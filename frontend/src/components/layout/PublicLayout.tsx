@@ -16,6 +16,7 @@ const PublicLayout = () => {
             <nav className="hidden md:flex items-center gap-6">
               <Link to="/" className="hover:text-[#13ec6d] transition-colors text-sm font-medium">Inicio</Link>
               <Link to="/catalogo" className="hover:text-[#13ec6d] transition-colors text-sm font-medium">Catálogo</Link>
+              <Link to="/faq" className="hover:text-[#13ec6d] transition-colors text-sm font-medium">Preguntas frecuentes</Link>
               <Link to="/login" className="bg-[#13ec6d] text-[#002f87] px-4 py-2 rounded-lg font-semibold text-sm hover:bg-green-400 transition-colors">Portal Vendedores</Link>
             </nav>
             {/* Mobile menu */}
@@ -39,12 +40,18 @@ const PublicLayout = () => {
       {/* Footer */}
       <footer className="bg-[#002a5c] text-white py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div>
               <p className="font-bold text-lg">Amigos Paguito Telcel</p>
               <p className="text-blue-300 text-sm">Tu celular a la puerta de tu casa</p>
             </div>
-            <p className="text-blue-300 text-sm">© {new Date().getFullYear()} Todos los derechos reservados.</p>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">Navegación</p>
+              <Link to="/" className="text-blue-300 text-sm hover:text-white transition-colors">Inicio</Link>
+              <Link to="/catalogo" className="text-blue-300 text-sm hover:text-white transition-colors">Catálogo</Link>
+              <Link to="/faq" className="text-blue-300 text-sm hover:text-white transition-colors">Preguntas frecuentes</Link>
+            </div>
+            <p className="text-blue-300 text-sm md:self-end">© {new Date().getFullYear()} Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>

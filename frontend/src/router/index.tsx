@@ -13,6 +13,7 @@ import Catalog from '../pages/public/Catalog';
 import ProductDetail from '../pages/public/ProductDetail';
 import ReservationForm from '../pages/public/ReservationForm';
 import ReservationSuccess from '../pages/public/ReservationSuccess';
+import FAQ from '../pages/public/FAQ';
 
 // Auth
 import Login from '../pages/auth/Login';
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
       { path: '/producto/:id', element: <ProductDetail /> },
       { path: '/reservar/:productId', element: <ReservationForm /> },
       { path: '/reserva/exitosa', element: <ReservationSuccess /> },
+      { path: '/faq', element: <FAQ /> },
     ],
   },
   // Login
