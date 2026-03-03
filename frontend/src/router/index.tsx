@@ -14,6 +14,7 @@ import ProductDetail from '../pages/public/ProductDetail';
 import ReservationForm from '../pages/public/ReservationForm';
 import ReservationSuccess from '../pages/public/ReservationSuccess';
 import FAQ from '../pages/public/FAQ';
+import Nosotros from '../pages/public/Nosotros';
 
 // Auth
 import Login from '../pages/auth/Login';
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
       { path: '/reservar/:productId', element: <ReservationForm /> },
       { path: '/reserva/exitosa', element: <ReservationSuccess /> },
       { path: '/faq', element: <FAQ /> },
+      { path: '/nosotros', element: <Nosotros /> },
     ],
   },
   // Login
