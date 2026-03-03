@@ -14,7 +14,7 @@ export interface ReservationFilters {
 
 const reservationInclude = {
   customer: { select: { id: true, nombreCompleto: true, telefono: true, curp: true, estado: true } },
-  product: { select: { id: true, nombre: true, marca: true, precio: true, imagenUrl: true } },
+  product: { select: { id: true, nombre: true, marca: true, precio: true, imagenes: true } },
   vendor: { select: { id: true, nombre: true, email: true, telefono: true, zona: true } },
 };
 
