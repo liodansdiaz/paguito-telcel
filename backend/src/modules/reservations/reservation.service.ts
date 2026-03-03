@@ -37,14 +37,18 @@ export class ReservationService {
     // 2. Validar horario
     ScheduleValidatorService.validateOrThrow(dto.fechaPreferida, dto.horarioPreferido);
 
-    // 3. Verificar que el cliente no tenga reserva activa (por CURP)
+    // 3. Verificar reservas activas según tipo de pago
     const curpUpper = dto.curp.toUpperCase().trim();
-    const existingReservation = await reservationRepository.findActiveByCustomer(curpUpper);
-    if (existingReservation) {
-      throw new AppError(
-        `Ya tienes una reserva activa (#${existingReservation.id.slice(0, 8).toUpperCase()}). Espera a que sea completada o cancelada antes de hacer una nueva.`,
-        409
-      );
+
+    if (dto.tipoPago === 'CREDITO') {
+      // A crédito: solo se permite un celular a la vez
+      const existingCredit = await reservationRepository.findActiveCreditByCustomer(curpUpper);
+      if (existingCredit) {
+        throw new AppError(
+          `Ya tienes una reserva a crédito en proceso (#${existingCredit.id.slice(0, 8).toUpperCase()}). Nuestro sistema únicamente otorga crédito para un celular a la vez.`,
+          409
+        );
+      }
     }
 
     // 4. Upsert cliente

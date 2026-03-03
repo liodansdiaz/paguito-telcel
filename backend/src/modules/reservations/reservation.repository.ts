@@ -71,6 +71,17 @@ export class ReservationRepository {
     });
   }
 
+  async findActiveCreditByCustomer(curp: string) {
+    return prisma.reservation.findFirst({
+      where: {
+        curp,
+        tipoPago: 'CREDITO',
+        estado: { in: ['NUEVA', 'ASIGNADA', 'EN_VISITA'] },
+      },
+      select: { id: true, estado: true, tipoPago: true },
+    });
+  }
+
   async findActiveByCurpOrId(busqueda: string) {
     const upper = busqueda.toUpperCase().trim();
 
