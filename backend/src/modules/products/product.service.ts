@@ -85,6 +85,14 @@ export class ProductService {
   async getMarcas() {
     return productRepository.getMarcas();
   }
+
+  async getPopulares(limit = 6) {
+    return productRepository.findPopulares(limit);
+  }
+
+  async getEnOferta(limit = 6) {
+    return productRepository.findEnOferta(limit);
+  }
 }
 
 export const productService = new ProductService();

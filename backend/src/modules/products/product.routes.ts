@@ -7,6 +7,8 @@ const router = Router();
 // Rutas públicas
 router.get('/', productController.getPublicProducts.bind(productController));
 router.get('/marcas', productController.getMarcas.bind(productController));
+router.get('/home/populares', productController.getPopulares.bind(productController));
+router.get('/home/ofertas', productController.getEnOferta.bind(productController));
 router.get('/:id', productController.getPublicProductById.bind(productController));
 
 // Rutas admin

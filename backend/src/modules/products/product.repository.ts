@@ -62,6 +62,37 @@ export class ProductRepository {
     });
     return result.map((r) => r.marca);
   }
+
+  // Productos con más reservas completadas (VENDIDA), para la sección "Más populares"
+  async findPopulares(limit = 6) {
+    const result = await prisma.product.findMany({
+      where: { isActive: true },
+      include: {
+        _count: {
+          select: { reservations: { where: { estado: 'VENDIDA' } } },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Ordenar por ventas completadas desc; si empatan, priorizar los con badge
+    return result
+      .sort((a, b) => {
+        const diff = b._count.reservations - a._count.reservations;
+        if (diff !== 0) return diff;
+        return a.badge ? -1 : 1;
+      })
+      .slice(0, limit);
+  }
+
+  // Productos en oferta (tienen precioAnterior definido)
+  async findEnOferta(limit = 6) {
+    return prisma.product.findMany({
+      where: { isActive: true, precioAnterior: { not: null } },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+  }
 }
 
 export const productRepository = new ProductRepository();

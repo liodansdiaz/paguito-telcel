@@ -56,6 +56,24 @@ export class ProductController {
     }
   }
 
+  async getPopulares(req: Request, res: Response, next: NextFunction) {
+    try {
+      const products = await productService.getPopulares(6);
+      sendSuccess(res, products);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getEnOferta(req: Request, res: Response, next: NextFunction) {
+    try {
+      const products = await productService.getEnOferta(6);
+      sendSuccess(res, products);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   // --- ADMIN ---
   async getAdminProducts(req: Request, res: Response, next: NextFunction) {
     try {
