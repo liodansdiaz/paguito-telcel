@@ -123,15 +123,25 @@ const InventoryManager = () => {
   const [createError, setCreateError] = useState('');
   const [filterActive, setFilterActive] = useState<string>('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [limit, setLimit] = useState<number>(20);
+  const [sortBy, setSortBy] = useState<string>('reciente');
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CreateForm>({
     resolver: zodResolver(createSchema),
   });
 
-  const fetchProducts = async () => {
+  const sortProducts = (list: Product[], sort: string): Product[] => {
+    const sorted = [...list];
+    if (sort === 'precio_asc') return sorted.sort((a, b) => a.precio - b.precio);
+    if (sort === 'precio_desc') return sorted.sort((a, b) => b.precio - a.precio);
+    if (sort === 'nombre_asc') return sorted.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    return sorted; // 'reciente' — orden que viene del backend
+  };
+
+  const fetchProducts = async (currentLimit = limit) => {
     setLoading(true);
     try {
-      const params: Record<string, string> = { limit: '50' };
+      const params: Record<string, string> = { limit: String(currentLimit) };
       if (filterActive !== '') params.isActive = filterActive;
       const res = await api.get('/products/admin/list', { params });
       setProducts(res.data.data);
@@ -140,7 +150,7 @@ const InventoryManager = () => {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchProducts(); }, [filterActive]);
+  useEffect(() => { fetchProducts(limit); }, [filterActive, limit]);
 
   const handleToggle = async (id: string) => {
     try {
@@ -184,21 +194,56 @@ const InventoryManager = () => {
   const formatPrice = (p: number) =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(p);
 
+  const displayedProducts = sortProducts(products, sortBy);
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Inventario y Stock</h2>
-          <p className="text-gray-400 text-sm">{total} productos registrados</p>
+          <p className="text-gray-400 text-sm">
+            {displayedProducts.length} de {total} productos
+          </p>
         </div>
-        <div className="flex gap-2">
-          <select value={filterActive} onChange={(e) => setFilterActive(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none">
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Filtro estado */}
+          <select
+            value={filterActive}
+            onChange={(e) => setFilterActive(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             <option value="">Todos</option>
             <option value="true">Activos</option>
             <option value="false">Inactivos</option>
           </select>
-          <button onClick={() => setShowCreate(true)} className="bg-[#0f49bd] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors whitespace-nowrap">
+
+          {/* Ordenamiento */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="reciente">Más recientes</option>
+            <option value="precio_desc">Mayor precio</option>
+            <option value="precio_asc">Menor precio</option>
+            <option value="nombre_asc">Nombre A–Z</option>
+          </select>
+
+          {/* Cantidad por página */}
+          <select
+            value={limit}
+            onChange={(e) => setLimit(Number(e.target.value))}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value={10}>Mostrar 10</option>
+            <option value={20}>Mostrar 20</option>
+            <option value={50}>Mostrar 50</option>
+          </select>
+
+          <button
+            onClick={() => setShowCreate(true)}
+            className="bg-[#0f49bd] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors whitespace-nowrap"
+          >
             + Agregar producto
           </button>
         </div>
@@ -217,7 +262,7 @@ const InventoryManager = () => {
             <tbody className="divide-y divide-gray-50">
               {loading ? Array.from({ length: 6 }).map((_, i) => (
                 <tr key={i}>{Array.from({ length: 9 }).map((__, j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>)}</tr>
-              )) : products.map((p) => {
+              )) : displayedProducts.map((p) => {
                 const sb = getStockBadge(p.stock, p.stockMinimo);
                 const primeraImagen = p.imagenes && p.imagenes.length > 0 ? toImageUrl(p.imagenes[0]) : null;
                 return (
