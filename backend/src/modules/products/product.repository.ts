@@ -1,17 +1,20 @@
 import { prisma } from '../../config/database';
 import { Prisma } from '@prisma/client';
 
+export type ProductSort = 'reciente' | 'precio_asc' | 'precio_desc' | 'nombre_asc';
+
 export interface ProductFilters {
   marca?: string;
   isActive?: boolean;
   search?: string;
   page?: number;
   limit?: number;
+  sort?: ProductSort;
 }
 
 export class ProductRepository {
   async findAll(filters: ProductFilters = {}) {
-    const { marca, isActive, search, page = 1, limit = 20 } = filters;
+    const { marca, isActive, search, page = 1, limit = 20, sort = 'reciente' } = filters;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ProductWhereInput = {};
@@ -25,8 +28,14 @@ export class ProductRepository {
       ];
     }
 
+    const orderBy: Prisma.ProductOrderByWithRelationInput =
+      sort === 'precio_asc'  ? { precio: 'asc' }    :
+      sort === 'precio_desc' ? { precio: 'desc' }   :
+      sort === 'nombre_asc'  ? { nombre: 'asc' }    :
+      { createdAt: 'desc' };
+
     const [data, total] = await Promise.all([
-      prisma.product.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      prisma.product.findMany({ where, skip, take: limit, orderBy }),
       prisma.product.count({ where }),
     ]);
 

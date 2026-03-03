@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { productService } from './product.service';
 import { sendSuccess, sendPaginated } from '../../shared/utils/response.helper';
+import type { ProductSort } from './product.repository';
 import { uploadProductImages } from '../../shared/middleware/upload.middleware';
 import path from 'path';
 import fs from 'fs';
@@ -25,14 +26,17 @@ export class ProductController {
   // --- PÚBLICA ---
   async getPublicProducts(req: Request, res: Response, next: NextFunction) {
     try {
-      const { marca, search, page, limit } = req.query;
+      const { marca, search, page, limit, sort } = req.query;
+      const currentPage = page ? parseInt(page as string) : 1;
+      const currentLimit = limit ? parseInt(limit as string) : 12;
       const result = await productService.getPublicProducts({
         marca: marca as string,
         search: search as string,
-        page: page ? parseInt(page as string) : 1,
-        limit: limit ? parseInt(limit as string) : 20,
+        page: currentPage,
+        limit: currentLimit,
+        sort: sort as ProductSort,
       });
-      sendPaginated(res, result.data, result.total, parseInt((page as string) || '1'), parseInt((limit as string) || '20'));
+      sendPaginated(res, result.data, result.total, currentPage, currentLimit);
     } catch (err) {
       next(err);
     }
@@ -77,15 +81,18 @@ export class ProductController {
   // --- ADMIN ---
   async getAdminProducts(req: Request, res: Response, next: NextFunction) {
     try {
-      const { marca, isActive, search, page, limit } = req.query;
+      const { marca, isActive, search, page, limit, sort } = req.query;
+      const currentPage = page ? parseInt(page as string) : 1;
+      const currentLimit = limit ? parseInt(limit as string) : 20;
       const result = await productService.getAdminProducts({
         marca: marca as string,
         isActive: isActive !== undefined ? isActive === 'true' : undefined,
         search: search as string,
-        page: page ? parseInt(page as string) : 1,
-        limit: limit ? parseInt(limit as string) : 20,
+        page: currentPage,
+        limit: currentLimit,
+        sort: sort as ProductSort,
       });
-      sendPaginated(res, result.data, result.total, parseInt((page as string) || '1'), parseInt((limit as string) || '20'));
+      sendPaginated(res, result.data, result.total, currentPage, currentLimit);
     } catch (err) {
       next(err);
     }

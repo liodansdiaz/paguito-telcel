@@ -125,24 +125,23 @@ const InventoryManager = () => {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [limit, setLimit] = useState<number>(20);
   const [sortBy, setSortBy] = useState<string>('reciente');
+  const [page, setPage] = useState<number>(1);
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CreateForm>({
     resolver: zodResolver(createSchema),
   });
 
-  const sortProducts = (list: Product[], sort: string): Product[] => {
-    const sorted = [...list];
-    if (sort === 'precio_asc') return sorted.sort((a, b) => a.precio - b.precio);
-    if (sort === 'precio_desc') return sorted.sort((a, b) => b.precio - a.precio);
-    if (sort === 'nombre_asc') return sorted.sort((a, b) => a.nombre.localeCompare(b.nombre));
-    return sorted; // 'reciente' — orden que viene del backend
-  };
+  const totalPages = Math.ceil(total / limit);
 
-  const fetchProducts = async (currentLimit = limit) => {
+  const fetchProducts = async (currentPage = page, currentLimit = limit, currentSort = sortBy, currentActive = filterActive) => {
     setLoading(true);
     try {
-      const params: Record<string, string> = { limit: String(currentLimit) };
-      if (filterActive !== '') params.isActive = filterActive;
+      const params: Record<string, string> = {
+        limit: String(currentLimit),
+        page: String(currentPage),
+        sort: currentSort,
+      };
+      if (currentActive !== '') params.isActive = currentActive;
       const res = await api.get('/products/admin/list', { params });
       setProducts(res.data.data);
       setTotal(res.data.pagination.total);
@@ -150,12 +149,16 @@ const InventoryManager = () => {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchProducts(limit); }, [filterActive, limit]);
+  // Al cambiar filtros o configuración, volver siempre a página 1
+  useEffect(() => {
+    setPage(1);
+    fetchProducts(1, limit, sortBy, filterActive);
+  }, [filterActive, limit, sortBy]);
 
   const handleToggle = async (id: string) => {
     try {
       await api.patch(`/products/admin/${id}/toggle`);
-      fetchProducts();
+      fetchProducts(page, limit, sortBy, filterActive);
     } catch (err: any) { alert(err.response?.data?.message || 'Error'); }
   };
 
@@ -180,7 +183,7 @@ const InventoryManager = () => {
       setShowCreate(false);
       reset();
       setImageFiles([]);
-      fetchProducts();
+      fetchProducts(page, limit, sortBy, filterActive);
     } catch (err: any) { setCreateError(err.response?.data?.message || 'Error al crear'); }
   };
 
@@ -194,15 +197,13 @@ const InventoryManager = () => {
   const formatPrice = (p: number) =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(p);
 
-  const displayedProducts = sortProducts(products, sortBy);
-
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Inventario y Stock</h2>
           <p className="text-gray-400 text-sm">
-            {displayedProducts.length} de {total} productos
+            {total} productos · página {page} de {totalPages || 1}
           </p>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
@@ -262,7 +263,7 @@ const InventoryManager = () => {
             <tbody className="divide-y divide-gray-50">
               {loading ? Array.from({ length: 6 }).map((_, i) => (
                 <tr key={i}>{Array.from({ length: 9 }).map((__, j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>)}</tr>
-              )) : displayedProducts.map((p) => {
+              )) : products.map((p) => {
                 const sb = getStockBadge(p.stock, p.stockMinimo);
                 const primeraImagen = p.imagenes && p.imagenes.length > 0 ? toImageUrl(p.imagenes[0]) : null;
                 return (
@@ -306,6 +307,59 @@ const InventoryManager = () => {
           </table>
         </div>
       </div>
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-sm text-gray-500">
+            Mostrando {(page - 1) * limit + 1}–{Math.min(page * limit, total)} de {total} productos
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => { const p = page - 1; setPage(p); fetchProducts(p, limit, sortBy, filterActive); }}
+              disabled={page === 1}
+              className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              ← Anterior
+            </button>
+
+            {/* Números de página */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+              .reduce<(number | '...')[]>((acc, p, i, arr) => {
+                if (i > 0 && (p as number) - (arr[i - 1] as number) > 1) acc.push('...');
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((item, i) =>
+                item === '...' ? (
+                  <span key={`ellipsis-${i}`} className="px-2 text-gray-400 text-sm">…</span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => { setPage(item as number); fetchProducts(item as number, limit, sortBy, filterActive); }}
+                    className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                      page === item
+                        ? 'bg-[#0f49bd] text-white border-[#0f49bd]'
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                )
+              )
+            }
+
+            <button
+              onClick={() => { const p = page + 1; setPage(p); fetchProducts(p, limit, sortBy, filterActive); }}
+              disabled={page === totalPages}
+              className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Siguiente →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal agregar producto */}
       {showCreate && (
