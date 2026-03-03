@@ -47,3 +47,34 @@ export const reservationLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+/**
+ * Rate limiter para consulta de reservas por folio o CURP.
+ * Máximo 20 intentos por IP cada hora.
+ * Permite varios intentos en caso de error de escritura.
+ */
+export const consultaLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: 20,
+  message: {
+    success: false,
+    message: 'Has realizado demasiadas consultas. Por favor espera una hora antes de intentar nuevamente.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Rate limiter para cancelación de reservas por el cliente.
+ * Máximo 10 intentos por IP cada hora.
+ */
+export const cancelarLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: 10,
+  message: {
+    success: false,
+    message: 'Has realizado demasiados intentos de cancelación. Por favor espera una hora antes de intentar nuevamente.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

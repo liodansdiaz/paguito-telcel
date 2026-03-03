@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import { reservationController } from './reservation.controller';
 import { authenticate, requireRole } from '../../shared/middleware/auth.middleware';
-import { reservationLimiter } from '../../config/rateLimit';
+import { reservationLimiter, consultaLimiter, cancelarLimiter } from '../../config/rateLimit';
 
 const router = Router();
 
 // Rutas públicas
 router.post('/', reservationLimiter, reservationController.create.bind(reservationController));
-router.post('/consulta', reservationLimiter, reservationController.consulta.bind(reservationController));
-router.patch('/cancelar', reservationLimiter, reservationController.cancelarPorCliente.bind(reservationController));
+router.post('/consulta', consultaLimiter, reservationController.consulta.bind(reservationController));
+router.patch('/cancelar', cancelarLimiter, reservationController.cancelarPorCliente.bind(reservationController));
 
 // Admin
 router.get('/admin', authenticate, requireRole('ADMIN'), reservationController.getAll.bind(reservationController));
