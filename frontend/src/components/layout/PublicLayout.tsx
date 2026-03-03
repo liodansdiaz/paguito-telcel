@@ -18,6 +18,7 @@ const PublicLayout = () => {
               <Link to="/catalogo" className="hover:text-[#13ec6d] transition-colors text-sm font-medium">Catálogo</Link>
               <Link to="/nosotros" className="hover:text-[#13ec6d] transition-colors text-sm font-medium">Quiénes somos</Link>
               <Link to="/faq" className="hover:text-[#13ec6d] transition-colors text-sm font-medium">Preguntas frecuentes</Link>
+              <Link to="/mi-reserva" className="hover:text-[#13ec6d] transition-colors text-sm font-medium">Mi reserva</Link>
               <Link to="/login" className="bg-[#13ec6d] text-[#002f87] px-4 py-2 rounded-lg font-semibold text-sm hover:bg-green-400 transition-colors">Portal Vendedores</Link>
             </nav>
             {/* Mobile menu */}
@@ -52,7 +53,7 @@ const PublicLayout = () => {
               <Link to="/catalogo" className="text-blue-300 text-sm hover:text-white transition-colors">Catálogo</Link>
               <Link to="/nosotros" className="text-blue-300 text-sm hover:text-white transition-colors">Quiénes somos</Link>
               <Link to="/faq" className="text-blue-300 text-sm hover:text-white transition-colors">Preguntas frecuentes</Link>
-              <Link to="/mi-reserva" className="text-blue-300 text-sm hover:text-white transition-colors">Mis reservas</Link>
+              <Link to="/mi-reserva" className="text-blue-300 text-sm hover:text-white transition-colors">Mi reserva</Link>
             </div>
             <p className="text-blue-300 text-sm md:self-end">© {new Date().getFullYear()} Todos los derechos reservados.</p>
           </div>
