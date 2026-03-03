@@ -1,0 +1,82 @@
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { useAuthStore } from '../store/auth.store';
+import type { Rol } from '../types';
+
+// Layouts
+import PublicLayout from '../components/layout/PublicLayout';
+import AdminLayout from '../components/layout/AdminLayout';
+import VendorLayout from '../components/layout/VendorLayout';
+
+// Public pages
+import Home from '../pages/public/Home';
+import Catalog from '../pages/public/Catalog';
+import ProductDetail from '../pages/public/ProductDetail';
+import ReservationForm from '../pages/public/ReservationForm';
+import ReservationSuccess from '../pages/public/ReservationSuccess';
+
+// Auth
+import Login from '../pages/auth/Login';
+
+// Admin
+import AdminDashboard from '../pages/admin/AdminDashboard';
+import ReservationsManager from '../pages/admin/ReservationsManager';
+import CustomersDirectory from '../pages/admin/CustomersDirectory';
+import CustomerProfile from '../pages/admin/CustomerProfile';
+import VendorsManager from '../pages/admin/VendorsManager';
+import InventoryManager from '../pages/admin/InventoryManager';
+
+// Vendor
+import VendorDashboard from '../pages/vendor/VendorDashboard';
+
+// Guard component
+const ProtectedRoute = ({ children, role }: { children: React.ReactNode; role?: Rol }) => {
+  const { isAuthenticated, user } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (role && user?.rol !== role) {
+    return <Navigate to={user?.rol === 'ADMIN' ? '/admin/dashboard' : '/vendedor/dashboard'} replace />;
+  }
+  return <>{children}</>;
+};
+
+export const router = createBrowserRouter([
+  // Rutas públicas
+  {
+    element: <PublicLayout />,
+    children: [
+      { path: '/', element: <Home /> },
+      { path: '/catalogo', element: <Catalog /> },
+      { path: '/producto/:id', element: <ProductDetail /> },
+      { path: '/reservar/:productId', element: <ReservationForm /> },
+      { path: '/reserva/exitosa', element: <ReservationSuccess /> },
+    ],
+  },
+  // Login
+  { path: '/login', element: <Login /> },
+  // Admin
+  {
+    path: '/admin',
+    element: <ProtectedRoute role="ADMIN"><AdminLayout /></ProtectedRoute>,
+    children: [
+      { index: true, element: <Navigate to="/admin/dashboard" replace /> },
+      { path: 'dashboard', element: <AdminDashboard /> },
+      { path: 'reservas', element: <ReservationsManager /> },
+      { path: 'clientes', element: <CustomersDirectory /> },
+      { path: 'clientes/:id', element: <CustomerProfile /> },
+      { path: 'vendedores', element: <VendorsManager /> },
+      { path: 'inventario', element: <InventoryManager /> },
+    ],
+  },
+  // Vendedor
+  {
+    path: '/vendedor',
+    element: <ProtectedRoute role="VENDEDOR"><VendorLayout /></ProtectedRoute>,
+    children: [
+      { index: true, element: <Navigate to="/vendedor/dashboard" replace /> },
+      { path: 'dashboard', element: <VendorDashboard /> },
+    ],
+  },
+  // 404
+  { path: '*', element: <Navigate to="/" replace /> },
+]);
+
+export { ProtectedRoute };

@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: paguito-postgres
+    environment:
+      POSTGRES_USER: paguito
+      POSTGRES_PASSWORD: paguito123
+      POSTGRES_DB: paguito_telcel
+    ports:
+      - "5433:5432"
+    volumes:
+      - paguito_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paguito -d paguito_telcel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  paguito_pgdata:

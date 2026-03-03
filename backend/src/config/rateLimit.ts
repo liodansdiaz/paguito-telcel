@@ -1,0 +1,49 @@
+import rateLimit from 'express-rate-limit';
+
+/**
+ * Rate limiter para el endpoint de login.
+ * Máximo 10 intentos por IP cada 15 minutos.
+ * Protege contra ataques de fuerza bruta de contraseñas.
+ */
+export const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 10,
+  message: {
+    success: false,
+    message: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.',
+  },
+  standardHeaders: true,  // Devuelve cabeceras RateLimit-* estándar
+  legacyHeaders: false,   // Desactiva cabeceras X-RateLimit-* antiguas
+});
+
+/**
+ * Rate limiter para el endpoint de refresh de token.
+ * Máximo 30 intentos por IP cada 15 minutos.
+ * Evita abuso del refresh silencioso en el cliente.
+ */
+export const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 30,
+  message: {
+    success: false,
+    message: 'Demasiadas solicitudes de renovación de sesión. Intenta de nuevo en 15 minutos.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Rate limiter para la creación de reservas públicas.
+ * Máximo 5 reservas por IP cada hora.
+ * Evita spam de reservas falsas desde una misma dirección.
+ */
+export const reservationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: 5,
+  message: {
+    success: false,
+    message: 'Has realizado demasiadas reservas. Por favor espera una hora antes de intentar nuevamente.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

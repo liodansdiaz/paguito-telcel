@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-blue: #0f49bd;
+  --color-brand-dark: #002f87;
+  --color-brand-navy: #002a5c;
+  --color-brand-green: #13ec6d;
+  --color-brand-green-dark: #0dc85e;
+}
+
+/* Leaflet fix */
+.leaflet-container {
+  z-index: 1;
+}
