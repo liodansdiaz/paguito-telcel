@@ -62,6 +62,10 @@ export class ProductRepository {
     });
   }
 
+  async delete(id: string) {
+    return prisma.product.delete({ where: { id } });
+  }
+
   async getMarcas(): Promise<string[]> {
     const result = await prisma.product.findMany({
       where: { isActive: true },

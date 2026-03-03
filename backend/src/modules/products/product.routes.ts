@@ -31,5 +31,6 @@ router.put(
 );
 
 router.patch('/admin/:id/toggle', authenticate, requireRole('ADMIN'), productController.toggleStatus.bind(productController));
+router.delete('/admin/:id', authenticate, requireRole('ADMIN'), productController.deleteProduct.bind(productController));
 
 export default router;

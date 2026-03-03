@@ -64,6 +64,15 @@ export class UserController {
       next(err);
     }
   }
+
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      await userService.delete(req.params['id'] as string);
+      sendSuccess(res, null, 'Vendedor eliminado');
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const userController = new UserController();

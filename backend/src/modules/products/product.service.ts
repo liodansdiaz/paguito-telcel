@@ -82,6 +82,11 @@ export class ProductService {
     return productRepository.toggleActive(id);
   }
 
+  async deleteProduct(id: string) {
+    await this.getAdminProductById(id);
+    return productRepository.delete(id);
+  }
+
   async getMarcas() {
     return productRepository.getMarcas();
   }

@@ -101,6 +101,11 @@ export class UserService {
       select: { id: true, nombre: true, isActive: true },
     });
   }
+
+  async delete(id: string) {
+    await this.getById(id);
+    return prisma.user.delete({ where: { id } });
+  }
 }
 
 export const userService = new UserService();

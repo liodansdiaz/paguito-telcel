@@ -182,6 +182,15 @@ export class ProductController {
     }
   }
 
+  async deleteProduct(req: Request, res: Response, next: NextFunction) {
+    try {
+      await productService.deleteProduct(req.params['id'] as string);
+      sendSuccess(res, null, 'Producto eliminado');
+    } catch (err) {
+      next(err);
+    }
+  }
+
   // Middleware de upload (se usa directamente en las rutas)
   uploadMiddleware(req: Request, res: Response, next: NextFunction) {
     uploadProductImages(req, res, (err) => {

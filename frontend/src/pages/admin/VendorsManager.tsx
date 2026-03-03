@@ -8,19 +8,24 @@ import type { User } from '../../types';
 const createSchema = z.object({
   nombre: z.string().min(2, 'Nombre requerido'),
   email: z.string().email('Email inválido'),
-  password: z.string().min(8, 'Mínimo 8 caracteres'),
+  password: z.string().min(8, 'Mínimo 8 caracteres').or(z.literal('')),
   zona: z.string().optional(),
   telefono: z.string().optional(),
 });
-type CreateForm = z.infer<typeof createSchema>;
+type VendorForm = z.infer<typeof createSchema>;
 
 const VendorsManager = () => {
   const [vendors, setVendors] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-  const [createError, setCreateError] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingVendor, setEditingVendor] = useState<User | null>(null);
+  const [formError, setFormError] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CreateForm>({ resolver: zodResolver(createSchema) });
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<VendorForm>({
+    resolver: zodResolver(createSchema),
+  });
 
   const fetchVendors = async () => {
     setLoading(true);
@@ -33,6 +38,27 @@ const VendorsManager = () => {
 
   useEffect(() => { fetchVendors(); }, []);
 
+  const openCreate = () => {
+    setEditingVendor(null);
+    reset({ nombre: '', email: '', password: '', zona: '', telefono: '' });
+    setFormError('');
+    setShowModal(true);
+  };
+
+  const openEdit = (vendor: User) => {
+    setEditingVendor(vendor);
+    reset({ nombre: vendor.nombre, email: vendor.email, password: '', zona: vendor.zona ?? '', telefono: vendor.telefono ?? '' });
+    setFormError('');
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingVendor(null);
+    reset();
+    setFormError('');
+  };
+
   const handleToggle = async (id: string) => {
     try {
       await api.patch(`/admin/users/${id}/toggle`);
@@ -40,14 +66,40 @@ const VendorsManager = () => {
     } catch (err: any) { alert(err.response?.data?.message || 'Error'); }
   };
 
-  const onSubmit = async (data: CreateForm) => {
-    setCreateError('');
+  const onSubmit = async (data: VendorForm) => {
+    setFormError('');
     try {
-      await api.post('/admin/users', { ...data, rol: 'VENDEDOR' });
-      setShowCreate(false);
-      reset();
+      if (editingVendor) {
+        const payload: Record<string, string> = {
+          nombre: data.nombre,
+          email: data.email,
+          zona: data.zona ?? '',
+          telefono: data.telefono ?? '',
+        };
+        if (data.password) payload.password = data.password;
+        await api.put(`/admin/users/${editingVendor.id}`, payload);
+      } else {
+        await api.post('/admin/users', { ...data, rol: 'VENDEDOR' });
+      }
+      closeModal();
       fetchVendors();
-    } catch (err: any) { setCreateError(err.response?.data?.message || 'Error al crear'); }
+    } catch (err: any) {
+      setFormError(err.response?.data?.message || 'Error al guardar');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/admin/users/${deleteTarget.id}`);
+      setDeleteTarget(null);
+      fetchVendors();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error al eliminar');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const activos = vendors.filter((v) => v.isActive).length;
@@ -59,7 +111,7 @@ const VendorsManager = () => {
           <h2 className="text-xl font-bold text-gray-900">Gestión de Vendedores</h2>
           <p className="text-gray-400 text-sm">{activos} activos / {vendors.length} total</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="bg-[#0f49bd] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+        <button onClick={openCreate} className="bg-[#0f49bd] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
           + Nuevo vendedor
         </button>
       </div>
@@ -88,21 +140,47 @@ const VendorsManager = () => {
               {v.telefono && <p>Tel: {v.telefono}</p>}
               <p>Reservas: {v._count?.reservations ?? 0}</p>
             </div>
-            <button
-              onClick={() => handleToggle(v.id)}
-              className={`w-full text-xs py-1.5 rounded-lg font-medium transition-colors ${v.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
-            >
-              {v.isActive ? 'Desactivar' : 'Activar'}
-            </button>
+            {/* Acciones */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleToggle(v.id)}
+                title={v.isActive ? 'Desactivar' : 'Activar'}
+                className={`flex-1 text-xs py-1.5 rounded-lg font-medium transition-colors ${v.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
+              >
+                {v.isActive ? 'Desactivar' : 'Activar'}
+              </button>
+              <button
+                onClick={() => openEdit(v)}
+                title="Editar vendedor"
+                className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+              >
+                {/* Ícono lápiz */}
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setDeleteTarget(v)}
+                title="Eliminar vendedor"
+                className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+              >
+                {/* Ícono papelera */}
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 01-1-1V5a1 1 0 011-1h6a1 1 0 011 1v1a1 1 0 01-1 1H9z" />
+                </svg>
+              </button>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Modal crear vendedor */}
-      {showCreate && (
+      {/* Modal crear / editar vendedor */}
+      {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md p-6">
-            <h3 className="font-bold text-lg text-gray-900 mb-5">Nuevo Vendedor</h3>
+            <h3 className="font-bold text-lg text-gray-900 mb-5">
+              {editingVendor ? 'Editar Vendedor' : 'Nuevo Vendedor'}
+            </h3>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-1 block">Nombre completo</label>
@@ -115,8 +193,10 @@ const VendorsManager = () => {
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-1 block">Contraseña</label>
-                <input {...register('password')} type="password" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className="text-sm font-medium text-gray-700 mb-1 block">
+                  Contraseña {editingVendor && <span className="text-gray-400 font-normal">(dejar vacío para no cambiar)</span>}
+                </label>
+                <input {...register('password')} type="password" placeholder={editingVendor ? '••••••••' : ''} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -129,14 +209,49 @@ const VendorsManager = () => {
                   <input {...register('telefono')} type="tel" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
-              {createError && <p className="text-red-500 text-sm">{createError}</p>}
+              {formError && <p className="text-red-500 text-sm">{formError}</p>}
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => { setShowCreate(false); reset(); setCreateError(''); }} className="flex-1 border border-gray-300 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50">Cancelar</button>
+                <button type="button" onClick={closeModal} className="flex-1 border border-gray-300 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50">
+                  Cancelar
+                </button>
                 <button type="submit" disabled={isSubmitting} className="flex-1 bg-[#0f49bd] text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-blue-700">
-                  {isSubmitting ? 'Creando...' : 'Crear vendedor'}
+                  {isSubmitting ? 'Guardando...' : editingVendor ? 'Guardar cambios' : 'Crear vendedor'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal confirmar eliminar */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 text-center">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 01-1-1V5a1 1 0 011-1h6a1 1 0 011 1v1a1 1 0 01-1 1H9z" />
+              </svg>
+            </div>
+            <h3 className="font-bold text-gray-900 text-lg mb-1">Eliminar vendedor</h3>
+            <p className="text-gray-500 text-sm mb-6">
+              ¿Estás seguro de eliminar a <span className="font-semibold text-gray-900">{deleteTarget.nombre}</span>? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="flex-1 border border-gray-300 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
           </div>
         </div>
       )}
