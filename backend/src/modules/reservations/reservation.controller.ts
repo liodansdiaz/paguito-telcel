@@ -106,6 +106,28 @@ export class ReservationController {
       next(err);
     }
   }
+
+  // Público: consultar reserva por folio o CURP
+  async consulta(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { busqueda } = z.object({ busqueda: z.string().min(8) }).parse(req.body);
+      const reservation = await reservationService.consultarReserva(busqueda);
+      sendSuccess(res, reservation);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // Público: cancelar reserva por folio o CURP
+  async cancelarPorCliente(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { busqueda } = z.object({ busqueda: z.string().min(8) }).parse(req.body);
+      await reservationService.cancelarPorCliente(busqueda);
+      sendSuccess(res, null, 'Tu reserva fue cancelada exitosamente.');
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const reservationController = new ReservationController();

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 
 interface LocationState {
@@ -11,6 +12,13 @@ const ReservationSuccess = () => {
   const state = location.state as LocationState;
 
   const shortId = state?.reservationId?.slice(0, 8).toUpperCase() ?? 'N/A';
+
+  // Guardar el folio en localStorage para acceso rápido desde /mi-reserva
+  useEffect(() => {
+    if (state?.reservationId) {
+      localStorage.setItem('paguito_last_folio', state.reservationId.slice(0, 8).toUpperCase());
+    }
+  }, [state?.reservationId]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -44,8 +52,7 @@ const ReservationSuccess = () => {
         </div>
 
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6 text-xs text-yellow-700 text-left">
-          <strong>Importante:</strong> No podrás hacer una nueva reserva mientras esta esté activa.
-          Espera a que sea completada o contacta a soporte si necesitas cancelarla.
+          <strong>Importante:</strong> Guarda tu número de folio <strong>#{shortId}</strong>. Lo necesitarás si quieres consultar o cancelar tu reserva.
         </div>
 
         <div className="flex flex-col gap-3">
@@ -54,6 +61,12 @@ const ReservationSuccess = () => {
             className="bg-[#13ec6d] text-[#002f87] py-3 rounded-xl font-bold hover:bg-green-400 transition-colors"
           >
             Ver más celulares
+          </Link>
+          <Link
+            to="/mi-reserva"
+            className="border border-red-200 text-red-600 py-3 rounded-xl font-semibold text-sm hover:bg-red-50 transition-colors"
+          >
+            ¿Necesitas cancelar? Consulta tu reserva
           </Link>
           <Link
             to="/"

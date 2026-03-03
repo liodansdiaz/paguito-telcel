@@ -71,6 +71,44 @@ export class ReservationRepository {
     });
   }
 
+  async findActiveByCurpOrId(busqueda: string) {
+    const upper = busqueda.toUpperCase().trim();
+
+    // Determinar modo de búsqueda por longitud/formato
+    let where: Prisma.ReservationWhereInput;
+
+    if (upper.length === 18) {
+      // CURP exacto
+      where = { curp: upper, estado: { in: ['NUEVA', 'ASIGNADA'] } };
+    } else if (upper.length === 36) {
+      // UUID completo
+      where = { id: upper, estado: { in: ['NUEVA', 'ASIGNADA'] } };
+    } else {
+      // Folio corto (primeros 8 chars del UUID)
+      where = {
+        id: { startsWith: upper.toLowerCase() },
+        estado: { in: ['NUEVA', 'ASIGNADA'] },
+      };
+    }
+
+    return prisma.reservation.findFirst({
+      where,
+      select: {
+        id: true,
+        nombreCompleto: true,
+        telefono: true,
+        tipoPago: true,
+        direccion: true,
+        fechaPreferida: true,
+        horarioPreferido: true,
+        estado: true,
+        createdAt: true,
+        product: { select: { id: true, nombre: true, marca: true, imagenes: true } },
+        vendor: { select: { nombre: true } },
+      },
+    });
+  }
+
   async create(data: Prisma.ReservationCreateInput) {
     return prisma.reservation.create({
       data,

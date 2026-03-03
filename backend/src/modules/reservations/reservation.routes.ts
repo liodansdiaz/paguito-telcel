@@ -5,8 +5,10 @@ import { reservationLimiter } from '../../config/rateLimit';
 
 const router = Router();
 
-// Ruta pública — crear reserva
+// Rutas públicas
 router.post('/', reservationLimiter, reservationController.create.bind(reservationController));
+router.post('/consulta', reservationLimiter, reservationController.consulta.bind(reservationController));
+router.patch('/cancelar', reservationLimiter, reservationController.cancelarPorCliente.bind(reservationController));
 
 // Admin
 router.get('/admin', authenticate, requireRole('ADMIN'), reservationController.getAll.bind(reservationController));

@@ -52,6 +52,7 @@ const PublicLayout = () => {
               <Link to="/catalogo" className="text-blue-300 text-sm hover:text-white transition-colors">Catálogo</Link>
               <Link to="/nosotros" className="text-blue-300 text-sm hover:text-white transition-colors">Quiénes somos</Link>
               <Link to="/faq" className="text-blue-300 text-sm hover:text-white transition-colors">Preguntas frecuentes</Link>
+              <Link to="/mi-reserva" className="text-blue-300 text-sm hover:text-white transition-colors">Mis reservas</Link>
             </div>
             <p className="text-blue-300 text-sm md:self-end">© {new Date().getFullYear()} Todos los derechos reservados.</p>
           </div>

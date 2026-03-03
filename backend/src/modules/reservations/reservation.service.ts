@@ -134,6 +134,31 @@ export class ReservationService {
   async getVendorMapData(vendorId: string) {
     return reservationRepository.findMapDataByVendor(vendorId);
   }
+
+  async consultarReserva(busqueda: string) {
+    if (!busqueda || busqueda.trim().length < 8) {
+      throw new AppError('Ingresa tu número de folio o CURP para buscar tu reserva.', 400);
+    }
+    const reservation = await reservationRepository.findActiveByCurpOrId(busqueda);
+    if (!reservation) {
+      throw new AppError('No encontramos ninguna reserva activa con ese dato. Verifica tu folio o CURP.', 404);
+    }
+    return reservation;
+  }
+
+  async cancelarPorCliente(busqueda: string) {
+    if (!busqueda || busqueda.trim().length < 8) {
+      throw new AppError('Ingresa tu número de folio o CURP para cancelar tu reserva.', 400);
+    }
+    const reservation = await reservationRepository.findActiveByCurpOrId(busqueda);
+    if (!reservation) {
+      throw new AppError('No encontramos ninguna reserva activa con ese dato.', 404);
+    }
+    if (!['NUEVA', 'ASIGNADA'].includes(reservation.estado)) {
+      throw new AppError('Esta reserva no puede cancelarse porque ya está en proceso de visita.', 409);
+    }
+    return reservationRepository.updateStatus(reservation.id, 'CANCELADA', 'Cancelada por el cliente desde la web.');
+  }
 }
 
 export const reservationService = new ReservationService();
