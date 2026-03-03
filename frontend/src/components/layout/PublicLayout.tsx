@@ -1,4 +1,5 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
+import Carrito from '../ui/Carrito';
 
 const PublicLayout = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const PublicLayout = () => {
               <Link to="/nosotros" className="hover:text-[#13ec6d] transition-colors text-sm font-medium">Quiénes somos</Link>
               <Link to="/faq" className="hover:text-[#13ec6d] transition-colors text-sm font-medium">Preguntas frecuentes</Link>
               <Link to="/mi-reserva" className="hover:text-[#13ec6d] transition-colors text-sm font-medium">Mi reserva</Link>
+              <Carrito />
               <Link to="/login" className="bg-[#13ec6d] text-[#002f87] px-4 py-2 rounded-lg font-semibold text-sm hover:bg-green-400 transition-colors">Portal Vendedores</Link>
             </nav>
             {/* Mobile menu */}

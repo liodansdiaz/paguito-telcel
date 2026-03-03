@@ -49,7 +49,18 @@ const ReservationForm = () => {
     setSubmitting(true); setSubmitError('');
     try {
       const res: any = await api.post('/reservations', { productId, ...data, curp: data.curp.toUpperCase(), fechaPreferida: new Date(data.fechaPreferida + 'T00:00:00').toISOString(), latitude: geo.latitude, longitude: geo.longitude });
-      navigate('/reserva/exitosa', { state: { reservationId: res.data.data.id, producto: product?.nombre, nombre: data.nombreCompleto } });
+      navigate('/reserva/exitosa', {
+        state: {
+          reservationId: res.data.data.id,
+          producto: product?.nombre,
+          marca: product?.marca,
+          tipoPago: data.tipoPago,
+          fechaPreferida: data.fechaPreferida,
+          horarioPreferido: data.horarioPreferido,
+          imagen: product?.imagenes?.[0] ?? undefined,
+          nombre: data.nombreCompleto,
+        },
+      });
     } catch (err: any) { setSubmitError(err.response?.data?.message || 'Error al crear la reserva.'); }
     finally { setSubmitting(false); }
   };
@@ -61,7 +72,7 @@ const ReservationForm = () => {
     <div className='max-w-2xl mx-auto px-4 py-10'>
       <h1 className='text-2xl font-bold text-gray-900 mb-1'>Reservar celular</h1>
       <div className='bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 flex items-center gap-4'>
-        {product.imagenUrl ? <img src={product.imagenUrl} alt={product.nombre} className='w-14 h-14 object-contain' /> : <span className='text-3xl'>📱</span>}
+        {product.imagenes?.[0] ? <img src={`http://localhost:3000${product.imagenes[0]}`} alt={product.nombre} className='w-14 h-14 object-contain' /> : <span className='text-3xl'>📱</span>}
         <div>
           <p className='text-xs text-blue-500 font-medium'>{product.marca}</p>
           <p className='font-bold text-gray-900'>{product.nombre}</p>

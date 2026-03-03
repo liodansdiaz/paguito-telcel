@@ -1,22 +1,40 @@
 import { useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
+import { useCarritoStore } from '../../store/carrito.store';
 
 interface LocationState {
   reservationId?: string;
   producto?: string;
+  marca?: string;
+  tipoPago?: 'CONTADO' | 'CREDITO';
+  fechaPreferida?: string;
+  horarioPreferido?: string;
+  imagen?: string;
   nombre?: string;
 }
 
 const ReservationSuccess = () => {
   const location = useLocation();
   const state = location.state as LocationState;
+  const { agregar } = useCarritoStore();
 
   const shortId = state?.reservationId?.slice(0, 8).toUpperCase() ?? 'N/A';
 
-  // Guardar el folio en localStorage para acceso rápido desde /mi-reserva
+  // Guardar folio en localStorage y agregar al carrito
   useEffect(() => {
     if (state?.reservationId) {
       localStorage.setItem('paguito_last_folio', state.reservationId.slice(0, 8).toUpperCase());
+
+      agregar({
+        folio: state.reservationId.slice(0, 8).toUpperCase(),
+        producto: state.producto ?? 'Celular',
+        marca: state.marca ?? '',
+        tipoPago: state.tipoPago ?? 'CONTADO',
+        fecha: state.fechaPreferida ?? new Date().toISOString(),
+        horario: state.horarioPreferido ?? '',
+        imagen: state.imagen,
+        createdAt: new Date().toISOString(),
+      });
     }
   }, [state?.reservationId]);
 
