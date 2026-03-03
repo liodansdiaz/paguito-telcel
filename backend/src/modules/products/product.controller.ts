@@ -141,31 +141,37 @@ export class ProductController {
 
       const data = createProductSchema.partial().parse(body);
 
-      // Imágenes nuevas subidas
+      // Imágenes: combinar existentes que no se quitaron + nuevas subidas
       const files = req.files as Express.Multer.File[] | undefined;
-      let imagenes: string[] | undefined;
 
-      if (files && files.length > 0) {
-        // Si se suben nuevas imágenes, reemplazar las anteriores
-        const existing = await productService.getAdminProductById(req.params['id'] as string);
-        // Eliminar archivos viejos del disco
-        if (existing.imagenes && Array.isArray(existing.imagenes)) {
-          for (const imgPath of existing.imagenes as string[]) {
-            const fullPath = path.join(process.cwd(), imgPath);
-            if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
-          }
-        }
-        imagenes = files.map((f) => `/uploads/productos/${f.filename}`);
-      } else if (body.imagenesExistentes) {
-        // El cliente puede pasar las URLs actuales para mantenerlas
-        imagenes = Array.isArray(body.imagenesExistentes)
+      // URLs existentes que el admin decidió conservar (puede ser array, string, o vacío)
+      let imagenesExistentes: string[] = [];
+      if (body.imagenesExistentes) {
+        imagenesExistentes = Array.isArray(body.imagenesExistentes)
           ? body.imagenesExistentes
           : [body.imagenesExistentes];
       }
 
+      // Nuevas imágenes subidas
+      const nuevasImagenes: string[] = files ? files.map((f) => `/uploads/productos/${f.filename}`) : [];
+
+      // Imágenes finales = existentes conservadas + nuevas
+      const imagenes: string[] = [...imagenesExistentes, ...nuevasImagenes];
+
+      // Eliminar del disco las imágenes que el admin quitó (las que ya no están en imagenesExistentes)
+      const existing = await productService.getAdminProductById(req.params['id'] as string);
+      if (existing.imagenes && Array.isArray(existing.imagenes)) {
+        for (const imgPath of existing.imagenes as string[]) {
+          if (!imagenesExistentes.includes(imgPath)) {
+            const fullPath = path.join(process.cwd(), imgPath);
+            if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+          }
+        }
+      }
+
       const product = await productService.updateProduct(
         req.params['id'] as string,
-        imagenes !== undefined ? { ...data, imagenes } : data
+        { ...data, imagenes }
       );
       sendSuccess(res, product, 'Producto actualizado');
     } catch (err) {

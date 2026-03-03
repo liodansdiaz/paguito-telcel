@@ -133,17 +133,17 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* Stock */}
+          {/* Disponibilidad */}
           <div className="mb-6">
             {product.stock > 0 ? (
               <span className="text-green-600 text-sm font-medium flex items-center gap-1.5">
                 <span className="w-2 h-2 bg-green-500 rounded-full inline-block"></span>
-                Disponible — {product.stock} unidades
+                Disponible
               </span>
             ) : (
               <span className="text-red-600 text-sm font-medium flex items-center gap-1.5">
                 <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
-                Sin stock actualmente
+                No disponible por el momento
               </span>
             )}
           </div>

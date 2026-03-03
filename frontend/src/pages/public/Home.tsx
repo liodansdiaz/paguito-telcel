@@ -140,11 +140,10 @@ const Home = () => {
             Elige tu celular favorito, agenda una visita y un vendedor te lo lleva.
             Sin filas, sin esperas.
           </p>
-          {/* Crédito destacado */}
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-xl px-5 py-3 mb-10">
             <span className="text-[#13ec6d] text-xl">✓</span>
             <span className="text-white text-sm font-medium">
-              Disponible a crédito desde <strong className="text-[#13ec6d]">$299/semana</strong> · Sin aval · Sin buró
+              Disponible a crédito o al contado · Sin aval · Sin buró
             </span>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -154,18 +153,93 @@ const Home = () => {
             >
               Ver catálogo
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 2. CÓMO FUNCIONA ─────────────────────────────────────────────────── */}
+      <section className="py-16 px-4 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-xs font-bold text-[#0f49bd] uppercase tracking-widest mb-1">Fácil y rápido</p>
+            <h2 className="text-2xl font-bold text-gray-900">¿Cómo funciona?</h2>
+            <p className="text-gray-500 text-sm mt-2 max-w-xl mx-auto">
+              En 4 sencillos pasos puedes tener tu celular nuevo sin salir de tu casa
+            </p>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-0">
+
+            {/* Paso 1 */}
+            <div className="flex-1 flex flex-col items-center text-center px-4">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 relative">
+                <span className="absolute -top-2 -right-2 bg-[#13ec6d] text-[#002f87] text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">1</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-[#0f49bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <rect x="5" y="2" width="14" height="20" rx="2" />
+                  <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth={2.5} strokeLinecap="round" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">Elige tu celular</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">Explora el catálogo y selecciona el modelo que más te guste</p>
+            </div>
+
+            <div className="hidden md:block text-gray-200 text-3xl font-light px-1">→</div>
+
+            {/* Paso 2 */}
+            <div className="flex-1 flex flex-col items-center text-center px-4">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 relative">
+                <span className="absolute -top-2 -right-2 bg-[#13ec6d] text-[#002f87] text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">2</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-[#0f49bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">Llena tu reserva</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">Ingresa tus datos y elige el día y hora que más te convenga</p>
+            </div>
+
+            <div className="hidden md:block text-gray-200 text-3xl font-light px-1">→</div>
+
+            {/* Paso 3 */}
+            <div className="flex-1 flex flex-col items-center text-center px-4">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 relative">
+                <span className="absolute -top-2 -right-2 bg-[#13ec6d] text-[#002f87] text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">3</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-[#0f49bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">Recibe al vendedor</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">Un vendedor va a tu domicilio en la fecha y hora que elegiste</p>
+            </div>
+
+            <div className="hidden md:block text-gray-200 text-3xl font-light px-1">→</div>
+
+            {/* Paso 4 */}
+            <div className="flex-1 flex flex-col items-center text-center px-4">
+              <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center mb-4 relative">
+                <span className="absolute -top-2 -right-2 bg-[#13ec6d] text-[#002f87] text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">4</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-[#13ec6d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">¡Listo, es tuyo!</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">Firma el contrato y lleva tu celular ese mismo día, sin filas ni esperas</p>
+            </div>
+
+          </div>
+
+          <div className="text-center mt-10">
             <Link
-              to="/login"
-              className="bg-white/10 border border-white/30 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/20 transition-all"
+              to="/catalogo"
+              className="inline-block bg-[#0f49bd] text-white px-8 py-3 rounded-xl font-semibold text-sm hover:bg-blue-700 transition-all shadow-md"
             >
-              Portal vendedores
+              Comenzar ahora →
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ── 2. MÁS POPULARES ─────────────────────────────────────────────────── */}
-      <section className="py-14 px-4 bg-gray-50">
+      {/* ── 3. MÁS POPULARES ─────────────────────────────────────────────────── */}
+      <section className="py-14 px-4 bg-gradient-to-b from-white to-blue-50">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-end justify-between mb-8">
             <div>
@@ -202,9 +276,9 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ── 3. OFERTAS ───────────────────────────────────────────────────────── */}
+      {/* ── 4. OFERTAS ───────────────────────────────────────────────────────── */}
       {(loadingOfertas || ofertas.length > 0) && (
-        <section className="py-14 px-4 bg-white">
+        <section className="py-14 px-4 bg-gradient-to-b from-blue-50 to-white">
           <div className="max-w-6xl mx-auto">
             <div className="flex items-end justify-between mb-8">
               <div>
@@ -229,8 +303,8 @@ const Home = () => {
         </section>
       )}
 
-      {/* ── 4. ¿POR QUÉ ELEGIRNOS? ───────────────────────────────────────────── */}
-      <section className="py-16 px-4 bg-gray-50">
+      {/* ── 5. ¿POR QUÉ ELEGIRNOS? ───────────────────────────────────────────── */}
+      <section className="py-16 px-4 bg-gradient-to-b from-white to-blue-50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs font-bold text-[#0f49bd] uppercase tracking-widest mb-1">Nuestras ventajas</p>

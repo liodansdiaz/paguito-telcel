@@ -252,10 +252,6 @@ const Catalog = () => {
                       )}
                     </div>
 
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full w-fit mb-3 ${stockLevel.color}`}>
-                      {stockLevel.label}
-                    </span>
-
                     <div className="flex gap-2 mt-auto">
                       <Link
                         to={`/producto/${product.id}`}
