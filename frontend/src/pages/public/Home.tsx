@@ -123,6 +123,39 @@ const Home = () => {
     },
   ];
 
+  const testimonios = [
+    {
+      nombre: 'María González',
+      producto: 'Samsung Galaxy A55',
+      comentario: 'Excelente servicio, el vendedor llegó puntual y muy amable. Me explicó todo sobre el crédito y salí con mi celular el mismo día. Lo recomiendo mucho.',
+    },
+    {
+      nombre: 'Carlos Ramírez',
+      producto: 'iPhone 14',
+      comentario: 'No tenía historial crediticio y pensé que no me iban a dar el crédito. Me sorprendió lo fácil que fue el trámite. Sin aval, sin buró y con pagos cómodos semanales.',
+    },
+    {
+      nombre: 'Laura Méndez',
+      producto: 'Motorola Edge 40',
+      comentario: 'Me gustó mucho que el vendedor fue hasta mi trabajo. No tuve que salir ni perder tiempo. El proceso fue rápido y transparente. Muy buena experiencia.',
+    },
+    {
+      nombre: 'Roberto Fuentes',
+      producto: 'Samsung Galaxy S23',
+      comentario: 'Ya llevo dos celulares con Paguito Telcel. El trato es muy bueno, los precios justos y los pagos semanales se ajustan perfecto a mi presupuesto.',
+    },
+    {
+      nombre: 'Ana Soto',
+      producto: 'iPhone 13',
+      comentario: 'Dudé al principio porque era a crédito, pero todo fue muy formal. Me dieron contrato, me explicaron las condiciones y el equipo llegó en perfectas condiciones.',
+    },
+    {
+      nombre: 'Miguel Torres',
+      producto: 'Motorola G84',
+      comentario: 'Lo mejor es que no tienes que ir a ningún lado. Hice la reserva en línea, elegí el horario y listo. El vendedor llegó con el celular y en media hora ya lo tenía configurado.',
+    },
+  ];
+
   return (
     <div>
 
@@ -319,6 +352,42 @@ const Home = () => {
                 <span className="text-4xl mb-4 block">{item.icon}</span>
                 <h3 className="font-semibold text-gray-900 mb-2">{item.titulo}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 6. TESTIMONIOS ───────────────────────────────────────────────────── */}
+      <section className="py-16 px-4 bg-gradient-to-b from-blue-50 to-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-xs font-bold text-[#0f49bd] uppercase tracking-widest mb-1">Lo que dicen nuestros clientes</p>
+            <h2 className="text-2xl font-bold text-gray-900">Clientes satisfechos</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {testimonios.map((t) => (
+              <div key={t.nombre} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                {/* Estrellas */}
+                <div className="flex gap-0.5 mb-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <svg key={i} xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </div>
+                {/* Comentario */}
+                <p className="text-gray-600 text-sm leading-relaxed flex-1 mb-4">"{t.comentario}"</p>
+                {/* Cliente */}
+                <div className="flex items-center gap-3 pt-4 border-t border-gray-50">
+                  <div className="w-9 h-9 rounded-full bg-[#0f49bd] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    {t.nombre.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">{t.nombre}</p>
+                    <p className="text-gray-400 text-xs">{t.producto}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
