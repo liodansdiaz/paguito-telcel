@@ -4,21 +4,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
-import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import '../../utils/leaflet'; // Fix Leaflet icons
 import api from '../../services/api';
 import { toImageUrl } from '../../services/config';
+import { getColorHex } from '../../utils/colors';
 import type { Product } from '../../types';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { validateSchedule, getMinTime, getMaxTime } from '../../hooks/useScheduleValidator';
-
-// Fix Leaflet icon default
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
 
 // ── Tapachula, Chiapas ──────────────────────────────────────────────────────
 const DEFAULT_CENTER: [number, number] = [14.9054, -92.2634];
@@ -102,17 +95,6 @@ type FormData = z.infer<typeof schema>;
 
 const fmt = (p: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(p);
-
-// Mapa de colores — mismo que el catálogo
-const COLOR_MAP: Record<string, string> = {
-  negro: '#1a1a1a', blanco: '#f5f5f5', plata: '#C0C0C0', plateado: '#C0C0C0',
-  gris: '#808080', azul: '#2563eb', 'azul oscuro': '#1e3a8a', 'azul claro': '#60a5fa',
-  verde: '#16a34a', 'verde menta': '#6ee7b7', morado: '#7c3aed', violeta: '#7c3aed',
-  rojo: '#dc2626', rosa: '#ec4899', dorado: '#d97706', amarillo: '#eab308',
-  naranja: '#ea580c', cafe: '#92400e', café: '#92400e', beige: '#d4b896',
-  titanio: '#a0a098', 'titanio negro': '#3a3a3a', 'titanio natural': '#a0a098',
-};
-const getColorHex = (color: string) => COLOR_MAP[color.toLowerCase()] ?? '#9ca3af';
 
 // ── Componente principal ────────────────────────────────────────────────────
 const ReservationForm = () => {
