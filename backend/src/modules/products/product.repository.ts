@@ -4,9 +4,13 @@ import { Prisma } from '@prisma/client';
 export type ProductSort = 'reciente' | 'precio_asc' | 'precio_desc' | 'nombre_asc';
 
 export interface ProductFilters {
-  marca?: string;
+  marca?: string | string[];
   isActive?: boolean;
   search?: string;
+  color?: string;
+  memoria?: string;
+  precioMin?: number;
+  precioMax?: number;
   page?: number;
   limit?: number;
   sort?: ProductSort;
@@ -14,12 +18,34 @@ export interface ProductFilters {
 
 export class ProductRepository {
   async findAll(filters: ProductFilters = {}) {
-    const { marca, isActive, search, page = 1, limit = 20, sort = 'reciente' } = filters;
+    const {
+      marca, isActive, search, color, memoria,
+      precioMin, precioMax,
+      page = 1, limit = 20, sort = 'reciente'
+    } = filters;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ProductWhereInput = {};
-    if (marca) where.marca = { equals: marca, mode: 'insensitive' };
+    if (marca) {
+      const marcas = Array.isArray(marca) ? marca.filter(Boolean) : [marca];
+      if (marcas.length === 1) {
+        where.marca = { equals: marcas[0], mode: 'insensitive' };
+      } else if (marcas.length > 1) {
+        // Prisma no soporta mode: insensitive con in:, usamos OR para mantener case-insensitive
+        where.OR = [
+          ...(where.OR ?? []),
+          ...marcas.map((m) => ({ marca: { equals: m, mode: 'insensitive' as const } })),
+        ];
+      }
+    }
     if (isActive !== undefined) where.isActive = isActive;
+    if (color) where.colores = { has: color };
+    if (memoria) where.memorias = { has: memoria };
+    if (precioMin !== undefined || precioMax !== undefined) {
+      where.precio = {};
+      if (precioMin !== undefined) (where.precio as Prisma.DecimalFilter).gte = precioMin;
+      if (precioMax !== undefined) (where.precio as Prisma.DecimalFilter).lte = precioMax;
+    }
     if (search) {
       where.OR = [
         { nombre: { contains: search, mode: 'insensitive' } },
@@ -74,6 +100,30 @@ export class ProductRepository {
       orderBy: { marca: 'asc' },
     });
     return result.map((r) => r.marca);
+  }
+
+  async getColores(): Promise<string[]> {
+    const result = await prisma.product.findMany({
+      where: { isActive: true },
+      select: { colores: true },
+    });
+    const all = result.flatMap((r) => r.colores);
+    return [...new Set(all)].sort();
+  }
+
+  async getMemorias(): Promise<string[]> {
+    const result = await prisma.product.findMany({
+      where: { isActive: true },
+      select: { memorias: true },
+    });
+    const all = result.flatMap((r) => r.memorias);
+    const unique = [...new Set(all)];
+    // Ordenar: primero por valor numérico, luego alfabético
+    return unique.sort((a, b) => {
+      const numA = parseInt(a) || 0;
+      const numB = parseInt(b) || 0;
+      return numA !== numB ? numA - numB : a.localeCompare(b);
+    });
   }
 
   // Productos con más reservas completadas (VENDIDA), para la sección "Más populares"

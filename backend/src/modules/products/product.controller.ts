@@ -13,7 +13,7 @@ const createProductSchema = z.object({
   marca: z.string().min(1, 'Marca requerida'),
   descripcion: z.string().optional(),
   precio: z.number().positive('Precio debe ser positivo'),
-  precioAnterior: z.number().positive().optional(),
+  precioAnterior: z.number().positive().nullable().optional(),
   stock: z.number().int().min(0),
   stockMinimo: z.number().int().min(0).optional(),
   badge: z.string().optional(),
@@ -26,12 +26,16 @@ export class ProductController {
   // --- PÚBLICA ---
   async getPublicProducts(req: Request, res: Response, next: NextFunction) {
     try {
-      const { marca, search, page, limit, sort } = req.query;
+      const { marca, search, page, limit, sort, color, memoria, precioMin, precioMax } = req.query;
       const currentPage = page ? parseInt(page as string) : 1;
       const currentLimit = limit ? parseInt(limit as string) : 12;
       const result = await productService.getPublicProducts({
-        marca: marca as string,
+        marca: marca as string | string[],
         search: search as string,
+        color: color as string,
+        memoria: memoria as string,
+        precioMin: precioMin ? parseFloat(precioMin as string) : undefined,
+        precioMax: precioMax ? parseFloat(precioMax as string) : undefined,
         page: currentPage,
         limit: currentLimit,
         sort: sort as ProductSort,
@@ -55,6 +59,24 @@ export class ProductController {
     try {
       const marcas = await productService.getMarcas();
       sendSuccess(res, marcas);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getColores(req: Request, res: Response, next: NextFunction) {
+    try {
+      const colores = await productService.getColores();
+      sendSuccess(res, colores);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getMemorias(req: Request, res: Response, next: NextFunction) {
+    try {
+      const memorias = await productService.getMemorias();
+      sendSuccess(res, memorias);
     } catch (err) {
       next(err);
     }
@@ -112,6 +134,24 @@ export class ProductController {
       if (body.especificaciones && typeof body.especificaciones === 'string') {
         try { body.especificaciones = JSON.parse(body.especificaciones); } catch { delete body.especificaciones; }
       }
+      // colores: puede venir como JSON string o como múltiples campos
+      let colores: string[] = [];
+      if (body.colores) {
+        if (typeof body.colores === 'string') {
+          try { colores = JSON.parse(body.colores); } catch { colores = body.colores.split(',').map((c: string) => c.trim()).filter(Boolean); }
+        } else if (Array.isArray(body.colores)) {
+          colores = body.colores;
+        }
+      }
+      // memorias: igual que colores
+      let memorias: string[] = [];
+      if (body.memorias) {
+        if (typeof body.memorias === 'string') {
+          try { memorias = JSON.parse(body.memorias); } catch { memorias = body.memorias.split(',').map((c: string) => c.trim()).filter(Boolean); }
+        } else if (Array.isArray(body.memorias)) {
+          memorias = body.memorias;
+        }
+      }
 
       const data = createProductSchema.parse(body);
 
@@ -119,7 +159,7 @@ export class ProductController {
       const files = req.files as Express.Multer.File[] | undefined;
       const imagenes = files ? files.map((f) => `/uploads/productos/${f.filename}`) : [];
 
-      const product = await productService.createProduct({ ...data, imagenes });
+      const product = await productService.createProduct({ ...data, imagenes, colores, memorias });
       sendSuccess(res, product, 'Producto creado exitosamente', 201);
     } catch (err) {
       next(err);
@@ -130,13 +170,33 @@ export class ProductController {
     try {
       const body = { ...req.body };
       if (body.precio) body.precio = parseFloat(body.precio);
-      if (body.precioAnterior) body.precioAnterior = parseFloat(body.precioAnterior);
+      if (body.precioAnterior !== undefined) {
+        body.precioAnterior = (body.precioAnterior === '' || body.precioAnterior === null)
+          ? null
+          : parseFloat(body.precioAnterior);
+      }
       if (body.stock !== undefined) body.stock = parseInt(body.stock);
       if (body.stockMinimo !== undefined) body.stockMinimo = parseInt(body.stockMinimo);
       if (body.pagosSemanales) body.pagosSemanales = parseFloat(body.pagosSemanales);
       if (body.disponibleCredito !== undefined) body.disponibleCredito = body.disponibleCredito === 'true' || body.disponibleCredito === true;
       if (body.especificaciones && typeof body.especificaciones === 'string') {
         try { body.especificaciones = JSON.parse(body.especificaciones); } catch { delete body.especificaciones; }
+      }
+      let colores: string[] | undefined;
+      if (body.colores !== undefined) {
+        if (typeof body.colores === 'string') {
+          try { colores = JSON.parse(body.colores); } catch { colores = body.colores.split(',').map((c: string) => c.trim()).filter(Boolean); }
+        } else if (Array.isArray(body.colores)) {
+          colores = body.colores;
+        }
+      }
+      let memorias: string[] | undefined;
+      if (body.memorias !== undefined) {
+        if (typeof body.memorias === 'string') {
+          try { memorias = JSON.parse(body.memorias); } catch { memorias = body.memorias.split(',').map((c: string) => c.trim()).filter(Boolean); }
+        } else if (Array.isArray(body.memorias)) {
+          memorias = body.memorias;
+        }
       }
 
       const data = createProductSchema.partial().parse(body);
@@ -171,7 +231,12 @@ export class ProductController {
 
       const product = await productService.updateProduct(
         req.params['id'] as string,
-        { ...data, imagenes }
+        {
+          ...data,
+          imagenes,
+          ...(colores !== undefined ? { colores } : {}),
+          ...(memorias !== undefined ? { memorias } : {}),
+        }
       );
       sendSuccess(res, product, 'Producto actualizado');
     } catch (err) {
