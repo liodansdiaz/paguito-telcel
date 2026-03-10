@@ -29,6 +29,16 @@ export class AuthController {
     }
   }
 
+  async logout(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { refreshToken } = z.object({ refreshToken: z.string() }).parse(req.body);
+      await authService.logout(refreshToken);
+      sendSuccess(res, null, 'Sesión cerrada correctamente');
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async me(req: Request, res: Response, next: NextFunction) {
     try {
       const user = await authService.me(req.user!.userId);

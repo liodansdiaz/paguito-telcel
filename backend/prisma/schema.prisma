@@ -57,6 +57,7 @@ model User {
   updatedAt       DateTime  @updatedAt
 
   reservations    Reservation[]
+  refreshTokens   RefreshToken[]
 
   @@map("users")
 }
@@ -73,6 +74,8 @@ model Product {
   stockMinimo     Int       @default(5)
   isActive        Boolean   @default(true)
   imagenes        String[]  @default([])
+  colores         String[]  @default([])
+  memorias        String[]  @default([])
   badge           String?
   disponibleCredito Boolean @default(true)
   pagosSemanales  Decimal?  @db.Decimal(10, 2)
@@ -114,8 +117,8 @@ model Reservation {
   direccion       String
   fechaPreferida  DateTime
   horarioPreferido String
-  latitude        Decimal       @db.Decimal(10, 8)
-  longitude       Decimal       @db.Decimal(11, 8)
+  latitude        Decimal?      @db.Decimal(10, 8)
+  longitude       Decimal?      @db.Decimal(11, 8)
 
   estado          EstadoReserva @default(NUEVA)
   notas           String?
@@ -145,10 +148,19 @@ model Notification {
   @@map("notifications")
 }
 
-model RoundRobinState {
-  id            Int       @id @default(1)
-  lastVendorId  String?
-  updatedAt     DateTime  @updatedAt
+model RefreshToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
 
-  @@map("round_robin_state")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
 }
+
+// RoundRobinState eliminado — el algoritmo de asignación round-robin
+// se implementa directamente con el campo lastAssignedAt del modelo User,
+// por lo que esta tabla era redundante y nunca se usaba en el código.
