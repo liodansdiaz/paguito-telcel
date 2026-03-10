@@ -78,3 +78,19 @@ export const cancelarLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+/**
+ * Rate limiter para el chat con IA.
+ * Máximo 20 mensajes por IP cada minuto.
+ * Protege contra abuso que puede agotar la cuota de Groq rápidamente.
+ */
+export const chatLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  max: 20,
+  message: {
+    success: false,
+    message: 'Has enviado demasiados mensajes. Por favor espera un momento antes de continuar.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
