@@ -18,8 +18,8 @@ export interface CreateReservationDTO {
   direccion: string;
   fechaPreferida: Date;
   horarioPreferido: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export class ReservationService {
@@ -30,9 +30,9 @@ export class ReservationService {
       throw new AppError('El producto no está disponible.', 404);
     }
 
-    if (product.stock <= 0) {
-      throw new AppError('Lo sentimos, este modelo está sin stock actualmente.', 409);
-    }
+    // Si el stock está en 0, se permite reservar de todas formas.
+    // El negocio intentará conseguir el producto. Se notificará al admin después de crear la reserva.
+    const stockAgotado = product.stock <= 0;
 
     // 2. Validar horario
     ScheduleValidatorService.validateOrThrow(dto.fechaPreferida, dto.horarioPreferido);
@@ -75,8 +75,8 @@ export class ReservationService {
       direccion: dto.direccion,
       fechaPreferida: dto.fechaPreferida,
       horarioPreferido: dto.horarioPreferido,
-      latitude: dto.latitude,
-      longitude: dto.longitude,
+      latitude: dto.latitude ?? null,
+      longitude: dto.longitude ?? null,
       estado: 'ASIGNADA',
       customer: { connect: { id: customer.id } },
       product: { connect: { id: product.id } },
@@ -86,6 +86,20 @@ export class ReservationService {
     logger.info(`Reserva creada: ${reservation.id} — Cliente: ${dto.nombreCompleto} — Producto: ${product.nombre} — Vendedor: ${vendor.nombre}`);
 
     // 7. Enviar notificaciones (no bloquea si falla)
+
+    // 7a. Si el stock estaba en 0, notificar a todos los admins
+    if (stockAgotado) {
+      NotificationService.sendStockAgotadoAlert({
+        reservationId: reservation.id,
+        productId: product.id,
+        productoNombre: product.nombre,
+        clienteNombre: dto.nombreCompleto,
+        stockActual: product.stock,
+      }).catch((err) => {
+        logger.error(`Alerta de stock agotado falló para reserva ${reservation.id}:`, err);
+      });
+    }
+
     NotificationService.sendReservationNotification({
       reservationId: reservation.id,
       vendorEmail: vendor.email,
@@ -98,8 +112,8 @@ export class ReservationService {
       direccion: dto.direccion,
       fechaPreferida: dto.fechaPreferida,
       horarioPreferido: dto.horarioPreferido,
-      latitude: dto.latitude,
-      longitude: dto.longitude,
+      latitude: dto.latitude ?? undefined,
+      longitude: dto.longitude ?? undefined,
     }).catch((err) => {
       logger.error(`Notificación falló para reserva ${reservation.id}:`, err);
     });
@@ -118,7 +132,13 @@ export class ReservationService {
   }
 
   async updateStatus(id: string, estado: EstadoReserva, notas?: string) {
-    await this.getById(id);
+    const reservation = await this.getById(id);
+
+    // Al marcar como VENDIDA, decrementar stock en transacción atómica
+    if (estado === 'VENDIDA') {
+      return reservationRepository.updateStatusVendida(id, reservation.product.id, notas);
+    }
+
     return reservationRepository.updateStatus(id, estado, notas);
   }
 

@@ -135,6 +135,27 @@ export class ReservationRepository {
     });
   }
 
+  /**
+   * Actualiza el estado de una reserva a VENDIDA y decrementa el stock del producto
+   * en una transacción atómica. Si el stock ya está en 0 quedará en negativo,
+   * lo que sirve como señal visual de deuda de inventario para el admin.
+   */
+  async updateStatusVendida(id: string, productId: string, notas?: string) {
+    const [reservation] = await prisma.$transaction([
+      prisma.reservation.update({
+        where: { id },
+        data: { estado: 'VENDIDA', ...(notas !== undefined && { notas }) },
+        include: reservationInclude,
+      }),
+      prisma.product.update({
+        where: { id: productId },
+        data: { stock: { decrement: 1 } },
+      }),
+    ]);
+
+    return reservation;
+  }
+
   async assignVendor(id: string, vendorId: string) {
     return prisma.reservation.update({
       where: { id },
