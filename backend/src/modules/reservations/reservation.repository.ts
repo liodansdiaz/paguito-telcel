@@ -85,20 +85,23 @@ export class ReservationRepository {
   async findActiveByCurpOrId(busqueda: string) {
     const upper = busqueda.toUpperCase().trim();
 
+    // Estados que el cliente puede consultar: NUEVA, ASIGNADA, EN_VISITA
+    const estadosConsultables = ['NUEVA', 'ASIGNADA', 'EN_VISITA'] as const;
+
     // Determinar modo de búsqueda por longitud/formato
     let where: Prisma.ReservationWhereInput;
 
     if (upper.length === 18) {
       // CURP exacto
-      where = { curp: upper, estado: { in: ['NUEVA', 'ASIGNADA'] } };
+      where = { curp: upper, estado: { in: estadosConsultables } };
     } else if (upper.length === 36) {
       // UUID completo
-      where = { id: upper, estado: { in: ['NUEVA', 'ASIGNADA'] } };
+      where = { id: upper, estado: { in: estadosConsultables } };
     } else {
       // Folio corto (primeros 8 chars del UUID)
       where = {
         id: { startsWith: upper.toLowerCase() },
-        estado: { in: ['NUEVA', 'ASIGNADA'] },
+        estado: { in: estadosConsultables },
       };
     }
 
