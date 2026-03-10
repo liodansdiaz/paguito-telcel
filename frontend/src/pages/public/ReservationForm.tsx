@@ -103,6 +103,17 @@ type FormData = z.infer<typeof schema>;
 const fmt = (p: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(p);
 
+// Mapa de colores — mismo que el catálogo
+const COLOR_MAP: Record<string, string> = {
+  negro: '#1a1a1a', blanco: '#f5f5f5', plata: '#C0C0C0', plateado: '#C0C0C0',
+  gris: '#808080', azul: '#2563eb', 'azul oscuro': '#1e3a8a', 'azul claro': '#60a5fa',
+  verde: '#16a34a', 'verde menta': '#6ee7b7', morado: '#7c3aed', violeta: '#7c3aed',
+  rojo: '#dc2626', rosa: '#ec4899', dorado: '#d97706', amarillo: '#eab308',
+  naranja: '#ea580c', cafe: '#92400e', café: '#92400e', beige: '#d4b896',
+  titanio: '#a0a098', 'titanio negro': '#3a3a3a', 'titanio natural': '#a0a098',
+};
+const getColorHex = (color: string) => COLOR_MAP[color.toLowerCase()] ?? '#9ca3af';
+
 // ── Componente principal ────────────────────────────────────────────────────
 const ReservationForm = () => {
   const { productId } = useParams();
@@ -226,6 +237,12 @@ const ReservationForm = () => {
     setSubmitting(true);
     setSubmitError('');
     try {
+      // Construir nota automática con la variante seleccionada
+      const varianteParts: string[] = [];
+      if (selectedColor) varianteParts.push(`Color: ${selectedColor}`);
+      if (selectedMemoria) varianteParts.push(`Almacenamiento: ${selectedMemoria}`);
+      const notaVariante = varianteParts.length > 0 ? `Variante solicitada — ${varianteParts.join(', ')}` : undefined;
+
       const res: any = await api.post('/reservations', {
         productId,
         ...data,
@@ -233,6 +250,7 @@ const ReservationForm = () => {
         fechaPreferida: new Date(data.fechaPreferida + 'T00:00:00').toISOString(),
         latitude: geo.obtained ? geo.latitude : null,
         longitude: geo.obtained ? geo.longitude : null,
+        ...(notaVariante && { notas: notaVariante }),
       });
       navigate('/reserva/exitosa', {
         state: {
@@ -288,20 +306,29 @@ const ReservationForm = () => {
           {product.disponibleCredito && product.pagosSemanales && (
             <p className="text-gray-400 text-xs">o desde {fmt(product.pagosSemanales)}/semana a credito</p>
           )}
-          {(selectedColor || selectedMemoria) && (
-            <div className="flex flex-wrap gap-1.5 mt-1.5">
-              {selectedColor && (
-                <span className="inline-flex items-center gap-1 text-xs bg-white border border-blue-200 text-gray-700 px-2 py-0.5 rounded-full">
-                  <span className="w-2.5 h-2.5 rounded-full inline-block border border-gray-200" style={{ backgroundColor: selectedColor }} />
-                  {selectedColor}
-                </span>
-              )}
-              {selectedMemoria && (
-                <span className="text-xs bg-white border border-blue-200 text-gray-700 px-2 py-0.5 rounded-full">
-                  {selectedMemoria}
-                </span>
-              )}
-            </div>
+          <div className="flex flex-wrap gap-1.5 mt-1.5">
+            {selectedColor && (
+              <span className="inline-flex items-center gap-1 text-xs bg-white border border-blue-200 text-gray-700 px-2 py-0.5 rounded-full">
+                <span className="w-2.5 h-2.5 rounded-full inline-block border border-gray-200 flex-shrink-0" style={{ backgroundColor: getColorHex(selectedColor) }} />
+                {selectedColor}
+              </span>
+            )}
+            {selectedMemoria && (
+              <span className="text-xs bg-white border border-blue-200 text-gray-700 px-2 py-0.5 rounded-full">
+                {selectedMemoria}
+              </span>
+            )}
+          </div>
+          {/* Aviso si el producto tiene variantes pero no se seleccionó alguna */}
+          {((product?.colores?.length ?? 0) > 0 && !selectedColor) && (
+            <p className="text-[10px] text-amber-600 mt-1">
+              Sin color seleccionado — el vendedor confirmará disponibilidad
+            </p>
+          )}
+          {((product?.memorias?.length ?? 0) > 0 && !selectedMemoria) && (
+            <p className="text-[10px] text-amber-600 mt-0.5">
+              Sin almacenamiento seleccionado — el vendedor confirmará disponibilidad
+            </p>
           )}
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { toImageUrl } from '../../services/config';
 import type { Product } from '../../types';
@@ -312,6 +312,27 @@ const Catalog = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const hasMore = products.length < total;
+
+  // Selección de color/memoria por tarjeta (para el botón Reservar directo)
+  const [cardSelection, setCardSelection] = useState<Record<string, { color: string; memoria: string }>>({});
+  const navigate = useNavigate();
+
+  const getCardColor = (productId: string) => cardSelection[productId]?.color ?? '';
+  const getCardMemoria = (productId: string) => cardSelection[productId]?.memoria ?? '';
+  const setCardColor = (productId: string, color: string) =>
+    setCardSelection(prev => ({ ...prev, [productId]: { ...prev[productId], color, memoria: prev[productId]?.memoria ?? '' } }));
+  const setCardMemoria = (productId: string, memoria: string) =>
+    setCardSelection(prev => ({ ...prev, [productId]: { color: prev[productId]?.color ?? '', ...prev[productId], memoria } }));
+
+  const handleReservar = (productId: string) => {
+    const color = getCardColor(productId);
+    const memoria = getCardMemoria(productId);
+    const params = new URLSearchParams();
+    if (color) params.set('color', color);
+    if (memoria) params.set('memoria', memoria);
+    const query = params.toString();
+    navigate(`/reservar/${productId}${query ? `?${query}` : ''}`);
+  };
 
   // UI móvil
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -669,19 +690,48 @@ const Catalog = () => {
                           {product.nombre}
                         </h3>
 
+                        {/* Selector de color */}
                         {product.colores && product.colores.length > 0 && (
-                          <div className="flex items-center gap-1.5 mb-2">
-                            {product.colores.slice(0, 5).map((c) => (
-                              <span
-                                key={c}
-                                title={c}
-                                className="w-3.5 h-3.5 rounded-full border border-gray-300 inline-block flex-shrink-0"
-                                style={{ backgroundColor: getColorHex(c) }}
-                              />
-                            ))}
-                            {product.colores.length > 5 && (
-                              <span className="text-[10px] text-gray-400">+{product.colores.length - 5}</span>
+                          <div className="mb-2">
+                            <p className="text-[10px] text-gray-400 mb-1">Color</p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {product.colores.map((c) => {
+                                const selected = getCardColor(product.id) === c;
+                                return (
+                                  <button
+                                    key={c}
+                                    title={c}
+                                    onClick={() => setCardColor(product.id, selected ? '' : c)}
+                                    className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${selected ? 'border-[#0f49bd] scale-110 shadow-md' : 'border-gray-300 hover:border-gray-400'}`}
+                                    style={{ backgroundColor: getColorHex(c) }}
+                                  />
+                                );
+                              })}
+                            </div>
+                            {getCardColor(product.id) && (
+                              <p className="text-[10px] text-[#0f49bd] mt-0.5 capitalize">{getCardColor(product.id)}</p>
                             )}
+                          </div>
+                        )}
+
+                        {/* Selector de memoria */}
+                        {product.memorias && product.memorias.length > 0 && (
+                          <div className="mb-2">
+                            <p className="text-[10px] text-gray-400 mb-1">Almacenamiento</p>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {product.memorias.map((m) => {
+                                const selected = getCardMemoria(product.id) === m;
+                                return (
+                                  <button
+                                    key={m}
+                                    onClick={() => setCardMemoria(product.id, selected ? '' : m)}
+                                    className={`text-[10px] px-2 py-0.5 rounded border font-medium transition-all ${selected ? 'bg-[#0f49bd] text-white border-[#0f49bd]' : 'border-gray-300 text-gray-600 hover:border-[#0f49bd] hover:text-[#0f49bd]'}`}
+                                  >
+                                    {m}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
 
@@ -709,12 +759,12 @@ const Catalog = () => {
 
                         <div className="mt-auto pt-2 flex flex-col gap-2">
                           {!unavailable ? (
-                            <Link
-                              to={`/reservar/${product.id}`}
+                            <button
+                              onClick={() => handleReservar(product.id)}
                               className="w-full text-center bg-[#0f49bd] hover:bg-[#002f87] text-white py-2.5 rounded-lg text-sm font-bold transition-colors"
                             >
-                              Lo quiero
-                            </Link>
+                              Reservar
+                            </button>
                           ) : (
                             <button disabled className="w-full bg-gray-200 text-gray-400 py-2.5 rounded-lg text-sm font-bold cursor-not-allowed">
                               Sin stock
