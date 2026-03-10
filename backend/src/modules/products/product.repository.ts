@@ -26,18 +26,36 @@ export class ProductRepository {
     const skip = (page - 1) * limit;
 
     const where: Prisma.ProductWhereInput = {};
+    const andConditions: Prisma.ProductWhereInput[] = [];
+
+    // Condición de marca — se combina con AND
     if (marca) {
       const marcas = Array.isArray(marca) ? marca.filter(Boolean) : [marca];
       if (marcas.length === 1) {
-        where.marca = { equals: marcas[0], mode: 'insensitive' };
+        andConditions.push({ marca: { equals: marcas[0], mode: 'insensitive' } });
       } else if (marcas.length > 1) {
-        // Prisma no soporta mode: insensitive con in:, usamos OR para mantener case-insensitive
-        where.OR = [
-          ...(where.OR ?? []),
-          ...marcas.map((m) => ({ marca: { equals: m, mode: 'insensitive' as const } })),
-        ];
+        andConditions.push({
+          OR: marcas.map((m) => ({ marca: { equals: m, mode: 'insensitive' as const } })),
+        });
       }
     }
+
+    // Condición de búsqueda — también se combina con AND
+    if (search) {
+      andConditions.push({
+        OR: [
+          { nombre: { contains: search, mode: 'insensitive' } },
+          { marca: { contains: search, mode: 'insensitive' } },
+          { sku: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    // Asignar condiciones AND si existen
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
+    }
+
     if (isActive !== undefined) where.isActive = isActive;
     if (color) where.colores = { has: color };
     if (memoria) where.memorias = { has: memoria };
@@ -45,13 +63,6 @@ export class ProductRepository {
       where.precio = {};
       if (precioMin !== undefined) (where.precio as Prisma.DecimalFilter).gte = precioMin;
       if (precioMax !== undefined) (where.precio as Prisma.DecimalFilter).lte = precioMax;
-    }
-    if (search) {
-      where.OR = [
-        { nombre: { contains: search, mode: 'insensitive' } },
-        { marca: { contains: search, mode: 'insensitive' } },
-        { sku: { contains: search, mode: 'insensitive' } },
-      ];
     }
 
     const orderBy: Prisma.ProductOrderByWithRelationInput =
