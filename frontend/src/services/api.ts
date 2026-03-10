@@ -1,17 +1,52 @@
 import axios, { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 
+// Token en memoria (no en localStorage para seguridad XSS)
+let accessToken: string | null = null;
+let refreshToken: string | null = null;
+
+// Notificar cambios en el token
+type TokenListener = (token: string | null) => void;
+const listeners: TokenListener[] = [];
+
+export const onTokenChange = (listener: TokenListener) => {
+  listeners.push(listener);
+  return () => {
+    const idx = listeners.indexOf(listener);
+    if (idx >= 0) listeners.splice(idx, 1);
+  };
+};
+
+const notifyListeners = () => {
+  listeners.forEach((l) => l(accessToken));
+};
+
+export const setTokens = (access: string | null, refresh: string | null) => {
+  accessToken = access;
+  refreshToken = refresh;
+  notifyListeners();
+};
+
+export const getAccessToken = () => accessToken;
+export const getRefreshToken = () => refreshToken;
+
+export const clearTokens = () => {
+  accessToken = null;
+  refreshToken = null;
+  notifyListeners();
+};
+
 const api = axios.create({
   baseURL: '/api',
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
+  withCredentials: true,
 });
 
-// Request interceptor — agregar token
+// Request interceptor — agregar token desde memoria
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = localStorage.getItem('accessToken');
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (accessToken && config.headers) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
   }
   return config;
 });
@@ -24,24 +59,22 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      const refreshToken = localStorage.getItem('refreshToken');
 
       if (refreshToken) {
         try {
-          const { data } = await axios.post('/api/auth/refresh', { refreshToken });
+          const { data } = await axios.post('/api/auth/refresh', { refreshToken }, { withCredentials: true });
           const newToken = data.data.accessToken;
-          localStorage.setItem('accessToken', newToken);
+          accessToken = newToken;
+          notifyListeners();
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
           }
           return api(originalRequest);
         } catch {
           try {
-            await axios.post('/api/auth/logout', { refreshToken });
+            await axios.post('/api/auth/logout', { refreshToken }, { withCredentials: true });
           } catch {}
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
+          clearTokens();
           window.location.href = '/login';
         }
       } else {
