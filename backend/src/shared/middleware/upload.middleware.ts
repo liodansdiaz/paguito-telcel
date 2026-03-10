@@ -21,9 +21,22 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+  // Tipos MIME permitidos para imágenes
+  const allowedMimeTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+  ];
+
+  // Extensiones permitidas (como fallback)
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+
   const ext = path.extname(file.originalname).toLowerCase();
-  if (allowed.includes(ext)) {
+  const mime = file.mimetype.toLowerCase();
+
+  // Validar tanto MIME type como extensión
+  // Esto previene archivos maliciosos disfrazados de imágenes
+  if (allowedMimeTypes.includes(mime) && allowedExtensions.includes(ext)) {
     cb(null, true);
   } else {
     cb(new Error('Solo se permiten imágenes JPG, PNG o WebP'));
