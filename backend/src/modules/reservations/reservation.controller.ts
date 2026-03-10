@@ -15,6 +15,7 @@ const createReservationSchema = z.object({
   horarioPreferido: z.string().regex(/^\d{1,2}:\d{2}$/, 'Formato de horario inválido (HH:MM)'),
   latitude: z.number().min(-90).max(90, 'Latitud inválida').nullable().optional(),
   longitude: z.number().min(-180).max(180, 'Longitud inválida').nullable().optional(),
+  notas: z.string().optional(),
 });
 
 const updateStatusSchema = z.object({
