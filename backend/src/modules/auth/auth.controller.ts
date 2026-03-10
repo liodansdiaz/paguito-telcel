@@ -47,6 +47,29 @@ export class AuthController {
       next(err);
     }
   }
+
+  async forgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = z.object({ email: z.string().email() }).parse(req.body);
+      const result = await authService.forgotPassword(email);
+      sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { token, password } = z.object({
+        token: z.string().min(1, 'Token requerido'),
+        password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+      }).parse(req.body);
+      const result = await authService.resetPassword(token, password);
+      sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const authController = new AuthController();
