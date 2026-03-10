@@ -19,13 +19,14 @@ const exportCSV = async (filterEstado: string, search: string) => {
     const res = await api.get('/reservations/admin', { params });
     const rows: Reservation[] = res.data.data;
 
-    const headers = ['Folio', 'Nombre', 'Teléfono', 'CURP', 'Celular', 'Tipo Pago', 'Dirección', 'Fecha preferida', 'Horario', 'Vendedor', 'Estado', 'Fecha creación'];
+    const headers = ['Folio', 'Nombre', 'Teléfono', 'CURP', 'Celular', 'Notas', 'Tipo Pago', 'Dirección', 'Fecha preferida', 'Horario', 'Vendedor', 'Estado', 'Fecha creación'];
     const data = rows.map((r) => [
       r.id.slice(0, 8).toUpperCase(),
       r.nombreCompleto,
       r.telefono,
       r.curp,
       r.product?.nombre ?? '',
+      r.notas ?? '',
       r.tipoPago === 'CONTADO' ? 'Contado' : 'Crédito',
       r.direccion,
       new Date(r.fechaPreferida).toLocaleDateString('es-MX'),
@@ -167,7 +168,7 @@ const ReservationsManager = () => {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {['ID', 'Cliente', 'Celular', 'Dirección', 'Pago', 'Fecha preferida', 'Vendedor', 'Estado', 'Acciones'].map((h) => (
+                {['ID', 'Cliente', 'Celular', 'Producto', 'Notas', 'Pago', 'Fecha', 'Vendedor', 'Estado', 'Acciones'].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -176,13 +177,13 @@ const ReservationsManager = () => {
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: 9 }).map((__, j) => (
+                    {Array.from({ length: 10 }).map((__, j) => (
                       <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
                     ))}
                   </tr>
                 ))
               ) : reservations.length === 0 ? (
-                <tr><td colSpan={9} className="text-center py-12 text-gray-400">Sin reservas</td></tr>
+                <tr><td colSpan={10} className="text-center py-12 text-gray-400">Sin reservas</td></tr>
               ) : (
                 reservations.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50 transition-colors">
@@ -192,6 +193,15 @@ const ReservationsManager = () => {
                       <p className="text-gray-400 text-xs">{r.telefono}</p>
                     </td>
                     <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{r.product?.nombre}</td>
+                    <td className="px-4 py-3 max-w-[150px]">
+                      {r.notas ? (
+                        <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded inline-block truncate" title={r.notas}>
+                          {r.notas}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 max-w-[200px]">
                       <p className="text-gray-700 text-xs truncate" title={r.direccion}>{r.direccion}</p>
                       {r.latitude !== null && r.longitude !== null && (
