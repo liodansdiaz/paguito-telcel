@@ -1,21 +1,64 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import type { Customer, EstadoCliente } from '../../types';
 import StatusBadge from '../../components/ui/StatusBadge';
+import Pagination from '../../components/ui/Pagination';
+
+// ── Exportar clientes a CSV ───────────────────────────────────────────────────
+const exportCSV = async (search: string, filterEstado: string) => {
+  try {
+    const params: Record<string, string> = { page: '1', limit: '9999' };
+    if (search) params.search = search;
+    if (filterEstado) params.estado = filterEstado;
+    const res = await api.get('/admin/customers', { params });
+    const rows: Customer[] = res.data.data;
+
+    const headers = ['Nombre', 'Teléfono', 'CURP', 'Email', 'Dirección', 'Reservas', 'Estado', 'Fecha registro'];
+    const data = rows.map((c) => [
+      c.nombreCompleto,
+      c.telefono,
+      c.curp,
+      c.email ?? '',
+      c.direccion ?? '',
+      c._count?.reservations ?? 0,
+      c.estado === 'ACTIVO' ? 'Activo' : 'Bloqueado',
+      new Date(c.createdAt).toLocaleDateString('es-MX'),
+    ]);
+
+    const csv = [headers, ...data]
+      .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clientes_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('Error al exportar:', err);
+    alert('No se pudo exportar. Intenta de nuevo.');
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const CustomersDirectory = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [search, setSearch] = useState('');
   const [filterEstado, setFilterEstado] = useState<EstadoCliente | ''>('');
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     setLoading(true);
     try {
-      const params: Record<string, string> = { page: String(page), limit: '15' };
+      const params: Record<string, string> = { page: String(page), limit: String(limit) };
       if (search) params.search = search;
       if (filterEstado) params.estado = filterEstado;
       const res = await api.get('/admin/customers', { params });
@@ -23,9 +66,9 @@ const CustomersDirectory = () => {
       setTotal(res.data.pagination.total);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
-  };
+  }, [page, limit, search, filterEstado]);
 
-  useEffect(() => { fetchCustomers(); }, [page, filterEstado]);
+  useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
   const handleToggleStatus = async (customer: Customer) => {
     const newStatus: EstadoCliente = customer.estado === 'ACTIVO' ? 'BLOQUEADO' : 'ACTIVO';
@@ -35,7 +78,13 @@ const CustomersDirectory = () => {
     } catch (err: any) { alert(err.response?.data?.message || 'Error'); }
   };
 
-  const totalPages = Math.ceil(total / 15);
+  const handleExport = async () => {
+    setExporting(true);
+    await exportCSV(search, filterEstado);
+    setExporting(false);
+  };
+
+  const totalPages = Math.ceil(total / limit);
 
   return (
     <div className="space-y-5">
@@ -44,24 +93,35 @@ const CustomersDirectory = () => {
           <h2 className="text-xl font-bold text-gray-900">Directorio de Clientes</h2>
           <p className="text-gray-400 text-sm">{total} clientes registrados</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap items-center">
           <input
             type="text"
             placeholder="Buscar nombre, CURP, tel..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && fetchCustomers()}
+            onKeyDown={(e) => { if (e.key === 'Enter') { setPage(1); fetchCustomers(); } }}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-52"
           />
           <select
             value={filterEstado}
-            onChange={(e) => { setFilterEstado(e.target.value as any); setPage(1); }}
+            onChange={(e) => { setFilterEstado(e.target.value as EstadoCliente | ''); setPage(1); }}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
           >
             <option value="">Todos</option>
             <option value="ACTIVO">Activos</option>
             <option value="BLOQUEADO">Bloqueados</option>
           </select>
+          <button
+            onClick={handleExport}
+            disabled={exporting || total === 0}
+            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+            title="Exportar a CSV"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {exporting ? 'Exportando...' : 'CSV'}
+          </button>
         </div>
       </div>
 
@@ -119,15 +179,15 @@ const CustomersDirectory = () => {
             </tbody>
           </table>
         </div>
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm">
-            <span className="text-gray-500">Página {page} de {totalPages}</span>
-            <div className="flex gap-2">
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 rounded border border-gray-300 disabled:opacity-40">Anterior</button>
-              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1 rounded border border-gray-300 disabled:opacity-40">Siguiente</button>
-            </div>
-          </div>
-        )}
+
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={(l) => { setLimit(l); setPage(1); }}
+        />
       </div>
     </div>
   );

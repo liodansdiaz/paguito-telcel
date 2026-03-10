@@ -1,9 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useCarritoStore } from '../../store/carrito.store';
 import api from '../../services/api';
-
-const BACKEND_URL = 'http://localhost:3000';
-const toImageUrl = (src: string) => src.startsWith('http') ? src : `${BACKEND_URL}${src}`;
+import { toImageUrl } from '../../services/config';
 
 const formatFecha = (fecha: string) =>
   new Date(fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -14,6 +12,7 @@ const Carrito = () => {
   const [cancelando, setCancelando] = useState<string | null>(null);
   const [confirmFolio, setConfirmFolio] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [verificando, setVerificando] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Cerrar al hacer click fuera
@@ -29,6 +28,29 @@ const Carrito = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  // Al abrir el carrito, verificar silenciosamente qué reservas siguen activas
+  const verificarReservas = useCallback(async () => {
+    if (items.length === 0) return;
+    setVerificando(true);
+    await Promise.allSettled(
+      items.map(async (item) => {
+        try {
+          await api.post('/reservations/consulta', { busqueda: item.folio });
+        } catch (err: any) {
+          // 404 = ya no existe como reserva activa (cancelada, vendida, etc.)
+          if (err?.response?.status === 404) {
+            eliminar(item.folio);
+          }
+        }
+      })
+    );
+    setVerificando(false);
+  }, [items, eliminar]);
+
+  useEffect(() => {
+    if (open) verificarReservas();
+  }, [open]);
+
   const handleCancelar = async (folio: string) => {
     setCancelando(folio);
     setError('');
@@ -37,7 +59,18 @@ const Carrito = () => {
       eliminar(folio);
       setConfirmFolio(null);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'No se pudo cancelar la reserva.');
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.message || 'No se pudo cancelar la reserva.';
+
+      // Si ya no existe como activa, quitarla del carrito con mensaje informativo
+      if (status === 404) {
+        eliminar(folio);
+        setConfirmFolio(null);
+        setError('');
+        return;
+      }
+
+      setError(msg);
     } finally {
       setCancelando(null);
     }
@@ -48,17 +81,14 @@ const Carrito = () => {
       {/* Botón carrito */}
       <button
         onClick={() => { setOpen(!open); setConfirmFolio(null); setError(''); }}
-        className="relative flex items-center gap-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-3 py-2 rounded-lg transition-colors"
+        className="relative flex items-center bg-white/10 hover:bg-white/20 border border-white/20 text-white p-2 rounded-lg transition-colors"
         title="Mis reservas"
       >
-        {/* Ícono bolsa/carrito */}
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
         </svg>
-        <span className="text-sm font-medium hidden sm:inline">Mis reservas</span>
-        {/* Badge contador */}
         {items.length > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 bg-[#13ec6d] text-[#002f87] text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+          <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
             {items.length}
           </span>
         )}
@@ -71,7 +101,11 @@ const Carrito = () => {
           <div className="bg-gradient-to-r from-[#002f87] to-[#0f49bd] px-5 py-4 flex items-center justify-between">
             <div>
               <p className="text-white font-bold text-sm">Mis reservas activas</p>
-              <p className="text-blue-200 text-xs">{items.length} {items.length === 1 ? 'reserva' : 'reservas'}</p>
+              <p className="text-blue-200 text-xs">
+                {verificando
+                  ? 'Verificando...'
+                  : `${items.length} ${items.length === 1 ? 'reserva' : 'reservas'}`}
+              </p>
             </div>
             <button onClick={() => setOpen(false)} className="text-white/60 hover:text-white transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -79,6 +113,14 @@ const Carrito = () => {
               </svg>
             </button>
           </div>
+
+          {/* Spinner de verificación */}
+          {verificando && (
+            <div className="flex items-center gap-2 px-5 py-3 bg-blue-50 border-b border-blue-100">
+              <span className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs text-blue-600">Verificando estado de tus reservas...</span>
+            </div>
+          )}
 
           {/* Lista de reservas */}
           <div className="max-h-96 overflow-y-auto divide-y divide-gray-50">
@@ -152,7 +194,7 @@ const Carrito = () => {
             )}
           </div>
 
-          {/* Footer del panel */}
+          {/* Footer */}
           {items.length > 0 && (
             <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
               <p className="text-xs text-gray-400 text-center">

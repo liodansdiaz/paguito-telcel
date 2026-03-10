@@ -41,35 +41,54 @@ export class DashboardService {
   }
 
   async getChartData() {
+    // Una sola query SQL que agrupa por día en los últimos 7 días,
+    // en lugar de 7 queries individuales.
+    const since = new Date();
+    since.setDate(since.getDate() - 6);
+    since.setHours(0, 0, 0, 0);
+
+    const rows = await prisma.$queryRaw<{ day: Date; count: bigint }[]>`
+      SELECT
+        DATE_TRUNC('day', "createdAt") AS day,
+        COUNT(*)::bigint              AS count
+      FROM reservations
+      WHERE "createdAt" >= ${since}
+      GROUP BY DATE_TRUNC('day', "createdAt")
+      ORDER BY day ASC
+    `;
+
+    // Construir el mapa día → count para rellenar días sin reservas con 0
+    const countByDay = new Map<string, number>();
+    for (const row of rows) {
+      const key = new Date(row.day).toISOString().slice(0, 10);
+      countByDay.set(key, Number(row.count));
+    }
+
+    // Generar los 7 días siempre en orden, con 0 si no hay datos
     const days: { date: string; count: number }[] = [];
     for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const end = new Date(start);
-      end.setDate(start.getDate() + 1);
-
-      const count = await prisma.reservation.count({
-        where: { createdAt: { gte: start, lt: end } },
-      });
-
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      d.setHours(0, 0, 0, 0);
+      const key = d.toISOString().slice(0, 10);
       days.push({
-        date: start.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' }),
-        count,
+        date: d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' }),
+        count: countByDay.get(key) ?? 0,
       });
     }
     return days;
   }
 
   async getStatusDistribution() {
-    const statuses = ['NUEVA', 'ASIGNADA', 'EN_VISITA', 'VENDIDA', 'NO_CONCRETADA', 'CANCELADA', 'SIN_STOCK'];
-    const results = await Promise.all(
-      statuses.map(async (estado) => ({
-        estado,
-        count: await prisma.reservation.count({ where: { estado: estado as any } }),
-      }))
-    );
-    return results.filter((r) => r.count > 0);
+    // Una sola query con groupBy en lugar de 7 queries independientes.
+    const groups = await prisma.reservation.groupBy({
+      by: ['estado'],
+      _count: { estado: true },
+    });
+    return groups
+      .map((g) => ({ estado: g.estado, count: g._count.estado }))
+      .filter((r) => r.count > 0)
+      .sort((a, b) => b.count - a.count);
   }
 
   async getVendorRanking() {

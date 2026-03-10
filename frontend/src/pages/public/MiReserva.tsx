@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
-
-const BACKEND_URL = 'http://localhost:3000';
-const toImageUrl = (src: string) => src.startsWith('http') ? src : `${BACKEND_URL}${src}`;
-
-const formatPrice = (p: number) =>
-  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(p);
+import { toImageUrl } from '../../services/config';
 
 const formatFecha = (fecha: string) =>
   new Date(fecha).toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });

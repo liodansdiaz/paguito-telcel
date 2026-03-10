@@ -28,6 +28,8 @@ export interface Product {
   stockMinimo: number;
   isActive: boolean;
   imagenes: string[];
+  colores: string[];
+  memorias: string[];
   badge?: string;
   disponibleCredito: boolean;
   pagosSemanales?: number;
@@ -60,8 +62,8 @@ export interface Reservation {
   direccion: string;
   fechaPreferida: string;
   horarioPreferido: string;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   estado: EstadoReserva;
   notas?: string;
   createdAt: string;
@@ -116,8 +118,8 @@ export interface MapReservation {
   fechaPreferida: string;
   horarioPreferido: string;
   estado: EstadoReserva;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   direccion: string;
   product?: { nombre: string };
 }

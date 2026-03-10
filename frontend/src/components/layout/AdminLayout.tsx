@@ -16,7 +16,7 @@ const AdminLayout = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   return (
@@ -64,11 +64,23 @@ const AdminLayout = () => {
               <p className="text-xs text-blue-300 truncate">{user?.email}</p>
             </div>
           </div>
+          <Link
+            to="/"
+            className="w-full text-xs text-blue-300 hover:text-white flex items-center gap-2 py-1 mb-1 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7m-9 5v6h4v-6m-4 0H9m6 0h-2" />
+            </svg>
+            Ir al sitio
+          </Link>
           <button
             onClick={handleLogout}
-            className="w-full text-left text-xs text-blue-300 hover:text-white flex items-center gap-2 py-1"
+            className="w-full text-left text-xs text-blue-300 hover:text-white flex items-center gap-2 py-1 transition-colors"
           >
-            <span>🚪</span> Cerrar sesión
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Cerrar sesión
           </button>
         </div>
       </aside>

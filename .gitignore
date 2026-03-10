@@ -46,3 +46,11 @@ backend/uploads/
 
 # Archivo reservado de Windows generado por error
 nul
+
+# Archivos sensibles que no deben commitearse nunca
+api-key.txt
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/

@@ -3,7 +3,7 @@ import { AppError } from '../../shared/middleware/error.middleware';
 import { Prisma } from '@prisma/client';
 
 export class ProductService {
-  async getPublicProducts(filters: ProductFilters) {
+  async getPublicProducts(filters: Omit<ProductFilters, 'isActive'>) {
     return productRepository.findAll({ ...filters, isActive: true });
   }
 
@@ -31,10 +31,12 @@ export class ProductService {
     marca: string;
     descripcion?: string;
     precio: number;
-    precioAnterior?: number;
+    precioAnterior?: number | null;
     stock: number;
     stockMinimo?: number;
     imagenes?: string[];
+    colores?: string[];
+    memorias?: string[];
     badge?: string;
     disponibleCredito?: boolean;
     pagosSemanales?: number;
@@ -50,6 +52,8 @@ export class ProductService {
       stock: data.stock,
       stockMinimo: data.stockMinimo || 5,
       imagenes: data.imagenes ?? [],
+      colores: data.colores ?? [],
+      memorias: data.memorias ?? [],
       badge: data.badge,
       disponibleCredito: data.disponibleCredito ?? true,
       pagosSemanales: data.pagosSemanales,
@@ -63,10 +67,12 @@ export class ProductService {
     marca: string;
     descripcion: string;
     precio: number;
-    precioAnterior: number;
+    precioAnterior: number | null;
     stock: number;
     stockMinimo: number;
     imagenes: string[];
+    colores: string[];
+    memorias: string[];
     badge: string;
     disponibleCredito: boolean;
     pagosSemanales: number;
@@ -89,6 +95,14 @@ export class ProductService {
 
   async getMarcas() {
     return productRepository.getMarcas();
+  }
+
+  async getColores() {
+    return productRepository.getColores();
+  }
+
+  async getMemorias() {
+    return productRepository.getMemorias();
   }
 
   async getPopulares(limit = 6) {

@@ -11,6 +11,7 @@ import customerRoutes from './modules/customers/customer.routes';
 import reservationRoutes from './modules/reservations/reservation.routes';
 import userRoutes from './modules/users/user.routes';
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
+import chatRoutes from './modules/chat/chat.routes';
 import { prisma } from './config/database';
 import fs from 'fs';
 import path from 'path';
@@ -27,6 +28,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
+// Orígenes permitidos: el frontend configurado + localhost en desarrollo
+const allowedOrigins: string[] = [FRONTEND_URL];
+if (process.env.NODE_ENV !== 'production') {
+  // En desarrollo también se permite el puerto de Vite por defecto
+  if (!allowedOrigins.includes('http://localhost:5173')) {
+    allowedOrigins.push('http://localhost:5173');
+  }
+}
+
 // Servir imágenes estáticas
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
@@ -35,7 +45,12 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }, // permite que el frontend cargue las imágenes
 }));
 app.use(cors({
-  origin: [FRONTEND_URL, 'http://localhost:5173', 'http://localhost:3000'],
+  origin: (origin, callback) => {
+    // Permitir requests sin origin (herramientas como Postman, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origen no permitido → ${origin}`));
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -56,6 +71,7 @@ app.use('/api/admin/customers', customerRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/admin/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Ruta 404
 app.use((_req, res) => {

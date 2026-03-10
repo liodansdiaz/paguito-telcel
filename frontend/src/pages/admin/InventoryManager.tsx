@@ -3,9 +3,8 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import api from '../../services/api';
+import { toImageUrl } from '../../services/config';
 import type { Product } from '../../types';
-
-const BACKEND_URL = 'http://localhost:3000';
 
 const productSchema = z.object({
   sku: z.string().min(1, 'SKU requerido'),
@@ -13,7 +12,7 @@ const productSchema = z.object({
   marca: z.string().min(1, 'Marca requerida'),
   descripcion: z.string().optional(),
   precio: z.number().positive('Precio debe ser positivo'),
-  precioAnterior: z.number().positive().optional().or(z.literal(undefined)),
+  precioAnterior: z.number().positive().optional(),
   stock: z.number().int().min(0),
   stockMinimo: z.number().int().min(0).optional(),
   badge: z.string().optional(),
@@ -31,8 +30,7 @@ const getStockBadge = (stock: number, min: number) => {
   return { label: 'Normal', cls: 'bg-green-100 text-green-700' };
 };
 
-const toImageUrl = (src: string) =>
-  src.startsWith('http') ? src : `${BACKEND_URL}${src}`;
+
 
 // ── Iconos SVG inline (sin dependencia externa) ───────────────────────────────
 const IconEdit = () => (
@@ -149,6 +147,178 @@ const ConfirmDeleteModal = ({ nombre, onConfirm, onCancel, loading }: {
   </div>
 );
 
+// ── Selector de memorias ──────────────────────────────────────────────────────
+const MEMORIAS_SUGERIDAS = ['64 GB', '128 GB', '256 GB', '512 GB', '1 TB'];
+
+const MemoriasSelector = ({ selected, onChange }: {
+  selected: string[]; onChange: (mems: string[]) => void;
+}) => {
+  const [custom, setCustom] = useState('');
+  const toggle = (m: string) =>
+    onChange(selected.includes(m) ? selected.filter(x => x !== m) : [...selected, m]);
+  const addCustom = () => {
+    const v = custom.trim();
+    if (v && !selected.includes(v)) { onChange([...selected, v]); setCustom(''); }
+  };
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-gray-700 block">Memorias disponibles</label>
+      <div className="flex flex-wrap gap-1.5">
+        {MEMORIAS_SUGERIDAS.map((m) => (
+          <button key={m} type="button" onClick={() => toggle(m)}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${selected.includes(m) ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 text-gray-600 border-gray-300 hover:border-blue-400'}`}>
+            {m}
+          </button>
+        ))}
+      </div>
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.filter(m => !MEMORIAS_SUGERIDAS.includes(m)).map((m) => (
+            <span key={m} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+              {m}
+              <button type="button" onClick={() => toggle(m)} className="ml-0.5 text-blue-400 hover:text-blue-700 font-bold">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="flex gap-2">
+        <input value={custom} onChange={(e) => setCustom(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustom())}
+          placeholder="Otra memoria (ej: 2 TB)..."
+          className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400" />
+        <button type="button" onClick={addCustom}
+          className="bg-gray-100 hover:bg-gray-200 px-2 py-1.5 rounded text-xs font-medium transition-colors">
+          Agregar
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── Editor de especificaciones clave-valor ────────────────────────────────────
+type SpecRow = { key: string; value: string };
+
+const EspecificacionesEditor = ({ value, onChange }: {
+  value: Record<string, string>; onChange: (v: Record<string, string>) => void;
+}) => {
+  const [rows, setRows] = useState<SpecRow[]>(() =>
+    Object.entries(value).map(([key, val]) => ({ key, value: String(val) }))
+  );
+
+  const sync = (updated: SpecRow[]) => {
+    setRows(updated);
+    const obj: Record<string, string> = {};
+    for (const r of updated) {
+      if (r.key.trim()) obj[r.key.trim()] = r.value;
+    }
+    onChange(obj);
+  };
+
+  const update = (i: number, field: 'key' | 'value', v: string) => {
+    const next = rows.map((r, idx) => idx === i ? { ...r, [field]: v } : r);
+    sync(next);
+  };
+
+  const add = () => sync([...rows, { key: '', value: '' }]);
+  const remove = (i: number) => sync(rows.filter((_, idx) => idx !== i));
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium text-gray-700">Especificaciones técnicas</label>
+        <button type="button" onClick={add}
+          className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+          + Agregar fila
+        </button>
+      </div>
+      {rows.length === 0 && (
+        <p className="text-xs text-gray-400 italic">Sin especificaciones. Haz clic en "+ Agregar fila".</p>
+      )}
+      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+        {rows.map((row, i) => (
+          <div key={i} className="flex gap-2 items-center">
+            <input value={row.key} onChange={(e) => update(i, 'key', e.target.value)}
+              placeholder="Clave (ej: Pantalla)"
+              className="flex-1 border border-gray-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400" />
+            <input value={row.value} onChange={(e) => update(i, 'value', e.target.value)}
+              placeholder="Valor (ej: 6.7 pulgadas AMOLED)"
+              className="flex-1 border border-gray-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400" />
+            <button type="button" onClick={() => remove(i)}
+              className="text-gray-300 hover:text-red-500 transition-colors font-bold text-sm leading-none">×</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── Selector de colores ───────────────────────────────────────────────────────
+const COLORES_SUGERIDOS = [
+  'Negro', 'Blanco', 'Plata', 'Gris', 'Azul', 'Azul oscuro', 'Azul claro',
+  'Verde', 'Verde menta', 'Morado', 'Rojo', 'Rosa', 'Dorado', 'Amarillo',
+  'Naranja', 'Titanio', 'Titanio negro', 'Titanio natural', 'Beige', 'Café',
+];
+
+const COLOR_MAP_ADMIN: Record<string, string> = {
+  negro: '#1a1a1a', blanco: '#f5f5f5', plata: '#C0C0C0', gris: '#808080',
+  azul: '#2563eb', 'azul oscuro': '#1e3a8a', 'azul claro': '#60a5fa',
+  verde: '#16a34a', 'verde menta': '#6ee7b7', morado: '#7c3aed',
+  rojo: '#dc2626', rosa: '#ec4899', dorado: '#d97706', amarillo: '#eab308',
+  naranja: '#ea580c', titanio: '#a0a098', 'titanio negro': '#3a3a3a',
+  'titanio natural': '#a0a098', beige: '#d4b896', café: '#92400e', cafe: '#92400e',
+};
+
+const getColorHexAdmin = (c: string) => COLOR_MAP_ADMIN[c.toLowerCase()] ?? '#9ca3af';
+
+const ColoresSelector = ({ selected, onChange }: {
+  selected: string[]; onChange: (cols: string[]) => void;
+}) => {
+  const [custom, setCustom] = useState('');
+  const toggle = (c: string) =>
+    onChange(selected.includes(c) ? selected.filter(x => x !== c) : [...selected, c]);
+  const addCustom = () => {
+    const v = custom.trim();
+    if (v && !selected.includes(v)) { onChange([...selected, v]); setCustom(''); }
+  };
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-gray-700 block">Colores disponibles</label>
+      <div className="flex flex-wrap gap-1.5 p-2 border border-gray-200 rounded-lg bg-gray-50 max-h-32 overflow-y-auto">
+        {COLORES_SUGERIDOS.map((c) => (
+          <button key={c} type="button" onClick={() => toggle(c)}
+            title={c}
+            className={`w-6 h-6 rounded-full border-2 transition-all hover:scale-110 ${selected.includes(c) ? 'border-blue-600 ring-2 ring-blue-200 scale-110' : 'border-gray-300'}`}
+            style={{ backgroundColor: getColorHexAdmin(c) }}
+          />
+        ))}
+      </div>
+      {/* Colores seleccionados */}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((c) => (
+            <span key={c} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+              <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: getColorHexAdmin(c) }} />
+              {c}
+              <button type="button" onClick={() => toggle(c)} className="ml-0.5 text-blue-400 hover:text-blue-700 font-bold">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      {/* Color personalizado */}
+      <div className="flex gap-2">
+        <input value={custom} onChange={(e) => setCustom(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustom())}
+          placeholder="Otro color..."
+          className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400" />
+        <button type="button" onClick={addCustom}
+          className="bg-gray-100 hover:bg-gray-200 px-2 py-1.5 rounded text-xs font-medium transition-colors">
+          Agregar
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // ── Componente principal ───────────────────────────────────────────────────────
 const InventoryManager = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -165,6 +335,9 @@ const InventoryManager = () => {
   const [formError, setFormError] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  const [selectedColores, setSelectedColores] = useState<string[]>([]);
+  const [selectedMemorias, setSelectedMemorias] = useState<string[]>([]);
+  const [especificaciones, setEspecificaciones] = useState<Record<string, string>>({});
 
   // Modal eliminar
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
@@ -197,6 +370,13 @@ const InventoryManager = () => {
     setEditingProduct(product);
     setExistingImageUrls(product.imagenes ?? []);
     setImageFiles([]);
+    setSelectedColores(product.colores ?? []);
+    setSelectedMemorias(product.memorias ?? []);
+    setEspecificaciones(
+      product.especificaciones
+        ? Object.fromEntries(Object.entries(product.especificaciones).map(([k, v]) => [k, String(v)]))
+        : {}
+    );
     setFormError('');
     setValue('sku', product.sku);
     setValue('nombre', product.nombre);
@@ -216,6 +396,9 @@ const InventoryManager = () => {
     setEditingProduct(null);
     setExistingImageUrls([]);
     setImageFiles([]);
+    setSelectedColores([]);
+    setSelectedMemorias([]);
+    setEspecificaciones({});
     setFormError('');
     reset();
     setShowForm(true);
@@ -227,6 +410,9 @@ const InventoryManager = () => {
     reset();
     setImageFiles([]);
     setExistingImageUrls([]);
+    setSelectedColores([]);
+    setSelectedMemorias([]);
+    setEspecificaciones({});
     setFormError('');
   };
 
@@ -236,11 +422,20 @@ const InventoryManager = () => {
     try {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
+        const isEmpty = value === undefined || value === null || (typeof value === 'number' && isNaN(value));
+        if (key === 'precioAnterior' && isEditing) {
+          // Enviar vacío explícitamente para que el backend borre el valor
+          formData.append(key, isEmpty ? '' : String(value));
+        } else if (!isEmpty && value !== '') {
           formData.append(key, String(value));
         }
       });
       imageFiles.forEach((file) => formData.append('imagenes', file));
+      formData.append('colores', JSON.stringify(selectedColores));
+      formData.append('memorias', JSON.stringify(selectedMemorias));
+      if (Object.keys(especificaciones).length > 0) {
+        formData.append('especificaciones', JSON.stringify(especificaciones));
+      }
 
       if (isEditing) {
         // Pasar URLs existentes que el admin no quitó
@@ -497,6 +692,9 @@ const InventoryManager = () => {
                 onChange={setImageFiles}
                 onRemoveExisting={(i) => setExistingImageUrls((prev) => prev.filter((_, idx) => idx !== i))}
               />
+              <ColoresSelector selected={selectedColores} onChange={setSelectedColores} />
+              <MemoriasSelector selected={selectedMemorias} onChange={setSelectedMemorias} />
+              <EspecificacionesEditor value={especificaciones} onChange={setEspecificaciones} />
               {formError && <p className="text-red-500 text-sm">{formError}</p>}
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={closeForm} className="flex-1 border border-gray-300 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50">

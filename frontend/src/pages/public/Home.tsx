@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import { toImageUrl } from '../../services/config';
 import type { Product } from '../../types';
-
-const BACKEND_URL = 'http://localhost:3000';
-const toImageUrl = (src: string) => src.startsWith('http') ? src : `${BACKEND_URL}${src}`;
 
 const formatPrice = (p: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(p);

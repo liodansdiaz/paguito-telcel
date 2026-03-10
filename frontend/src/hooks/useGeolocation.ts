@@ -41,8 +41,7 @@ export const useGeolocation = () => {
       (err) => {
         let message = 'No se pudo obtener la ubicación.';
         if (err.code === err.PERMISSION_DENIED) {
-          message =
-            'Permiso de ubicación denegado. La ubicación GPS es obligatoria para programar la visita. Por favor permite el acceso a tu ubicación en la configuración del navegador.';
+          message = 'Permiso de ubicación denegado.';
         } else if (err.code === err.POSITION_UNAVAILABLE) {
           message = 'Ubicación no disponible. Verifica que tu GPS esté activado.';
         } else if (err.code === err.TIMEOUT) {
@@ -54,9 +53,14 @@ export const useGeolocation = () => {
     );
   };
 
+  // Permite setear coordenadas manualmente (desde el mapa interactivo)
+  const setManual = (latitude: number, longitude: number) => {
+    setState({ latitude, longitude, loading: false, error: null, obtained: true });
+  };
+
   const reset = () => {
     setState({ latitude: null, longitude: null, loading: false, error: null, obtained: false });
   };
 
-  return { ...state, requestLocation, reset };
+  return { ...state, requestLocation, setManual, reset };
 };
