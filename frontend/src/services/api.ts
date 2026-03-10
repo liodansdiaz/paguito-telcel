@@ -36,6 +36,9 @@ api.interceptors.response.use(
           }
           return api(originalRequest);
         } catch {
+          try {
+            await axios.post('/api/auth/logout', { refreshToken });
+          } catch {}
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('user');
