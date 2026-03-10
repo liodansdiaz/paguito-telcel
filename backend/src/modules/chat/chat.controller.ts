@@ -77,10 +77,11 @@ interface ChatMessage {
   content: string;
 }
 
-// Consulta todos los productos activos con stock para inyectarlos al prompt
+// Consulta todos los productos activos (incluyendo sin stock) para inyectarlos al prompt
+// Se permiten reservas de productos sin stock — el negocio puede conseguirlos
 async function getProductContext(): Promise<string> {
   const products = await prisma.product.findMany({
-    where: { isActive: true, stock: { gt: 0 } },
+    where: { isActive: true },
     select: {
       nombre: true,
       marca: true,
@@ -96,7 +97,7 @@ async function getProductContext(): Promise<string> {
   });
 
   if (products.length === 0) {
-    return 'CATÁLOGO: No hay productos disponibles en este momento.';
+    return 'CATÁLOGO: No hay productos dados de alta en el sistema.';
   }
 
   const lines = products.map((p) => {
@@ -104,6 +105,7 @@ async function getProductContext(): Promise<string> {
     const precioAnterior = p.precioAnterior
       ? ` (antes ${`$${Number(p.precioAnterior).toLocaleString('es-MX')}`})`
       : '';
+    const stockInfo = p.stock === 0 ? ' (SIN STOCK - se puede reservar)' : ` (${p.stock} unidades)`;
     const credito = p.disponibleCredito && p.pagosSemanales
       ? ` | Pago semanal: $${Number(p.pagosSemanales).toLocaleString('es-MX')}`
       : p.disponibleCredito
@@ -112,7 +114,7 @@ async function getProductContext(): Promise<string> {
     const badge = p.badge ? ` [${p.badge}]` : '';
     const desc = p.descripcion ? ` — ${p.descripcion}` : '';
 
-    return `• ${p.marca} ${p.nombre}${badge} | Precio contado: ${precio}${precioAnterior}${credito} | Stock: ${p.stock} unidades${desc}`;
+    return `• ${p.marca} ${p.nombre}${badge} | Precio contado: ${precio}${precioAnterior}${credito}${stockInfo}${desc}`;
   });
 
   return `CATÁLOGO DE PRODUCTOS DISPONIBLES (actualizado en tiempo real):\n${lines.join('\n')}`;
