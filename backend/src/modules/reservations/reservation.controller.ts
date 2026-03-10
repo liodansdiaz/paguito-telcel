@@ -8,7 +8,7 @@ const createReservationSchema = z.object({
   productId: z.string().uuid('ID de producto inválido'),
   nombreCompleto: z.string().min(3, 'Nombre completo requerido'),
   telefono: z.string().regex(/^[\d\s\-\+\(\)]{10,15}$/, 'Teléfono inválido. Ej: 55 1234 5678 o +52 55 1234 5678').min(10).max(15),
-  curp: z.string().length(18, 'CURP debe tener 18 caracteres'),
+  curp: z.string().regex(/^[A-Z]{4}\d{6}[HM][A-Z]{2}[A-Z\d]{3}\d$/, 'CURP inválida. Formato: 4 letras, 6 dígitos, H/M, 2 letras, 3 caracteres, 1 dígito').length(18, 'CURP debe tener 18 caracteres'),
   tipoPago: z.enum(['CONTADO', 'CREDITO']),
   direccion: z.string().min(10, 'Dirección completa requerida'),
   fechaPreferida: z.string().transform((val) => new Date(val)),
