@@ -12,6 +12,7 @@ const ESTADOS_VENDEDOR: { value: EstadoReserva; label: string; color: string }[]
   { value: 'EN_VISITA',      label: 'En visita',      color: 'bg-purple-100 text-purple-700' },
   { value: 'VENDIDA',        label: 'Vendida',         color: 'bg-green-100 text-green-700' },
   { value: 'NO_CONCRETADA',  label: 'No concretada',   color: 'bg-gray-100 text-gray-600' },
+  { value: 'SIN_STOCK',      label: 'Sin stock',       color: 'bg-orange-100 text-orange-700' },
   { value: 'CANCELADA',      label: 'Cancelada',       color: 'bg-red-100 text-red-600' },
 ];
 
