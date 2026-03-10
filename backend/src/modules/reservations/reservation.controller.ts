@@ -7,7 +7,7 @@ import { EstadoReserva } from '@prisma/client';
 const createReservationSchema = z.object({
   productId: z.string().uuid('ID de producto inválido'),
   nombreCompleto: z.string().min(3, 'Nombre completo requerido'),
-  telefono: z.string().min(10, 'Teléfono inválido').max(15),
+  telefono: z.string().regex(/^[\d\s\-\+\(\)]{10,15}$/, 'Teléfono inválido. Ej: 55 1234 5678 o +52 55 1234 5678').min(10).max(15),
   curp: z.string().length(18, 'CURP debe tener 18 caracteres'),
   tipoPago: z.enum(['CONTADO', 'CREDITO']),
   direccion: z.string().min(10, 'Dirección completa requerida'),
