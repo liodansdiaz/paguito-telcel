@@ -144,6 +144,14 @@ const ReservationForm = () => {
     }
   }, [watchedDate, watchedTime]);
 
+  // Auto-centrar el mapa cuando se obtiene la geolocalización del navegador
+  useEffect(() => {
+    if (geo.obtained && geo.latitude !== null && geo.longitude !== null && !pinConfirmed) {
+      setMapCenter([geo.latitude, geo.longitude]);
+      setMapZoom(16);
+    }
+  }, [geo.obtained, geo.latitude, geo.longitude, pinConfirmed]);
+
   // Debounce: geocodificar la dirección escrita 800ms después de que el cliente deja de escribir
   // Solo si el mapa está abierto y el cliente no ha fijado el pin manualmente
   const handleDireccionChange = useCallback((value: string) => {
