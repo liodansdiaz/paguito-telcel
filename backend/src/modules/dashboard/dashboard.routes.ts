@@ -9,6 +9,7 @@ router.get('/admin/metrics', authenticate, requireRole('ADMIN'), dashboardContro
 router.get('/admin/chart', authenticate, requireRole('ADMIN'), dashboardController.getChartData.bind(dashboardController));
 router.get('/admin/status-distribution', authenticate, requireRole('ADMIN'), dashboardController.getStatusDistribution.bind(dashboardController));
 router.get('/admin/vendor-ranking', authenticate, requireRole('ADMIN'), dashboardController.getVendorRanking.bind(dashboardController));
+router.get('/admin/cache-metrics', authenticate, requireRole('ADMIN'), dashboardController.getCacheMetrics.bind(dashboardController));
 
 // Vendedor
 router.get('/vendor', authenticate, requireRole('VENDEDOR', 'ADMIN'), dashboardController.getVendorDashboard.bind(dashboardController));

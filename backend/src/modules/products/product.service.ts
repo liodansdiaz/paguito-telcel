@@ -1,14 +1,46 @@
 import { productRepository, ProductFilters } from './product.repository';
 import { AppError } from '../../shared/middleware/error.middleware';
 import { Prisma } from '@prisma/client';
+import { CacheService } from '../../shared/services/cache.service';
 
 export class ProductService {
+  // TTL de caché: 10 minutos para productos (cambian poco)
+  private readonly CACHE_TTL = 600;
+  // Prefijo de caché para productos
+  private readonly CACHE_PREFIX = 'products';
+
+  /**
+   * Genera una key de caché basada en filtros
+   */
+  private generateCacheKey(filters: any): string {
+    const sortedFilters = Object.keys(filters)
+      .sort()
+      .reduce((acc, key) => {
+        acc[key] = filters[key];
+        return acc;
+      }, {} as any);
+    return JSON.stringify(sortedFilters);
+  }
+
   async getPublicProducts(filters: Omit<ProductFilters, 'isActive'>) {
-    return productRepository.findAll({ ...filters, isActive: true });
+    const cacheKey = `list:${this.generateCacheKey({ ...filters, isActive: true })}`;
+    
+    return CacheService.getOrSet(
+      cacheKey,
+      () => productRepository.findAll({ ...filters, isActive: true }),
+      { ttl: this.CACHE_TTL, prefix: this.CACHE_PREFIX }
+    );
   }
 
   async getPublicProductById(id: string) {
-    const product = await productRepository.findById(id);
+    const cacheKey = `public:${id}`;
+    
+    const product = await CacheService.getOrSet(
+      cacheKey,
+      () => productRepository.findById(id),
+      { ttl: this.CACHE_TTL, prefix: this.CACHE_PREFIX }
+    );
+
     if (!product || !product.isActive) {
       throw new AppError('Producto no encontrado.', 404);
     }
@@ -23,6 +55,14 @@ export class ProductService {
     const product = await productRepository.findById(id);
     if (!product) throw new AppError('Producto no encontrado.', 404);
     return product;
+  }
+
+  /**
+   * Invalida todo el caché de productos
+   * Se ejecuta después de crear, actualizar o eliminar productos
+   */
+  private async invalidateCache(): Promise<void> {
+    await CacheService.deletePattern('*', { prefix: this.CACHE_PREFIX });
   }
 
   async createProduct(data: {
@@ -59,7 +99,13 @@ export class ProductService {
       pagosSemanales: data.pagosSemanales,
       especificaciones: data.especificaciones as Prisma.InputJsonValue,
     };
-    return productRepository.create(createData);
+    
+    const product = await productRepository.create(createData);
+    
+    // Invalidar caché después de crear
+    await this.invalidateCache();
+    
+    return product;
   }
 
   async updateProduct(id: string, data: Partial<{
@@ -80,37 +126,82 @@ export class ProductService {
     isActive: boolean;
   }>) {
     await this.getAdminProductById(id);
-    return productRepository.update(id, data as Prisma.ProductUpdateInput);
+    const product = await productRepository.update(id, data as Prisma.ProductUpdateInput);
+    
+    // Invalidar caché después de actualizar
+    await this.invalidateCache();
+    
+    return product;
   }
 
   async toggleProductStatus(id: string) {
     await this.getAdminProductById(id);
-    return productRepository.toggleActive(id);
+    const product = await productRepository.toggleActive(id);
+    
+    // Invalidar caché después de cambiar estado
+    await this.invalidateCache();
+    
+    return product;
   }
 
   async deleteProduct(id: string) {
     await this.getAdminProductById(id);
-    return productRepository.delete(id);
+    const product = await productRepository.delete(id);
+    
+    // Invalidar caché después de eliminar
+    await this.invalidateCache();
+    
+    return product;
   }
 
   async getMarcas() {
-    return productRepository.getMarcas();
+    const cacheKey = 'marcas:all';
+    
+    return CacheService.getOrSet(
+      cacheKey,
+      () => productRepository.getMarcas(),
+      { ttl: this.CACHE_TTL, prefix: this.CACHE_PREFIX }
+    );
   }
 
   async getColores() {
-    return productRepository.getColores();
+    const cacheKey = 'colores:all';
+    
+    return CacheService.getOrSet(
+      cacheKey,
+      () => productRepository.getColores(),
+      { ttl: this.CACHE_TTL, prefix: this.CACHE_PREFIX }
+    );
   }
 
   async getMemorias() {
-    return productRepository.getMemorias();
+    const cacheKey = 'memorias:all';
+    
+    return CacheService.getOrSet(
+      cacheKey,
+      () => productRepository.getMemorias(),
+      { ttl: this.CACHE_TTL, prefix: this.CACHE_PREFIX }
+    );
   }
 
   async getPopulares(limit = 6) {
-    return productRepository.findPopulares(limit);
+    const cacheKey = `populares:${limit}`;
+    
+    return CacheService.getOrSet(
+      cacheKey,
+      () => productRepository.findPopulares(limit),
+      { ttl: this.CACHE_TTL, prefix: this.CACHE_PREFIX }
+    );
   }
 
   async getEnOferta(limit = 6) {
-    return productRepository.findEnOferta(limit);
+    const cacheKey = `ofertas:${limit}`;
+    
+    return CacheService.getOrSet(
+      cacheKey,
+      () => productRepository.findEnOferta(limit),
+      { ttl: this.CACHE_TTL, prefix: this.CACHE_PREFIX }
+    );
   }
 }
 
