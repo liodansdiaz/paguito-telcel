@@ -24,7 +24,7 @@ const PublicLayout = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
-              <img src="/logo.svg" alt="Amigo Paguitos Telcel" className="w-10 h-10" />
+              <img src="/logo.png" alt="Amigo Paguitos Telcel" className="w-10 h-10 object-contain" />
               <span className="font-bold text-xl tracking-tight">Amigo Paguitos Telcel</span>
             </Link>
 
@@ -116,9 +116,12 @@ const PublicLayout = () => {
       <footer className="bg-[#002a5c] text-white py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
-            <div>
-              <p className="font-bold text-lg">Amigo Paguitos Telcel</p>
-              <p className="text-blue-300 text-sm">Tu celular a la puerta de tu casa</p>
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="Amigo Paguitos Telcel" className="w-12 h-12 object-contain" />
+              <div>
+                <p className="font-bold text-lg">Amigo Paguitos Telcel</p>
+                <p className="text-blue-300 text-sm">Tu celular a la puerta de tu casa</p>
+              </div>
             </div>
             <div className="flex flex-col gap-2">
               <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">Navegación</p>
