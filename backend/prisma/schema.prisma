@@ -61,6 +61,8 @@ model User {
   passwordResetTokens PasswordResetToken[]
 
   @@map("users")
+  @@index([isActive, rol, lastAssignedAt, createdAt])
+  @@index([isActive, rol])
 }
 
 model Product {
@@ -87,6 +89,8 @@ model Product {
   reservations    Reservation[]
 
   @@map("products")
+  @@index([isActive, marca, createdAt])
+  @@index([isActive, createdAt])
 }
 
 model Customer {
@@ -103,6 +107,7 @@ model Customer {
   reservations    Reservation[]
 
   @@map("customers")
+  @@index([estado, createdAt])
 }
 
 model Reservation {
@@ -132,6 +137,11 @@ model Reservation {
   notifications   Notification[]
 
   @@map("reservations")
+  @@index([vendorId, estado, createdAt])
+  @@index([curp, tipoPago, estado])
+  @@index([curp, estado])
+  @@index([estado, createdAt])
+  @@index([vendorId, fechaPreferida])
 }
 
 model Notification {
@@ -147,6 +157,7 @@ model Notification {
   reservation   Reservation         @relation(fields: [reservationId], references: [id])
 
   @@map("notifications")
+  @@index([reservationId, status])
 }
 
 model RefreshToken {
@@ -160,6 +171,8 @@ model RefreshToken {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("refresh_tokens")
+  @@index([userId, expiresAt])
+  @@index([userId, revokedAt])
 }
 
 model PasswordResetToken {
@@ -173,6 +186,7 @@ model PasswordResetToken {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("password_reset_tokens")
+  @@index([userId, expiresAt])
 }
 
 // RoundRobinState eliminado — el algoritmo de asignación round-robin
