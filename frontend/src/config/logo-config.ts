@@ -4,10 +4,10 @@
 export const logoConfig = {
   // Ruta al logo principal
   // Opciones: '/logo.svg', '/logo.png', '/logo.jpg', '/logo.webp'
-  mainLogo: '/logo.svg',
+  mainLogo: '/logo.png',
   
   // Ruta al logo para favicon (pequeño)
-  // Puedes usar el mismo o uno diferente
+  // SVG recomendado para favicon (pequeño, escalable)
   faviconLogo: '/logo.svg',
   
   // Nombre de la marca (para alt text y accesibilidad)
