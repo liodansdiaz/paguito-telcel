@@ -157,35 +157,101 @@ const Home = () => {
   return (
     <div>
 
-      {/* ── 1. HERO ──────────────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-br from-[#002f87] to-[#0f49bd] text-white py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="bg-[#13ec6d] text-[#002f87] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-6 inline-block">
-            Servicio a domicilio
-          </span>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
-            Tu próximo celular,<br />
-            <span className="text-[#13ec6d]">en la puerta de tu casa</span>
-          </h1>
-          <p className="text-blue-100 text-lg mb-4 max-w-2xl mx-auto">
-            Elige tu celular favorito, agenda una visita y un vendedor te lo lleva.
-            Sin filas, sin esperas.
-          </p>
-          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-xl px-5 py-3 mb-10">
-            <span className="text-[#13ec6d] text-xl">✓</span>
-            <span className="text-white text-sm font-medium">
-              Disponible a crédito o al contado · Sin aval · Sin buró
+      {/* ── 1. HERO MEJORADO ─────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#002f87] via-[#0f49bd] to-[#002f87]">
+        
+        {/* ═══ Pattern Geométrico Abstracto ═══ */}
+        <svg className="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="geometric-pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+              {/* Hexágonos */}
+              <path 
+                d="M25 10 L40 19 L40 35 L25 44 L10 35 L10 19 Z" 
+                fill="none" 
+                stroke="white" 
+                strokeWidth="1" 
+                opacity="0.3"
+              />
+              {/* Círculos */}
+              <circle cx="75" cy="25" r="15" fill="white" opacity="0.1"/>
+              <circle cx="15" cy="75" r="10" fill="white" opacity="0.15"/>
+              {/* Diamantes */}
+              <path 
+                d="M60 70 L75 60 L90 70 L75 80 Z" 
+                fill="white" 
+                opacity="0.15"
+              />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#geometric-pattern)" />
+        </svg>
+        
+        {/* ═══ Dots Pattern ═══ */}
+        <div 
+          className="absolute inset-0 opacity-[0.08]"
+          style={{
+            backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
+            backgroundSize: '24px 24px'
+          }}
+        />
+        
+        {/* ═══ Formas Flotantes con Blur ═══ */}
+        <div className="absolute top-20 right-10 w-64 h-64 bg-[#13ec6d] rounded-full opacity-10 blur-3xl animate-float-slow" />
+        <div className="absolute bottom-20 left-10 w-96 h-96 bg-white rounded-full opacity-5 blur-3xl animate-float-slower" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-[#0f49bd] rounded-full opacity-15 blur-2xl animate-float" />
+        
+        {/* ═══ Contenido Principal ═══ */}
+        <div className="relative z-10 text-white py-20 px-4">
+          <div className="max-w-4xl mx-auto text-center animate-fade-in-up">
+            
+            <span className="bg-[#13ec6d] text-[#002f87] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-6 inline-block">
+              Servicio a domicilio
             </span>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/catalogo"
-              className="bg-[#13ec6d] text-[#002f87] px-8 py-4 rounded-xl font-bold text-lg hover:bg-green-400 transition-all shadow-lg"
-            >
-              Ver catálogo
-            </Link>
+            
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
+              Tu próximo celular,<br />
+              <span className="text-[#13ec6d]">en la puerta de tu casa</span>
+            </h1>
+            
+            <p className="text-blue-100 text-lg mb-4 max-w-2xl mx-auto">
+              Elige tu celular favorito, agenda una visita y un vendedor te lo lleva.
+              Sin filas, sin esperas.
+            </p>
+            
+            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-xl px-5 py-3 mb-10">
+              <span className="text-[#13ec6d] text-xl">✓</span>
+              <span className="text-white text-sm font-medium">
+                Disponible a crédito o al contado · Sin aval · Sin buró
+              </span>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/catalogo"
+                className="bg-[#13ec6d] text-[#002f87] px-8 py-4 rounded-xl font-bold text-lg hover:bg-green-400 transition-all shadow-lg"
+              >
+                Ver catálogo
+              </Link>
+            </div>
+            
           </div>
         </div>
+        
+        {/* ═══ Wave Divisor al Final ═══ */}
+        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
+          <svg 
+            className="relative block w-full h-16" 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 1440 120"
+            preserveAspectRatio="none"
+          >
+            <path 
+              fill="white" 
+              d="M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,864,58.7C960,64,1056,64,1152,58.7C1248,53,1344,43,1392,37.3L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"
+            />
+          </svg>
+        </div>
+        
       </section>
 
       {/* ── 2. CÓMO FUNCIONA ─────────────────────────────────────────────────── */}
