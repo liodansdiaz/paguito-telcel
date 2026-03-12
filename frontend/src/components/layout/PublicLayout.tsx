@@ -24,7 +24,7 @@ const PublicLayout = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
-              <img src="/logo.svg" alt="Amigo Paguitos Telcel" className="w-10 h-10 object-contain" />
+              <img src="/logo.svg" alt="Amigo Paguitos Telcel" className="w-12 h-12" />
               <span className="font-bold text-xl tracking-tight">Amigo Paguitos Telcel</span>
             </Link>
 

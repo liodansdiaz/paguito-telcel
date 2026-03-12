@@ -1,28 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <!-- Logo Amigo Paguitos Telcel - Fondo transparente -->
   
+  <!-- Fondo decorativo con círculo -->
+  <circle cx="100" cy="100" r="90" fill="#002f87"/>
+  <circle cx="100" cy="100" r="75" fill="#13ec6d"/>
+  
   <!-- Teléfono estilizado -->
   <g>
-    <!-- Cuerpo del teléfono (azul oscuro) -->
-    <rect x="50" y="30" width="100" height="140" rx="15" fill="#002f87"/>
+    <!-- Cuerpo del teléfono (azul oscuro sobre verde) -->
+    <rect x="60" y="55" width="80" height="90" rx="12" fill="#002f87"/>
     
-    <!-- Pantalla (verde neón) -->
-    <rect x="56" y="38" width="88" height="120" rx="8" fill="#13ec6d"/>
+    <!-- Pantalla (blanco/claro) -->
+    <rect x="65" y="60" width="70" height="70" rx="6" fill="#ffffff"/>
     
-    <!-- Botón físico (haz de luz) -->
-    <rect x="85" y="158" width="30" height="8" rx="4" fill="#002f87"/>
+    <!-- Botón central -->
+    <circle cx="100" cy="135" r="6" fill="#002f87"/>
     
     <!-- Cámara frontal -->
-    <circle cx="100" cy="34" r="3" fill="#002f87"/>
+    <circle cx="100" cy="57" r="2" fill="#002f87"/>
   </g>
-  
-  <!-- Texto "AP" sutil en la parte inferior -->
-  <text x="100" y="195" text-anchor="middle" 
-        font-family="system-ui, -apple-system, sans-serif" 
-        font-size="16" 
-        font-weight="bold" 
-        fill="#002f87"
-        opacity="0.8">
-    AP
-  </text>
 </svg>
