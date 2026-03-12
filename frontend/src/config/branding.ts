@@ -8,7 +8,8 @@ export const brandingConfig = {
   
   // Ruta del logo en la carpeta public/
   // Opciones: '/logo.svg', '/logo.png', '/logo.jpg', '/logo.webp'
-  logoPath: '/logo.png',
+  // Recomendado: SVG para máxima calidad y fondo transparente
+  logoPath: '/logo.svg',
   
   // ═════════════════════════════════════════════════════════════
   // CONFIGURACIÓN DE LA MARCA

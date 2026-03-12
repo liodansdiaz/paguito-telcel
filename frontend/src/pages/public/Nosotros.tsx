@@ -46,7 +46,7 @@ const Nosotros = () => {
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
       <section className="bg-gradient-to-br from-[#002f87] to-[#0f49bd] text-white py-16 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <img src="/logo.png" alt="Amigo Paguitos Telcel" className="w-16 h-16 mx-auto mb-4" />
+          <img src="/logo.svg" alt="Amigo Paguitos Telcel" className="w-16 h-16 mx-auto mb-4" />
           <span className="bg-[#13ec6d] text-[#002f87] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-4 inline-block">
             Nuestra historia
           </span>

@@ -4,11 +4,11 @@
 export const logoConfig = {
   // Ruta al logo principal
   // Opciones: '/logo.svg', '/logo.png', '/logo.jpg', '/logo.webp'
-  mainLogo: '/logo.png',
+  mainLogo: '/logo.svg',
   
   // Ruta al logo para favicon (pequeño)
   // Puedes usar el mismo o uno diferente
-  faviconLogo: '/logo.png',
+  faviconLogo: '/logo.svg',
   
   // Nombre de la marca (para alt text y accesibilidad)
   brandName: 'Amigo Paguitos Telcel',

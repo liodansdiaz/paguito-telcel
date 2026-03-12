@@ -38,7 +38,7 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#002f87] to-[#0f49bd] flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <img src="/logo.png" alt="Amigo Paguitos Telcel" className="w-14 h-14 mx-auto mb-4" />
+          <img src="/logo.svg" alt="Amigo Paguitos Telcel" className="w-14 h-14 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900">Portal de Vendedores</h1>
           <p className="text-gray-400 text-sm mt-1">Amigo Paguitos Telcel</p>
         </div>

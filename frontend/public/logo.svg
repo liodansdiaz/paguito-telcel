@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Logo Amigo Paguitos Telcel - Fondo transparente -->
+  
+  <!-- Teléfono estilizado -->
+  <g>
+    <!-- Cuerpo del teléfono (azul oscuro) -->
+    <rect x="50" y="30" width="100" height="140" rx="15" fill="#002f87"/>
+    
+    <!-- Pantalla (verde neón) -->
+    <rect x="56" y="38" width="88" height="120" rx="8" fill="#13ec6d"/>
+    
+    <!-- Botón físico (haz de luz) -->
+    <rect x="85" y="158" width="30" height="8" rx="4" fill="#002f87"/>
+    
+    <!-- Cámara frontal -->
+    <circle cx="100" cy="34" r="3" fill="#002f87"/>
+  </g>
+  
+  <!-- Texto "AP" sutil en la parte inferior -->
+  <text x="100" y="195" text-anchor="middle" 
+        font-family="system-ui, -apple-system, sans-serif" 
+        font-size="16" 
+        font-weight="bold" 
+        fill="#002f87"
+        opacity="0.8">
+    APT
+  </text>
+</svg>
