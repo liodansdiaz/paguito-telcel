@@ -46,6 +46,7 @@ const Nosotros = () => {
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
       <section className="bg-gradient-to-br from-[#002f87] to-[#0f49bd] text-white py-16 px-4">
         <div className="max-w-3xl mx-auto text-center">
+          <img src="/logo.svg" alt="Amigo Paguitos Telcel" className="w-16 h-16 mx-auto mb-4" />
           <span className="bg-[#13ec6d] text-[#002f87] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-4 inline-block">
             Nuestra historia
           </span>
@@ -66,7 +67,7 @@ const Nosotros = () => {
               <p className="text-xs font-bold text-[#0f49bd] uppercase tracking-widest mb-2">Nuestra historia</p>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Nacimos para hacer más fácil tu próxima compra</h2>
               <p className="text-gray-500 text-sm leading-relaxed mb-4">
-                <strong className="text-gray-700">Amigos Paguito Telcel</strong> nació de la necesidad de ofrecer una alternativa real a quienes quieren un celular de calidad pero no cuentan con tarjeta de crédito, historial bancario o tiempo para ir a una tienda.
+                <strong className="text-gray-700">Amigo Paguitos Telcel</strong> nació de la necesidad de ofrecer una alternativa real a quienes quieren un celular de calidad pero no cuentan con tarjeta de crédito, historial bancario o tiempo para ir a una tienda.
               </p>
               <p className="text-gray-500 text-sm leading-relaxed mb-4">
                 Somos distribuidores autorizados de equipos Telcel y operamos con un modelo simple: tú eliges tu celular en línea, nosotros vamos hasta tu puerta. El crédito se tramita en la visita, sin buró, sin aval y con pagos semanales accesibles.

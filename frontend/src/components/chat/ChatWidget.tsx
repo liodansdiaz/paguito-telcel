@@ -176,7 +176,7 @@ export default function ChatWidget() {
                 🤖
               </div>
               <div>
-                <p className="text-sm font-semibold leading-none">Asistente Paguito</p>
+                <p className="text-sm font-semibold leading-none">Asistente Amigo Paguitos</p>
                 <p className="text-xs text-blue-200 mt-0.5">¿En qué te ayudo hoy?</p>
               </div>
             </div>
@@ -210,7 +210,7 @@ export default function ChatWidget() {
                   🤖
                 </div>
                 <div className="bg-white rounded-2xl rounded-tl-sm px-3 py-2 shadow-sm text-sm text-gray-700 max-w-[85%]">
-                  ¡Hola! Soy el asistente de <strong>Amigos Paguito Telcel</strong>. Puedo ayudarte con información sobre equipos, precios, crédito y más. ¿En qué te puedo ayudar?
+                  ¡Hola! Soy el asistente de <strong>Amigo Paguitos Telcel</strong>. Puedo ayudarte con información sobre equipos, precios, crédito y más. ¿En qué te puedo ayudar?
                 </div>
               </div>
             )}

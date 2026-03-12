@@ -140,7 +140,7 @@ const Home = () => {
     {
       nombre: 'Roberto Fuentes',
       producto: 'Redmi Note 14',
-      comentario: 'Ya llevo dos celulares con Paguito Telcel. El trato es muy bueno, los precios justos y los pagos semanales se ajustan perfecto a mi presupuesto.',
+      comentario: 'Ya llevo dos celulares con Amigo Paguitos Telcel. El trato es muy bueno, los precios justos y los pagos semanales se ajustan perfecto a mi presupuesto.',
     },
     {
       nombre: 'Ana Soto',
@@ -405,7 +405,7 @@ const Home = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs font-bold text-[#0f49bd] uppercase tracking-widest mb-1">Nuestras ventajas</p>
-            <h2 className="text-2xl font-bold text-gray-900">¿Por qué elegir Paguito Telcel?</h2>
+            <h2 className="text-2xl font-bold text-gray-900">¿Por qué elegir Amigo Paguitos Telcel?</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {confianza.map((item) => (

@@ -22,7 +22,7 @@ const DEFAULT_ZOOM = 13;
 const TAPACHULA_VIEWBOX = '-92.6,14.6,-91.8,15.2';
 
 // ── Nominatim helpers ───────────────────────────────────────────────────────
-const nominatimHeaders = { 'Accept-Language': 'es', 'User-Agent': 'PaguitoTelcel/1.0' };
+const nominatimHeaders = { 'Accept-Language': 'es', 'User-Agent': 'AmigoPaguitosTelcel/1.0' };
 
 async function geocodeAddress(query: string): Promise<[number, number] | null> {
   if (!query || query.trim().length < 8) return null;

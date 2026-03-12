@@ -38,11 +38,9 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#002f87] to-[#0f49bd] flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-[#002f87] rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl font-bold text-[#13ec6d]">P</span>
-          </div>
+          <img src="/logo.svg" alt="Amigo Paguitos Telcel" className="w-14 h-14 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900">Portal de Vendedores</h1>
-          <p className="text-gray-400 text-sm mt-1">Amigos Paguito Telcel</p>
+          <p className="text-gray-400 text-sm mt-1">Amigo Paguitos Telcel</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

@@ -26,9 +26,9 @@ const AdminLayout = () => {
         {/* Logo */}
         <div className="p-5 border-b border-blue-800">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-[#13ec6d] rounded-lg flex items-center justify-center font-bold text-[#002f87] text-lg">P</div>
+            <img src="/logo.svg" alt="Amigo Paguitos Telcel" className="w-10 h-10" />
             <div>
-              <p className="font-bold text-sm leading-tight">Paguito Telcel</p>
+              <p className="font-bold text-sm leading-tight">Amigo Paguitos Telcel</p>
               <p className="text-blue-300 text-xs">Panel Admin</p>
             </div>
           </div>

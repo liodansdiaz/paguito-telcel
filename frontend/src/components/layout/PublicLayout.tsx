@@ -24,8 +24,8 @@ const PublicLayout = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
-              <div className="w-9 h-9 bg-[#13ec6d] rounded-lg flex items-center justify-center font-bold text-[#002f87] text-lg">P</div>
-              <span className="font-bold text-xl tracking-tight">Paguito Telcel</span>
+              <img src="/logo.svg" alt="Amigo Paguitos Telcel" className="w-10 h-10" />
+              <span className="font-bold text-xl tracking-tight">Amigo Paguitos Telcel</span>
             </Link>
 
             {/* Desktop nav */}
@@ -117,7 +117,7 @@ const PublicLayout = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div>
-              <p className="font-bold text-lg">Amigos Paguito Telcel</p>
+              <p className="font-bold text-lg">Amigo Paguitos Telcel</p>
               <p className="text-blue-300 text-sm">Tu celular a la puerta de tu casa</p>
             </div>
             <div className="flex flex-col gap-2">

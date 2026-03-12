@@ -14,9 +14,9 @@ const VendorLayout = () => {
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <header className="bg-[#0f49bd] text-white shadow-md px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#13ec6d] rounded-lg flex items-center justify-center font-bold text-[#002f87]">P</div>
+          <img src="/logo.svg" alt="Amigo Paguitos Telcel" className="w-9 h-9" />
           <div>
-            <p className="font-bold text-sm">Paguito Telcel</p>
+            <p className="font-bold text-sm">Amigo Paguitos Telcel</p>
             <p className="text-blue-200 text-xs">Portal Vendedor</p>
           </div>
         </div>

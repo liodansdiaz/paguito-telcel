@@ -8,8 +8,17 @@ import { AuthPayload } from '../../shared/middleware/auth.middleware';
 import { emailService } from '../../shared/services/email.service';
 import { logger } from '../../shared/utils/logger';
 
-// 7 días en milisegundos — debe coincidir con JWT_REFRESH_EXPIRES_IN
+const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 días en segundos
+
+export const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: COOKIE_MAX_AGE,
+  path: '/',
+};
 
 export class AuthService {
   async login(email: string, password: string) {
@@ -47,7 +56,6 @@ export class AuthService {
 
     return {
       accessToken,
-      refreshToken,
       user: {
         id: user.id,
         nombre: user.nombre,
@@ -56,6 +64,10 @@ export class AuthService {
         zona: user.zona,
       },
     };
+  }
+
+  getRefreshTokenCookieOptions() {
+    return cookieOptions;
   }
 
   async refresh(refreshToken: string) {

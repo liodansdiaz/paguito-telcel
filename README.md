@@ -1,4 +1,4 @@
-# Paguito Telcel
+# Amigo Paguitos Telcel
 
 Sistema web para la gestión de ventas a crédito y contado de equipos celulares Telcel. Permite a los clientes explorar el catálogo, realizar reservas en línea y recibir la visita de un vendedor a domicilio. Los administradores gestionan el inventario, las reservas y los vendedores desde un panel centralizado.
 

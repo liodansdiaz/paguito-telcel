@@ -7,7 +7,7 @@ const faqs = [
     items: [
       {
         pregunta: '¿Necesito historial crediticio o consulta al buró?',
-        respuesta: 'No. En Paguito Telcel no consultamos el buró de crédito ni solicitamos aval. Solo necesitas una identificación oficial vigente y tu CURP para tramitar tu crédito.',
+        respuesta: 'No. En Amigo Paguitos Telcel no consultamos el buró de crédito ni solicitamos aval. Solo necesitas una identificación oficial vigente y tu CURP para tramitar tu crédito.',
       },
       {
         pregunta: '¿Cuánto es el enganche?',
