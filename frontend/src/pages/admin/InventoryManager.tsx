@@ -13,10 +13,7 @@ const productSchema = z.object({
   marca: z.string().min(1, 'Marca requerida'),
   descripcion: z.string().optional(),
   precio: z.number().positive('Precio debe ser positivo'),
-  precioAnterior: z.preprocess(
-    (val) => (val === '' || val === null || (typeof val === 'number' && isNaN(val)) ? undefined : val),
-    z.number().positive().optional()
-  ),
+  precioAnterior: z.any().optional(),
   stock: z.number().int().min(0),
   stockMinimo: z.number().int().min(0).optional(),
   badge: z.string().optional(),

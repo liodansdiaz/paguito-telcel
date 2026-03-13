@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import type { Rol } from '../types';
+import RouteErrorBoundary from '../components/RouteErrorBoundary';
 
 // Layouts
 import PublicLayout from '../components/layout/PublicLayout';
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
   // Rutas públicas
   {
     element: <PublicLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       { path: '/', element: <Home /> },
       { path: '/catalogo', element: <Catalog /> },
@@ -62,6 +64,7 @@ export const router = createBrowserRouter([
   {
     path: '/admin',
     element: <ProtectedRoute role="ADMIN"><AdminLayout /></ProtectedRoute>,
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
       { path: 'dashboard', element: <AdminDashboard /> },
@@ -76,6 +79,7 @@ export const router = createBrowserRouter([
   {
     path: '/vendedor',
     element: <ProtectedRoute role="VENDEDOR"><VendorLayout /></ProtectedRoute>,
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: <Navigate to="/vendedor/dashboard" replace /> },
       { path: 'dashboard', element: <VendorDashboard /> },

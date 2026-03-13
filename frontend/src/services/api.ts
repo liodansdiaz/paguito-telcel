@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
+import { logApiError } from '../utils/errorLogger';
 
 // Token en memoria (no en localStorage para seguridad XSS)
 let accessToken: string | null = null;
@@ -56,6 +57,15 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+    // Log del error de API
+    if (error.config) {
+      logApiError(
+        error,
+        error.config.url || 'unknown',
+        error.config.method?.toUpperCase() || 'GET'
+      );
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;

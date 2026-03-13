@@ -308,7 +308,7 @@ const Catalog = () => {
   const setCardColor = (productId: string, color: string) =>
     setCardSelection(prev => ({ ...prev, [productId]: { ...prev[productId], color, memoria: prev[productId]?.memoria ?? '' } }));
   const setCardMemoria = (productId: string, memoria: string) =>
-    setCardSelection(prev => ({ ...prev, [productId]: { color: prev[productId]?.color ?? '', ...prev[productId], memoria } }));
+    setCardSelection(prev => ({ ...prev, [productId]: { ...(prev[productId] || { color: '' }), memoria } }));
 
   const handleReservar = (productId: string) => {
     const color = getCardColor(productId);

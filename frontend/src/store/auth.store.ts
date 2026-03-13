@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AuthState } from '../types';
-import { setTokens, clearTokens, getAccessToken, getRefreshToken } from '../services/api';
+import { setTokens, clearTokens, getRefreshToken } from '../services/api';
 
 interface AuthStore extends AuthState {
   login: (user: AuthState['user'], accessToken: string, refreshToken: string) => void;
