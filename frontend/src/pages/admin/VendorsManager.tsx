@@ -6,6 +6,43 @@ import api from '../../services/api';
 import type { User } from '../../types';
 import { showSuccess, showError } from '../../utils/notifications';
 
+// ── Exportar vendedores a CSV ───────────────────────────────────────────────────
+const exportCSV = async () => {
+  try {
+    const params: Record<string, string> = { rol: 'VENDEDOR' };
+    const res = await api.get('/admin/users', { params });
+    const rows: User[] = res.data.data;
+
+    const headers = ['Nombre', 'Email', 'Zona', 'Teléfono', 'Estado', 'Fecha registro'];
+    const data = rows.map((v) => [
+      v.nombre,
+      v.email,
+      v.zona ?? '',
+      v.telefono ?? '',
+      v.isActive ? 'Activo' : 'Inactivo',
+      new Date(v.createdAt).toLocaleDateString('es-MX'),
+    ]);
+
+    const csv = [headers, ...data]
+      .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `vendedores_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showSuccess('Vendedores exportados correctamente');
+  } catch (err) {
+    console.error('Error al exportar:', err);
+    showError('No se pudo exportar. Intenta de nuevo.');
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const createSchema = z.object({
   nombre: z.string().min(2, 'Nombre requerido'),
   email: z.string().email('Email inválido'),
@@ -18,6 +55,7 @@ type VendorForm = z.infer<typeof createSchema>;
 const VendorsManager = () => {
   const [vendors, setVendors] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingVendor, setEditingVendor] = useState<User | null>(null);
   const [formError, setFormError] = useState('');
@@ -109,6 +147,12 @@ const VendorsManager = () => {
     }
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    await exportCSV();
+    setExporting(false);
+  };
+
   const activos = vendors.filter((v) => v.isActive).length;
 
   return (
@@ -118,9 +162,22 @@ const VendorsManager = () => {
           <h2 className="text-xl font-bold text-gray-900">Gestión de Vendedores</h2>
           <p className="text-gray-400 text-sm">{activos} activos / {vendors.length} total</p>
         </div>
-        <button onClick={openCreate} className="bg-[#0f49bd] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
-          + Nuevo vendedor
-        </button>
+        <div className="flex gap-2 items-center">
+          <button
+            onClick={handleExport}
+            disabled={exporting || vendors.length === 0}
+            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+            title="Exportar a CSV"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {exporting ? 'Exportando...' : 'CSV'}
+          </button>
+          <button onClick={openCreate} className="bg-[#0f49bd] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+            + Nuevo vendedor
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
