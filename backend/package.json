@@ -9,12 +9,17 @@
     "start": "node dist/app.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:status": "prisma migrate status",
     "db:push": "prisma db push",
     "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "generate-secrets": "ts-node scripts/generate-secrets.ts",
+    "env:validate": "ts-node scripts/validate-env.ts",
+    "env:check": "npm run env:validate"
   },
   "keywords": [],
   "author": "",

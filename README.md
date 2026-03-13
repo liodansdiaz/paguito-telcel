@@ -6,6 +6,7 @@ Sistema web para la gestión de ventas a crédito y contado de equipos celulares
 
 ## Tabla de Contenidos
 
+- [🔐 Seguridad y Configuración](#-seguridad-y-configuración-importante)
 - [Características principales](#características-principales)
 - [Stack tecnológico](#stack-tecnológico)
 - [Arquitectura del proyecto](#arquitectura-del-proyecto)
@@ -17,6 +18,38 @@ Sistema web para la gestión de ventas a crédito y contado de equipos celulares
 - [API — Endpoints](#api--endpoints)
 - [Roles y permisos](#roles-y-permisos)
 - [Credenciales de prueba](#credenciales-de-prueba)
+
+---
+
+## 🔐 Seguridad y Configuración (IMPORTANTE)
+
+> ⚠️ **Antes de comenzar, lee esto:**
+
+Esta aplicación requiere configuración segura de variables de entorno, especialmente para JWT y Redis.
+
+**📖 Guía de Configuración Rápida:** [SEGURIDAD-SETUP.md](./SEGURIDAD-SETUP.md)
+
+**🛡️ Guía Completa de Seguridad:** [backend/SECURITY.md](./backend/SECURITY.md)
+
+### Inicio Rápido
+
+```bash
+# 1. Configurar backend
+cd backend
+cp .env.example .env
+
+# 2. Generar secrets seguros
+npm run generate-secrets
+
+# 3. Copiar secrets al archivo .env (desde .env.secrets)
+
+# 4. Validar configuración
+npm run env:validate
+
+# 5. Si todo OK, continuar con instalación normal
+```
+
+**⚠️ NUNCA uses valores de ejemplo en producción. Genera secrets únicos con `npm run generate-secrets`**
 
 ---
 

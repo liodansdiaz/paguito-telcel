@@ -1,4 +1,9 @@
 import 'dotenv/config';
+
+// ⚠️ CRÍTICO: Validar variables de entorno ANTES de importar cualquier otro módulo
+import { validateEnvOrExit, getEnvSummary } from './config/env.validation';
+validateEnvOrExit();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -59,9 +64,52 @@ app.use(morgan('combined', {
   stream: { write: (msg) => logger.info(msg.trim()) },
 }));
 
-// Health check
+// Health check básico
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), service: 'Paguito Telcel API' });
+});
+
+// Health check detallado (solo en desarrollo)
+app.get('/health/detailed', async (req, res) => {
+  // Proteger en producción - requiere header secreto
+  if (process.env.NODE_ENV === 'production') {
+    const healthToken = req.headers['x-health-token'];
+    if (!healthToken || healthToken !== process.env.HEALTH_CHECK_TOKEN) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+  }
+
+  try {
+    // Check database
+    const dbStart = Date.now();
+    await prisma.$queryRaw`SELECT 1`;
+    const dbLatency = Date.now() - dbStart;
+
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      service: 'Paguito Telcel API',
+      environment: getEnvSummary(),
+      checks: {
+        database: {
+          status: 'healthy',
+          latency: `${dbLatency}ms`,
+        },
+        uptime: `${Math.floor(process.uptime())}s`,
+        memory: {
+          used: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
+          total: `${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)}MB`,
+        },
+      },
+    });
+  } catch (error) {
+    logger.error('Health check failed', error);
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      error: 'Service degraded',
+    });
+  }
 });
 
 // Rutas de la API
