@@ -5,43 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import api from '../../services/api';
 import type { User } from '../../types';
 import { showSuccess, showError } from '../../utils/notifications';
-
-// ── Exportar vendedores a CSV ───────────────────────────────────────────────────
-const exportCSV = async () => {
-  try {
-    const params: Record<string, string> = { rol: 'VENDEDOR' };
-    const res = await api.get('/admin/users', { params });
-    const rows: User[] = res.data.data;
-
-    const headers = ['Nombre', 'Email', 'Zona', 'Teléfono', 'Estado', 'Fecha registro'];
-    const data = rows.map((v) => [
-      v.nombre,
-      v.email,
-      v.zona ?? '',
-      v.telefono ?? '',
-      v.isActive ? 'Activo' : 'Inactivo',
-      new Date(v.createdAt).toLocaleDateString('es-MX'),
-    ]);
-
-    const csv = [headers, ...data]
-      .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `vendedores_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showSuccess('Vendedores exportados correctamente');
-  } catch (err) {
-    console.error('Error al exportar:', err);
-    showError('No se pudo exportar. Intenta de nuevo.');
-  }
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
 
 const createSchema = z.object({
   nombre: z.string().min(2, 'Nombre requerido'),
@@ -54,6 +18,9 @@ type VendorForm = z.infer<typeof createSchema>;
 
 const VendorsManager = () => {
   const [vendors, setVendors] = useState<User[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -61,21 +28,93 @@ const VendorsManager = () => {
   const [formError, setFormError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
+  
+  // Filtros
+  const [search, setSearch] = useState('');
+  const [filterZona, setFilterZona] = useState('');
+  const [filterEstado, setFilterEstado] = useState('');
+  const [zonas, setZonas] = useState<string[]>([]);
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<VendorForm>({
     resolver: zodResolver(createSchema),
   });
 
-  const fetchVendors = async () => {
+  const totalPages = Math.ceil(total / limit);
+
+  const fetchVendors = async (p = page, l = limit) => {
     setLoading(true);
     try {
-      const res = await api.get('/admin/users', { params: { rol: 'VENDEDOR' } });
+      const params: Record<string, string> = { 
+        rol: 'VENDEDOR',
+        page: String(p),
+        limit: String(l),
+      };
+      if (search) params.search = search;
+      if (filterZona) params.zona = filterZona;
+      if (filterEstado) params.isActive = filterEstado;
+      
+      const res = await api.get('/admin/users', { params });
       setVendors(res.data.data);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
+      setTotal(res.data.pagination.total);
+      
+      // Obtener zonas únicas para el filtro
+      if (zonas.length === 0) {
+        const allVendors = await api.get('/admin/users', { params: { rol: 'VENDEDOR', limit: '9999' } });
+        const uniqueZonas = [...new Set(allVendors.data.data.map((v: User) => v.zona).filter(Boolean))];
+        setZonas(uniqueZonas as string[]);
+      }
+    } catch (err) { 
+      console.error(err); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
-  useEffect(() => { fetchVendors(); }, []);
+  useEffect(() => { 
+    fetchVendors(page, limit); 
+  }, [page, limit, search, filterZona, filterEstado]);
+
+  const exportCSV = async () => {
+    setExporting(true);
+    try {
+      const params: Record<string, string> = { rol: 'VENDEDOR', limit: '9999' };
+      if (search) params.search = search;
+      if (filterZona) params.zona = filterZona;
+      if (filterEstado) params.isActive = filterEstado;
+      
+      const res = await api.get('/admin/users', { params });
+      const rows: User[] = res.data.data;
+
+      const headers = ['Nombre', 'Email', 'Zona', 'Teléfono', 'Estado', 'Reservas', 'Fecha registro'];
+      const data = rows.map((v) => [
+        v.nombre,
+        v.email,
+        v.zona ?? '',
+        v.telefono ?? '',
+        v.isActive ? 'Activo' : 'Inactivo',
+        v._count?.reservations ?? 0,
+        new Date(v.createdAt).toLocaleDateString('es-MX'),
+      ]);
+
+      const csv = [headers, ...data]
+        .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vendedores_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showSuccess('Vendedores exportados correctamente');
+    } catch (err) {
+      console.error('Error al exportar:', err);
+      showError('No se pudo exportar. Intenta de nuevo.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const openCreate = () => {
     setEditingVendor(null);
@@ -102,7 +141,7 @@ const VendorsManager = () => {
     try {
       await api.patch(`/admin/users/${id}/toggle`);
       showSuccess('Vendedor actualizado correctamente');
-      fetchVendors();
+      fetchVendors(page, limit);
     } catch (err: any) { 
       showError(err.response?.data?.message || 'Error al cambiar estado del vendedor');
     }
@@ -126,7 +165,7 @@ const VendorsManager = () => {
         showSuccess('Vendedor creado correctamente');
       }
       closeModal();
-      fetchVendors();
+      fetchVendors(page, limit);
     } catch (err: any) {
       setFormError(err.response?.data?.message || 'Error al guardar');
     }
@@ -139,7 +178,7 @@ const VendorsManager = () => {
       await api.delete(`/admin/users/${deleteTarget.id}`);
       showSuccess('Vendedor eliminado correctamente');
       setDeleteTarget(null);
-      fetchVendors();
+      fetchVendors(page, limit);
     } catch (err: any) {
       showError(err.response?.data?.message || 'Error al eliminar vendedor');
     } finally {
@@ -147,96 +186,159 @@ const VendorsManager = () => {
     }
   };
 
-  const handleExport = async () => {
-    setExporting(true);
-    await exportCSV();
-    setExporting(false);
-  };
-
   const activos = vendors.filter((v) => v.isActive).length;
 
-  return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Gestión de Vendedores</h2>
-          <p className="text-gray-400 text-sm">{activos} activos / {vendors.length} total</p>
-        </div>
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={handleExport}
-            disabled={exporting || vendors.length === 0}
-            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-            title="Exportar a CSV"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            {exporting ? 'Exportando...' : 'CSV'}
-          </button>
-          <button onClick={openCreate} className="bg-[#0f49bd] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
-            + Nuevo vendedor
-          </button>
-        </div>
+  // Filtros UI
+  const filtersUI = (
+    <>
+      <div className="w-36">
+        <label className="text-xs text-gray-500 block mb-1">Zona</label>
+        <select
+          value={filterZona}
+          onChange={(e) => { setFilterZona(e.target.value); setPage(1); }}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todas</option>
+          {zonas.map((z) => (
+            <option key={z} value={z}>{z}</option>
+          ))}
+        </select>
       </div>
+      <div className="w-32">
+        <label className="text-xs text-gray-500 block mb-1">Estado</label>
+        <select
+          value={filterEstado}
+          onChange={(e) => { setFilterEstado(e.target.value); setPage(1); }}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todos</option>
+          <option value="true">Activos</option>
+          <option value="false">Inactivos</option>
+        </select>
+      </div>
+    </>
+  );
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {loading ? Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-xl p-5 animate-pulse shadow-sm h-40" />
-        )) : vendors.map((v) => (
-          <div key={v.id} className={`bg-white rounded-xl shadow-sm border p-5 ${v.isActive ? 'border-gray-100' : 'border-gray-100 opacity-60'}`}>
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${v.isActive ? 'bg-[#0f49bd]' : 'bg-gray-300'}`}>
-                  {v.nombre.split(' ').map((n) => n[0]).slice(0, 2).join('')}
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">{v.nombre}</p>
-                  <p className="text-gray-400 text-xs">{v.email}</p>
-                </div>
-              </div>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${v.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                {v.isActive ? 'Activo' : 'Inactivo'}
-              </span>
-            </div>
-            <div className="text-xs text-gray-500 space-y-1 mb-3">
-              {v.zona && <p>Zona: {v.zona}</p>}
-              {v.telefono && <p>Tel: {v.telefono}</p>}
-              <p>Reservas: {v._count?.reservations ?? 0}</p>
-            </div>
-            {/* Acciones */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleToggle(v.id)}
-                title={v.isActive ? 'Desactivar' : 'Activar'}
-                className={`flex-1 text-xs py-1.5 rounded-lg font-medium transition-colors ${v.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
-              >
-                {v.isActive ? 'Desactivar' : 'Activar'}
-              </button>
-              <button
-                onClick={() => openEdit(v)}
-                title="Editar vendedor"
-                className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-              >
-                {/* Ícono lápiz */}
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setDeleteTarget(v)}
-                title="Eliminar vendedor"
-                className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
-              >
-                {/* Ícono papelera */}
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 01-1-1V5a1 1 0 011-1h6a1 1 0 011 1v1a1 1 0 01-1 1H9z" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+  const activeFiltersUI = (
+    <>
+      {search && (
+        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+          Búsqueda: "{search}"
+          <button onClick={() => setSearch('')} className="ml-0.5 hover:text-blue-900">×</button>
+        </span>
+      )}
+      {filterZona && (
+        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+          Zona: {filterZona}
+          <button onClick={() => setFilterZona('')} className="ml-0.5 hover:text-blue-900">×</button>
+        </span>
+      )}
+      {filterEstado && (
+        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+          Estado: {filterEstado === 'true' ? 'Activo' : 'Inactivo'}
+          <button onClick={() => setFilterEstado('')} className="ml-0.5 hover:text-blue-900">×</button>
+        </span>
+      )}
+    </>
+  );
+
+  return (
+    <>
+      <AdminPageLayout
+        title="Gestión de Vendedores"
+        subtitle={`${activos} activos / ${vendors.length} total`}
+        total={total}
+        page={page}
+        totalPages={totalPages}
+        limit={limit}
+        loading={loading}
+        exporting={exporting}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
+        onExport={exportCSV}
+        onAdd={openCreate}
+        addButtonText="+ Nuevo vendedor"
+        searchPlaceholder="Buscar por nombre o zona..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        onKeyDown={(e) => { if (e.key === 'Enter') setPage(1); }}
+        filters={filtersUI}
+        activeFilters={activeFiltersUI}
+      >
+        {/* Tabla */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-100">
+              <tr>
+                {['Nombre', 'Email', 'Zona', 'Teléfono', 'Estado', 'Reservas', 'Acciones'].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {loading ? (
+                Array.from({ length: limit }).map((_, i) => (
+                  <tr key={i}>
+                    {Array.from({ length: 7 }).map((__, j) => (
+                      <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
+                    ))}
+                  </tr>
+                ))
+              ) : vendors.length === 0 ? (
+                <tr><td colSpan={7} className="text-center py-12 text-gray-400">Sin vendedores</td></tr>
+              ) : (
+                vendors.map((v) => (
+                  <tr key={v.id} className={`hover:bg-gray-50 transition-colors ${!v.isActive ? 'opacity-50' : ''}`}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${v.isActive ? 'bg-[#0f49bd]' : 'bg-gray-300'}`}>
+                          {v.nombre.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                        </div>
+                        <span className="font-medium text-gray-900">{v.nombre}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{v.email}</td>
+                    <td className="px-4 py-3 text-gray-600">{v.zona || '-'}</td>
+                    <td className="px-4 py-3 text-gray-600">{v.telefono || '-'}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${v.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {v.isActive ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{v._count?.reservations ?? 0}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => handleToggle(v.id)}
+                          title={v.isActive ? 'Desactivar' : 'Activar'}
+                          className={`p-1.5 rounded-lg transition-colors ${v.isActive ? 'text-orange-500 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'}`}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            {v.isActive 
+                              ? <><rect x="1" y="5" width="22" height="14" rx="7" /><circle cx="16" cy="12" r="3" fill="currentColor" /></>
+                              : <><rect x="1" y="5" width="22" height="14" rx="7" /><circle cx="8" cy="12" r="3" fill="currentColor" /></>
+                            }
+                          </svg>
+                        </button>
+                        <button onClick={() => openEdit(v)} title="Editar" className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+                          </svg>
+                        </button>
+                        <button onClick={() => setDeleteTarget(v)} title="Eliminar" className="p-1.5 rounded-lg text-red-500 hover:bg-red-50">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 01-1-1V5a1 1 0 011-1h6a1 1 0 011 1v1a1 1 0 01-1 1H9z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </AdminPageLayout>
 
       {/* Modal crear / editar vendedor */}
       {showModal && (
@@ -319,7 +421,7 @@ const VendorsManager = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

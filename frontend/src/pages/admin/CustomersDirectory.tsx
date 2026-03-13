@@ -3,49 +3,8 @@ import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import type { Customer, EstadoCliente } from '../../types';
 import StatusBadge from '../../components/ui/StatusBadge';
-import Pagination from '../../components/ui/Pagination';
 import { showSuccess, showError } from '../../utils/notifications';
-
-// ── Exportar clientes a CSV ───────────────────────────────────────────────────
-const exportCSV = async (search: string, filterEstado: string) => {
-  try {
-    const params: Record<string, string> = { page: '1', limit: '9999' };
-    if (search) params.search = search;
-    if (filterEstado) params.estado = filterEstado;
-    const res = await api.get('/admin/customers', { params });
-    const rows: Customer[] = res.data.data;
-
-    const headers = ['Nombre', 'Teléfono', 'CURP', 'Email', 'Dirección', 'Reservas', 'Estado', 'Fecha registro'];
-    const data = rows.map((c) => [
-      c.nombreCompleto,
-      c.telefono,
-      c.curp,
-      c.email ?? '',
-      c.direccion ?? '',
-      c._count?.reservations ?? 0,
-      c.estado === 'ACTIVO' ? 'Activo' : 'Bloqueado',
-      new Date(c.createdAt).toLocaleDateString('es-MX'),
-    ]);
-
-    const csv = [headers, ...data]
-      .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `clientes_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showSuccess('Clientes exportados correctamente');
-  } catch (err) {
-    console.error('Error al exportar:', err);
-    showError('No se pudo exportar. Intenta de nuevo.');
-  }
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
+import AdminPageLayout from '../../components/admin/AdminPageLayout';
 
 const CustomersDirectory = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -57,10 +16,12 @@ const CustomersDirectory = () => {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
-  const fetchCustomers = useCallback(async () => {
+  const totalPages = Math.ceil(total / limit);
+
+  const fetchCustomers = useCallback(async (p = page, l = limit) => {
     setLoading(true);
     try {
-      const params: Record<string, string> = { page: String(page), limit: String(limit) };
+      const params: Record<string, string> = { page: String(p), limit: String(l) };
       if (search) params.search = search;
       if (filterEstado) params.estado = filterEstado;
       const res = await api.get('/admin/customers', { params });
@@ -83,75 +44,123 @@ const CustomersDirectory = () => {
     }
   };
 
-  const handleExport = async () => {
+  const exportCSV = async () => {
     setExporting(true);
-    await exportCSV(search, filterEstado);
-    setExporting(false);
+    try {
+      const params: Record<string, string> = { page: '1', limit: '9999' };
+      if (search) params.search = search;
+      if (filterEstado) params.estado = filterEstado;
+      const res = await api.get('/admin/customers', { params });
+      const rows: Customer[] = res.data.data;
+
+      const headers = ['Nombre', 'Teléfono', 'CURP', 'Email', 'Dirección', 'Reservas', 'Estado', 'Fecha registro'];
+      const data = rows.map((c) => [
+        c.nombreCompleto,
+        c.telefono,
+        c.curp,
+        c.email ?? '',
+        c.direccion ?? '',
+        c._count?.reservations ?? 0,
+        c.estado === 'ACTIVO' ? 'Activo' : 'Bloqueado',
+        new Date(c.createdAt).toLocaleDateString('es-MX'),
+      ]);
+
+      const csv = [headers, ...data]
+        .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `clientes_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showSuccess('Clientes exportados correctamente');
+    } catch (err) {
+      console.error('Error al exportar:', err);
+      showError('No se pudo exportar. Intenta de nuevo.');
+    } finally {
+      setExporting(false);
+    }
   };
 
-  const totalPages = Math.ceil(total / limit);
+  // Filtros UI
+  const filtersUI = (
+    <div className="w-32">
+      <label className="text-xs text-gray-500 block mb-1">Estado</label>
+      <select
+        value={filterEstado}
+        onChange={(e) => { setFilterEstado(e.target.value as EstadoCliente | ''); setPage(1); }}
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="">Todos</option>
+        <option value="ACTIVO">Activos</option>
+        <option value="BLOQUEADO">Bloqueados</option>
+      </select>
+    </div>
+  );
+
+  const activeFiltersUI = (
+    <>
+      {search && (
+        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+          Búsqueda: "{search}"
+          <button onClick={() => setSearch('')} className="ml-0.5 hover:text-blue-900">×</button>
+        </span>
+      )}
+      {filterEstado && (
+        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+          Estado: {filterEstado === 'ACTIVO' ? 'Activo' : 'Bloqueado'}
+          <button onClick={() => setFilterEstado('')} className="ml-0.5 hover:text-blue-900">×</button>
+        </span>
+      )}
+    </>
+  );
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Directorio de Clientes</h2>
-          <p className="text-gray-400 text-sm">{total} clientes registrados</p>
-        </div>
-        <div className="flex gap-2 flex-wrap items-center">
-          <input
-            type="text"
-            placeholder="Buscar nombre, CURP, tel..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { setPage(1); fetchCustomers(); } }}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-52"
-          />
-          <select
-            value={filterEstado}
-            onChange={(e) => { setFilterEstado(e.target.value as EstadoCliente | ''); setPage(1); }}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
-          >
-            <option value="">Todos</option>
-            <option value="ACTIVO">Activos</option>
-            <option value="BLOQUEADO">Bloqueados</option>
-          </select>
-          <button
-            onClick={handleExport}
-            disabled={exporting || total === 0}
-            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-            title="Exportar a CSV"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            {exporting ? 'Exportando...' : 'CSV'}
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                {['Cliente', 'Teléfono', 'CURP', 'Reservas', 'Estado', 'Acciones'].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {loading ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <tr key={i}>
-                    {Array.from({ length: 6 }).map((__, j) => (
-                      <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
-                    ))}
-                  </tr>
-                ))
-              ) : customers.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-12 text-gray-400">Sin clientes</td></tr>
-              ) : customers.map((c) => (
+    <AdminPageLayout
+      title="Directorio de Clientes"
+      subtitle={`${total} clientes registrados`}
+      total={total}
+      page={page}
+      totalPages={totalPages}
+      limit={limit}
+      loading={loading}
+      exporting={exporting}
+      onPageChange={setPage}
+      onLimitChange={setLimit}
+      onExport={exportCSV}
+      searchPlaceholder="Buscar por nombre, CURP o teléfono..."
+      searchValue={search}
+      onSearchChange={setSearch}
+      onKeyDown={(e) => { if (e.key === 'Enter') setPage(1); }}
+      filters={filtersUI}
+      activeFilters={activeFiltersUI}
+    >
+      {/* Tabla */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 border-b border-gray-100">
+            <tr>
+              {['Cliente', 'Teléfono', 'CURP', 'Reservas', 'Estado', 'Acciones'].map((h) => (
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {loading ? (
+              Array.from({ length: limit }).map((_, i) => (
+                <tr key={i}>
+                  {Array.from({ length: 6 }).map((__, j) => (
+                    <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
+                  ))}
+                </tr>
+              ))
+            ) : customers.length === 0 ? (
+              <tr><td colSpan={6} className="text-center py-12 text-gray-400">Sin clientes</td></tr>
+            ) : (
+              customers.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -180,21 +189,12 @@ const CustomersDirectory = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          total={total}
-          limit={limit}
-          onPageChange={setPage}
-          onLimitChange={(l) => { setLimit(l); setPage(1); }}
-        />
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
-    </div>
+    </AdminPageLayout>
   );
 };
 
