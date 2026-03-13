@@ -1,12 +1,30 @@
 import { prisma } from '../../config/database';
 
+interface DashboardFilters {
+  fechaDesde?: Date;
+  fechaHasta?: Date;
+}
+
 export class DashboardService {
-  async getAdminMetrics() {
+  async getAdminMetrics(filters: DashboardFilters = {}) {
+    const { fechaDesde, fechaHasta } = filters;
+    
+    // Si hay fechas específicas, usarlas; si no, usar rangos predefinidos
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Si hay fechas específicas, usarlas para todas las métricas
+    const whereFecha = fechaDesde || fechaHasta 
+      ? { 
+          createdAt: { 
+            ...(fechaDesde ? { gte: fechaDesde } : {}),
+            ...(fechaHasta ? { lte: fechaHasta } : {}),
+          }
+        }
+      : {};
 
     const [
       reservasHoy, reservasSemana, reservasMes,
@@ -14,13 +32,24 @@ export class DashboardService {
       vendedoresActivos, vendedoresInactivos,
       totalClientes,
     ] = await Promise.all([
-      prisma.reservation.count({ where: { createdAt: { gte: startOfToday } } }),
-      prisma.reservation.count({ where: { createdAt: { gte: startOfWeek } } }),
-      prisma.reservation.count({ where: { createdAt: { gte: startOfMonth } } }),
+      // Métricas por fecha específica o por rangos predefinidos
+      fechaDesde || fechaHasta
+        ? prisma.reservation.count({ where: whereFecha })
+        : prisma.reservation.count({ where: { createdAt: { gte: startOfToday } } }),
+      fechaDesde || fechaHasta
+        ? prisma.reservation.count({ where: whereFecha })
+        : prisma.reservation.count({ where: { createdAt: { gte: startOfWeek } } }),
+      fechaDesde || fechaHasta
+        ? prisma.reservation.count({ where: whereFecha })
+        : prisma.reservation.count({ where: { createdAt: { gte: startOfMonth } } }),
+      
+      // Métricas de estado (sin filtro de fecha, siempre son totales)
       prisma.reservation.count({ where: { estado: { in: ['NUEVA', 'ASIGNADA', 'EN_VISITA'] } } }),
       prisma.reservation.count({ where: { estado: 'VENDIDA' } }),
       prisma.reservation.count({ where: { estado: 'CANCELADA' } }),
       prisma.reservation.count({ where: { estado: 'SIN_STOCK' } }),
+      
+      // Vendedores y clientes (totales)
       prisma.user.count({ where: { isActive: true, rol: 'VENDEDOR' } }),
       prisma.user.count({ where: { isActive: false, rol: 'VENDEDOR' } }),
       prisma.customer.count(),
@@ -40,19 +69,32 @@ export class DashboardService {
     };
   }
 
-  async getChartData() {
-    // Una sola query SQL que agrupa por día en los últimos 7 días,
-    // en lugar de 7 queries individuales.
-    const since = new Date();
-    since.setDate(since.getDate() - 6);
+  async getChartData(filters: DashboardFilters = {}) {
+    const { fechaDesde, fechaHasta } = filters;
+    
+    // Calcular rango de fechas
+    let since: Date;
+    let until: Date;
+    
+    if (fechaDesde || fechaHasta) {
+      since = fechaDesde || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      until = fechaHasta || new Date();
+    } else {
+      // Por defecto: últimos 7 días
+      since = new Date();
+      since.setDate(since.getDate() - 6);
+      until = new Date();
+    }
+    
     since.setHours(0, 0, 0, 0);
+    until.setHours(23, 59, 59, 999);
 
     const rows = await prisma.$queryRaw<{ day: Date; count: bigint }[]>`
       SELECT
         DATE_TRUNC('day', "createdAt") AS day,
         COUNT(*)::bigint              AS count
       FROM reservations
-      WHERE "createdAt" >= ${since}
+      WHERE "createdAt" BETWEEN ${since} AND ${until}
       GROUP BY DATE_TRUNC('day', "createdAt")
       ORDER BY day ASC
     `;
@@ -64,26 +106,38 @@ export class DashboardService {
       countByDay.set(key, Number(row.count));
     }
 
-    // Generar los 7 días siempre en orden, con 0 si no hay datos
+    // Generar días en el rango, con 0 si no hay datos
     const days: { date: string; count: number }[] = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      d.setHours(0, 0, 0, 0);
-      const key = d.toISOString().slice(0, 10);
+    const currentDay = new Date(since);
+    
+    while (currentDay <= until) {
+      const key = currentDay.toISOString().slice(0, 10);
       days.push({
-        date: d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' }),
+        date: currentDay.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' }),
         count: countByDay.get(key) ?? 0,
       });
+      currentDay.setDate(currentDay.getDate() + 1);
     }
+    
     return days;
   }
 
-  async getStatusDistribution() {
-    // Una sola query con groupBy en lugar de 7 queries independientes.
+  async getStatusDistribution(filters: DashboardFilters = {}) {
+    const { fechaDesde, fechaHasta } = filters;
+    
+    const where = fechaDesde || fechaHasta 
+      ? { 
+          createdAt: { 
+            ...(fechaDesde ? { gte: fechaDesde } : {}),
+            ...(fechaHasta ? { lte: fechaHasta } : {}),
+          }
+        }
+      : {};
+
     const groups = await prisma.reservation.groupBy({
       by: ['estado'],
       _count: { estado: true },
+      where,
     });
     return groups
       .map((g) => ({ estado: g.estado, count: g._count.estado }))
@@ -91,7 +145,18 @@ export class DashboardService {
       .sort((a, b) => b.count - a.count);
   }
 
-  async getVendorRanking() {
+  async getVendorRanking(filters: DashboardFilters = {}) {
+    const { fechaDesde, fechaHasta } = filters;
+    
+    const reservationWhere = fechaDesde || fechaHasta 
+      ? { 
+          createdAt: { 
+            ...(fechaDesde ? { gte: fechaDesde } : {}),
+            ...(fechaHasta ? { lte: fechaHasta } : {}),
+          }
+        }
+      : {};
+
     const vendors = await prisma.user.findMany({
       where: { rol: 'VENDEDOR' },
       select: {
@@ -99,9 +164,16 @@ export class DashboardService {
         nombre: true,
         zona: true,
         isActive: true,
-        _count: { select: { reservations: true } },
+        _count: { 
+          select: { 
+            reservations: { where: reservationWhere } 
+          } 
+        },
         reservations: {
-          where: { estado: 'VENDIDA' },
+          where: { 
+            ...reservationWhere,
+            estado: 'VENDIDA' 
+          },
           select: { id: true },
         },
       },

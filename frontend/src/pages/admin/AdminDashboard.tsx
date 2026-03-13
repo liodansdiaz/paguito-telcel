@@ -28,24 +28,75 @@ const AdminDashboard = () => {
   const [ranking, setRanking] = useState<VendorRanking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Filtros de fecha
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
 
-  useEffect(() => {
-    Promise.all([
-      api.get('/dashboard/admin/metrics'),
-      api.get('/dashboard/admin/chart'),
-      api.get('/dashboard/admin/status-distribution'),
-      api.get('/dashboard/admin/vendor-ranking'),
-    ]).then(([m, c, d, r]) => {
+  const fetchData = async (desde?: string, hasta?: string) => {
+    setLoading(true);
+    try {
+      const params: Record<string, string> = {};
+      if (desde) params.fechaDesde = desde;
+      if (hasta) params.fechaHasta = hasta;
+      
+      const [m, c, d, r] = await Promise.all([
+        api.get('/dashboard/admin/metrics', { params }),
+        api.get('/dashboard/admin/chart', { params }),
+        api.get('/dashboard/admin/status-distribution', { params }),
+        api.get('/dashboard/admin/vendor-ranking', { params }),
+      ]);
+      
       setMetrics(m.data.data);
       setChart(c.data.data);
       setDistribution(d.data.data);
       setRanking(r.data.data.slice(0, 10));
       setError(null);
-    }).catch((err) => {
+    } catch (err) {
       console.error(err);
       setError('No se pudieron cargar los datos del dashboard. Verifica tu conexión e intenta de nuevo.');
-    }).finally(() => setLoading(false));
-  }, []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData(fechaDesde, fechaHasta);
+  }, [fechaDesde, fechaHasta]);
+
+  // Presets de fecha
+  const applyPreset = (preset: string) => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    switch (preset) {
+      case 'hoy':
+        setFechaDesde(todayStr);
+        setFechaHasta(todayStr);
+        break;
+      case 'semana':
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        setFechaDesde(startOfWeek.toISOString().split('T')[0]);
+        setFechaHasta(todayStr);
+        break;
+      case 'mes':
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        setFechaDesde(startOfMonth.toISOString().split('T')[0]);
+        setFechaHasta(todayStr);
+        break;
+      case 'ultimos7':
+        const startOf7Days = new Date(today);
+        startOf7Days.setDate(today.getDate() - 7);
+        setFechaDesde(startOf7Days.toISOString().split('T')[0]);
+        setFechaHasta(todayStr);
+        break;
+      case 'todos':
+        setFechaDesde('');
+        setFechaHasta('');
+        break;
+    }
+  };
 
   if (loading) {
     return (
@@ -78,9 +129,82 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">Dashboard General</h2>
-        <p className="text-gray-400 text-sm">Resumen del sistema en tiempo real</p>
+      {/* Cabecera con filtros de fecha */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Dashboard General</h2>
+          <p className="text-gray-400 text-sm">
+            Resumen del sistema 
+            {fechaDesde && fechaHasta 
+              ? ` (${new Date(fechaDesde).toLocaleDateString('es-MX')} - ${new Date(fechaHasta).toLocaleDateString('es-MX')})`
+              : ' en tiempo real'
+            }
+          </p>
+        </div>
+        
+        {/* Filtros de fecha */}
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Presets rápidos */}
+          <div className="flex gap-1">
+            <button
+              onClick={() => applyPreset('todos')}
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                !fechaDesde && !fechaHasta 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Todos
+            </button>
+            <button
+              onClick={() => applyPreset('hoy')}
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                fechaDesde === fechaHasta && fechaDesde
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Hoy
+            </button>
+            <button
+              onClick={() => applyPreset('semana')}
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                fechaDesde && !fechaHasta && fechaDesde !== fechaHasta
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Esta semana
+            </button>
+            <button
+              onClick={() => applyPreset('mes')}
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                fechaDesde && !fechaHasta && fechaDesde !== fechaHasta
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Este mes
+            </button>
+          </div>
+          
+          {/* Inputs de fecha */}
+          <div className="flex gap-2 items-center ml-2 pl-2 border-l border-gray-200">
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => setFechaDesde(e.target.value)}
+              className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-gray-400">-</span>
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => setFechaHasta(e.target.value)}
+              className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
       </div>
 
       {/* KPIs */}

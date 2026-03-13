@@ -7,7 +7,11 @@ import { isRedisAvailable } from '../../config/redis';
 export class DashboardController {
   async getAdminMetrics(req: Request, res: Response, next: NextFunction) {
     try {
-      const metrics = await dashboardService.getAdminMetrics();
+      const { fechaDesde, fechaHasta } = req.query;
+      const metrics = await dashboardService.getAdminMetrics({
+        fechaDesde: fechaDesde ? new Date(fechaDesde as string) : undefined,
+        fechaHasta: fechaHasta ? new Date(fechaHasta as string) : undefined,
+      });
       sendSuccess(res, metrics);
     } catch (err) {
       next(err);
@@ -16,7 +20,11 @@ export class DashboardController {
 
   async getChartData(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await dashboardService.getChartData();
+      const { fechaDesde, fechaHasta } = req.query;
+      const data = await dashboardService.getChartData({
+        fechaDesde: fechaDesde ? new Date(fechaDesde as string) : undefined,
+        fechaHasta: fechaHasta ? new Date(fechaHasta as string) : undefined,
+      });
       sendSuccess(res, data);
     } catch (err) {
       next(err);
@@ -25,7 +33,11 @@ export class DashboardController {
 
   async getStatusDistribution(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await dashboardService.getStatusDistribution();
+      const { fechaDesde, fechaHasta } = req.query;
+      const data = await dashboardService.getStatusDistribution({
+        fechaDesde: fechaDesde ? new Date(fechaDesde as string) : undefined,
+        fechaHasta: fechaHasta ? new Date(fechaHasta as string) : undefined,
+      });
       sendSuccess(res, data);
     } catch (err) {
       next(err);
@@ -34,7 +46,11 @@ export class DashboardController {
 
   async getVendorRanking(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await dashboardService.getVendorRanking();
+      const { fechaDesde, fechaHasta } = req.query;
+      const data = await dashboardService.getVendorRanking({
+        fechaDesde: fechaDesde ? new Date(fechaDesde as string) : undefined,
+        fechaHasta: fechaHasta ? new Date(fechaHasta as string) : undefined,
+      });
       sendSuccess(res, data);
     } catch (err) {
       next(err);
