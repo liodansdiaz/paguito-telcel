@@ -4,6 +4,7 @@ import api from '../../services/api';
 import type { Customer, EstadoCliente } from '../../types';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
+import { showSuccess, showError } from '../../utils/notifications';
 
 // ── Exportar clientes a CSV ───────────────────────────────────────────────────
 const exportCSV = async (search: string, filterEstado: string) => {
@@ -37,9 +38,10 @@ const exportCSV = async (search: string, filterEstado: string) => {
     a.download = `clientes_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    showSuccess('Clientes exportados correctamente');
   } catch (err) {
     console.error('Error al exportar:', err);
-    alert('No se pudo exportar. Intenta de nuevo.');
+    showError('No se pudo exportar. Intenta de nuevo.');
   }
 };
 
@@ -74,8 +76,11 @@ const CustomersDirectory = () => {
     const newStatus: EstadoCliente = customer.estado === 'ACTIVO' ? 'BLOQUEADO' : 'ACTIVO';
     try {
       await api.patch(`/admin/customers/${customer.id}/status`, { estado: newStatus });
+      showSuccess(`Cliente ${newStatus === 'ACTIVO' ? 'activado' : 'bloqueado'} correctamente`);
       fetchCustomers();
-    } catch (err: any) { alert(err.response?.data?.message || 'Error'); }
+    } catch (err: any) { 
+      showError(err.response?.data?.message || 'Error al cambiar estado del cliente');
+    }
   };
 
   const handleExport = async () => {

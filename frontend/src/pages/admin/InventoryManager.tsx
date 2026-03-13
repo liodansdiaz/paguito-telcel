@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import api from '../../services/api';
 import { toImageUrl } from '../../services/config';
 import type { Product } from '../../types';
+import { showSuccess, showError } from '../../utils/notifications';
 
 const productSchema = z.object({
   sku: z.string().min(1, 'SKU requerido'),
@@ -452,6 +453,7 @@ const InventoryManager = () => {
         });
       }
 
+      showSuccess(isEditing ? 'Producto actualizado correctamente' : 'Producto creado correctamente');
       closeForm();
       fetchProducts(page, limit, sortBy, filterActive);
     } catch (err: any) { setFormError(err.response?.data?.message || 'Error al guardar'); }
@@ -461,8 +463,11 @@ const InventoryManager = () => {
   const handleToggle = async (id: string) => {
     try {
       await api.patch(`/products/admin/${id}/toggle`);
+      showSuccess('Producto actualizado correctamente');
       fetchProducts(page, limit, sortBy, filterActive);
-    } catch (err: any) { alert(err.response?.data?.message || 'Error'); }
+    } catch (err: any) { 
+      showError(err.response?.data?.message || 'Error al cambiar estado del producto');
+    }
   };
 
   // ── Eliminar ─────────────────────────────────────────────────────────────
@@ -471,9 +476,12 @@ const InventoryManager = () => {
     setDeleting(true);
     try {
       await api.delete(`/products/admin/${deleteTarget.id}`);
+      showSuccess('Producto eliminado correctamente');
       setDeleteTarget(null);
       fetchProducts(page, limit, sortBy, filterActive);
-    } catch (err: any) { alert(err.response?.data?.message || 'Error al eliminar'); }
+    } catch (err: any) { 
+      showError(err.response?.data?.message || 'Error al eliminar producto');
+    }
     finally { setDeleting(false); }
   };
 

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import api from '../../services/api';
 import type { User } from '../../types';
+import { showSuccess, showError } from '../../utils/notifications';
 
 const createSchema = z.object({
   nombre: z.string().min(2, 'Nombre requerido'),
@@ -62,8 +63,11 @@ const VendorsManager = () => {
   const handleToggle = async (id: string) => {
     try {
       await api.patch(`/admin/users/${id}/toggle`);
+      showSuccess('Vendedor actualizado correctamente');
       fetchVendors();
-    } catch (err: any) { alert(err.response?.data?.message || 'Error'); }
+    } catch (err: any) { 
+      showError(err.response?.data?.message || 'Error al cambiar estado del vendedor');
+    }
   };
 
   const onSubmit = async (data: VendorForm) => {
@@ -78,8 +82,10 @@ const VendorsManager = () => {
         };
         if (data.password) payload.password = data.password;
         await api.put(`/admin/users/${editingVendor.id}`, payload);
+        showSuccess('Vendedor actualizado correctamente');
       } else {
         await api.post('/admin/users', { ...data, rol: 'VENDEDOR' });
+        showSuccess('Vendedor creado correctamente');
       }
       closeModal();
       fetchVendors();
@@ -93,10 +99,11 @@ const VendorsManager = () => {
     setDeleting(true);
     try {
       await api.delete(`/admin/users/${deleteTarget.id}`);
+      showSuccess('Vendedor eliminado correctamente');
       setDeleteTarget(null);
       fetchVendors();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Error al eliminar');
+      showError(err.response?.data?.message || 'Error al eliminar vendedor');
     } finally {
       setDeleting(false);
     }

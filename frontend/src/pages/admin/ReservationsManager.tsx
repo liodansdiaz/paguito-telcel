@@ -3,6 +3,7 @@ import api from '../../services/api';
 import type { Reservation, EstadoReserva, User } from '../../types';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
+import { showSuccess, showError } from '../../utils/notifications';
 
 const ESTADOS: EstadoReserva[] = ['NUEVA', 'ASIGNADA', 'EN_VISITA', 'VENDIDA', 'NO_CONCRETADA', 'CANCELADA', 'SIN_STOCK'];
 const estadoLabel: Record<EstadoReserva, string> = {
@@ -47,9 +48,10 @@ const exportCSV = async (filterEstado: string, search: string) => {
     a.download = `reservas_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    showSuccess('Reservas exportadas correctamente');
   } catch (err) {
     console.error('Error al exportar:', err);
-    alert('No se pudo exportar. Intenta de nuevo.');
+    showError('No se pudo exportar. Intenta de nuevo.');
   }
 };
 
@@ -99,9 +101,12 @@ const ReservationsManager = () => {
     setActionLoading(true);
     try {
       await api.patch(`/reservations/admin/${assignModal.reservation.id}/assign`, { vendorId: assignVendorId });
+      showSuccess('Vendedor asignado correctamente');
       setAssignModal({ open: false, reservation: null });
       fetchReservations();
-    } catch (err: any) { alert(err.response?.data?.message || 'Error al asignar'); }
+    } catch (err: any) { 
+      showError(err.response?.data?.message || 'Error al asignar vendedor');
+    }
     finally { setActionLoading(false); }
   };
 
@@ -110,10 +115,13 @@ const ReservationsManager = () => {
     setActionLoading(true);
     try {
       await api.patch(`/reservations/admin/${statusModal.reservation.id}/status`, { estado: newStatus, notas });
+      showSuccess('Estado actualizado correctamente');
       setStatusModal({ open: false, reservation: null });
       setNotas('');
       fetchReservations();
-    } catch (err: any) { alert(err.response?.data?.message || 'Error al cambiar estado'); }
+    } catch (err: any) { 
+      showError(err.response?.data?.message || 'Error al cambiar estado');
+    }
     finally { setActionLoading(false); }
   };
 
@@ -168,7 +176,7 @@ const ReservationsManager = () => {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {['ID', 'Cliente', 'Celular', 'Producto', 'Notas', 'Pago', 'Fecha', 'Vendedor', 'Estado', 'Acciones'].map((h) => (
+                {['ID', 'Cliente', 'Producto', 'Dirección', 'Notas', 'Pago', 'Fecha', 'Vendedor', 'Estado', 'Acciones'].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -193,15 +201,6 @@ const ReservationsManager = () => {
                       <p className="text-gray-400 text-xs">{r.telefono}</p>
                     </td>
                     <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{r.product?.nombre}</td>
-                    <td className="px-4 py-3 max-w-[150px]">
-                      {r.notas ? (
-                        <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded inline-block truncate" title={r.notas}>
-                          {r.notas}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-400">—</span>
-                      )}
-                    </td>
                     <td className="px-4 py-3 max-w-[200px]">
                       <p className="text-gray-700 text-xs truncate" title={r.direccion}>{r.direccion}</p>
                       {r.latitude !== null && r.longitude !== null && (
@@ -217,6 +216,17 @@ const ReservationsManager = () => {
                           </svg>
                           Ver mapa
                         </a>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 max-w-[200px]">
+                      {r.notas ? (
+                        <div className="max-w-[200px]">
+                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded inline-block max-w-full truncate" title={r.notas}>
+                            {r.notas}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
