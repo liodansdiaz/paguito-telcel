@@ -330,6 +330,18 @@ const InventoryManager = () => {
   const [sortBy, setSortBy] = useState('reciente');
   const [page, setPage] = useState(1);
 
+  // Filtros de búsqueda avanzada
+  const [search, setSearch] = useState('');
+  const [selectedMarca, setSelectedMarca] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
+  const [selectedMemoria, setSelectedMemoria] = useState('');
+  const [precioMin, setPrecioMin] = useState<number | undefined>(undefined);
+  const [precioMax, setPrecioMax] = useState<number | undefined>(undefined);
+
+  // Opciones dinámicas para filtros
+  const [marcas, setMarcas] = useState<string[]>([]);
+  const [colores, setColores] = useState<string[]>([]);
+
   // Modal crear/editar
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -357,6 +369,13 @@ const InventoryManager = () => {
     try {
       const params: Record<string, string> = { limit: String(l), page: String(p), sort: s };
       if (a !== '') params.isActive = a;
+      if (search) params.search = search;
+      if (selectedMarca) params.marca = selectedMarca;
+      if (selectedColor) params.color = selectedColor;
+      if (selectedMemoria) params.memoria = selectedMemoria;
+      if (precioMin !== undefined) params.precioMin = String(precioMin);
+      if (precioMax !== undefined) params.precioMax = String(precioMax);
+      
       const res = await api.get('/products/admin/list', { params });
       setProducts(res.data.data);
       setTotal(res.data.pagination.total);
@@ -364,7 +383,28 @@ const InventoryManager = () => {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { setPage(1); fetchProducts(1, limit, sortBy, filterActive); }, [filterActive, limit, sortBy]);
+  useEffect(() => { 
+    setPage(1); 
+    fetchProducts(1, limit, sortBy, filterActive); 
+  }, [filterActive, limit, sortBy, search, selectedMarca, selectedColor, selectedMemoria, precioMin, precioMax]);
+
+  // Obtener opciones dinámicas para filtros
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const [marcasRes, coloresRes] = await Promise.all([
+          api.get('/products/marcas'),
+          api.get('/products/colores'),
+        ]);
+        setMarcas(marcasRes.data.data || []);
+        setColores(coloresRes.data.data || []);
+        // Para memorias, extraerlas de los productos existentes o agregar endpoint si es necesario
+      } catch (err) {
+        console.error('Error al cargar opciones de filtros:', err);
+      }
+    };
+    fetchOptions();
+  }, []);
 
   // ── Abrir formulario de edición ──────────────────────────────────────────
   const openEdit = (product: Product) => {
@@ -488,13 +528,171 @@ const InventoryManager = () => {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
-      {/* Cabecera y controles */}
+      {/* Cabecera */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Inventario y Stock</h2>
           <p className="text-gray-400 text-sm">{total} productos · página {page} de {totalPages || 1}</p>
         </div>
-        <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex gap-2 items-center">
+          <select value={limit} onChange={(e) => setLimit(Number(e.target.value))}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value={10}>Mostrar 10</option>
+            <option value={20}>Mostrar 20</option>
+            <option value={50}>Mostrar 50</option>
+          </select>
+          <button onClick={openCreate}
+            className="bg-[#0f49bd] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors whitespace-nowrap">
+            + Agregar producto
+          </button>
+        </div>
+      </div>
+
+      {/* Búsqueda avanzada */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <div className="flex flex-wrap gap-3 items-end">
+          {/* Buscador principal */}
+          <div className="flex-1 min-w-[200px]">
+            <label className="text-xs text-gray-500 block mb-1">Buscar</label>
+            <input
+              type="text"
+              placeholder="SKU, nombre o marca..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          {/* Filtro por Marca */}
+          <div className="w-40">
+            <label className="text-xs text-gray-500 block mb-1">Marca</label>
+            <select
+              value={selectedMarca}
+              onChange={(e) => setSelectedMarca(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todas</option>
+              {marcas.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Filtro por Color */}
+          <div className="w-32">
+            <label className="text-xs text-gray-500 block mb-1">Color</label>
+            <select
+              value={selectedColor}
+              onChange={(e) => setSelectedColor(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todos</option>
+              {colores.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Filtro por Memoria */}
+          <div className="w-32">
+            <label className="text-xs text-gray-500 block mb-1">Memoria</label>
+            <select
+              value={selectedMemoria}
+              onChange={(e) => setSelectedMemoria(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todas</option>
+              {['64 GB', '128 GB', '256 GB', '512 GB', '1 TB'].map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Rango de precios */}
+          <div className="w-48">
+            <label className="text-xs text-gray-500 block mb-1">Precio</label>
+            <div className="flex gap-1 items-center">
+              <input
+                type="number"
+                placeholder="Mín"
+                value={precioMin ?? ''}
+                onChange={(e) => setPrecioMin(e.target.value ? parseFloat(e.target.value) : undefined)}
+                className="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <span className="text-gray-400 text-sm">-</span>
+              <input
+                type="number"
+                placeholder="Máx"
+                value={precioMax ?? ''}
+                onChange={(e) => setPrecioMax(e.target.value ? parseFloat(e.target.value) : undefined)}
+                className="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          
+          {/* Botón limpiar */}
+          <button
+            onClick={() => {
+              setSearch('');
+              setSelectedMarca('');
+              setSelectedColor('');
+              setSelectedMemoria('');
+              setPrecioMin(undefined);
+              setPrecioMax(undefined);
+            }}
+            className="text-sm text-blue-600 hover:text-blue-800 px-2 py-2"
+          >
+            Limpiar filtros
+          </button>
+        </div>
+        
+        {/* Filtros activos */}
+        {(search || selectedMarca || selectedColor || selectedMemoria || precioMin || precioMax) && (
+          <div className="mt-3 flex flex-wrap gap-2 items-center">
+            <span className="text-xs text-gray-500">Filtros activos:</span>
+            {search && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                Búsqueda: "{search}"
+                <button onClick={() => setSearch('')} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+            {selectedMarca && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                Marca: {selectedMarca}
+                <button onClick={() => setSelectedMarca('')} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+            {selectedColor && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                Color: {selectedColor}
+                <button onClick={() => setSelectedColor('')} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+            {selectedMemoria && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                Memoria: {selectedMemoria}
+                <button onClick={() => setSelectedMemoria('')} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+            {precioMin !== undefined && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                Precio min: ${precioMin}
+                <button onClick={() => setPrecioMin(undefined)} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+            {precioMax !== undefined && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                Precio max: ${precioMax}
+                <button onClick={() => setPrecioMax(undefined)} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Controles adicionales */}
+      <div className="flex flex-wrap gap-2 items-center justify-between">
+        <div className="flex gap-2 items-center">
           <select value={filterActive} onChange={(e) => setFilterActive(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Todos</option>
@@ -508,16 +706,6 @@ const InventoryManager = () => {
             <option value="precio_asc">Menor precio</option>
             <option value="nombre_asc">Nombre A–Z</option>
           </select>
-          <select value={limit} onChange={(e) => setLimit(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value={10}>Mostrar 10</option>
-            <option value={20}>Mostrar 20</option>
-            <option value={50}>Mostrar 50</option>
-          </select>
-          <button onClick={openCreate}
-            className="bg-[#0f49bd] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors whitespace-nowrap">
-            + Agregar producto
-          </button>
         </div>
       </div>
 
