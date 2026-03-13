@@ -52,13 +52,15 @@ export class ReservationController {
   // Admin: listado
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { estado, vendorId, search, fechaDesde, fechaHasta, page, limit } = req.query;
+      const { estado, vendorId, search, fechaDesde, fechaHasta, tipoPago, producto, page, limit } = req.query;
       const result = await reservationService.getAll({
         estado: estado as EstadoReserva,
         vendorId: vendorId as string,
         search: search as string,
         fechaDesde: fechaDesde ? new Date(fechaDesde as string) : undefined,
         fechaHasta: fechaHasta ? new Date(fechaHasta as string) : undefined,
+        tipoPago: tipoPago as 'CONTADO' | 'CREDITO' | undefined,
+        producto: producto as string,
         page: page ? parseInt(page as string) : 1,
         limit: limit ? parseInt(limit as string) : 20,
       });

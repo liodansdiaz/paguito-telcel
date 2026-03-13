@@ -12,11 +12,24 @@ const estadoLabel: Record<EstadoReserva, string> = {
 };
 
 // ── Exportar a CSV ────────────────────────────────────────────────────────────
-const exportCSV = async (filterEstado: string, search: string) => {
+const exportCSV = async (filters: {
+  estado: string;
+  search: string;
+  vendorId: string;
+  fechaDesde: string;
+  fechaHasta: string;
+  producto: string;
+  tipoPago: string;
+}) => {
   try {
     const params: Record<string, string> = { page: '1', limit: '9999' };
-    if (filterEstado) params.estado = filterEstado;
-    if (search) params.search = search;
+    if (filters.estado) params.estado = filters.estado;
+    if (filters.search) params.search = filters.search;
+    if (filters.vendorId) params.vendorId = filters.vendorId;
+    if (filters.fechaDesde) params.fechaDesde = filters.fechaDesde;
+    if (filters.fechaHasta) params.fechaHasta = filters.fechaHasta;
+    if (filters.producto) params.producto = filters.producto;
+    if (filters.tipoPago) params.tipoPago = filters.tipoPago;
     const res = await api.get('/reservations/admin', { params });
     const rows: Reservation[] = res.data.data;
 
@@ -68,6 +81,13 @@ const ReservationsManager = () => {
   const [search, setSearch] = useState('');
   const [vendors, setVendors] = useState<User[]>([]);
 
+  // Filtros de búsqueda avanzada
+  const [searchProducto, setSearchProducto] = useState('');
+  const [filterTipoPago, setFilterTipoPago] = useState('');
+  const [filterVendor, setFilterVendor] = useState('');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
+
   // Modal estados
   const [assignModal, setAssignModal] = useState<{ open: boolean; reservation: Reservation | null }>({ open: false, reservation: null });
   const [statusModal, setStatusModal] = useState<{ open: boolean; reservation: Reservation | null }>({ open: false, reservation: null });
@@ -82,12 +102,17 @@ const ReservationsManager = () => {
       const params: Record<string, string> = { page: String(page), limit: String(limit) };
       if (filterEstado) params.estado = filterEstado;
       if (search) params.search = search;
+      if (filterVendor) params.vendorId = filterVendor;
+      if (fechaDesde) params.fechaDesde = fechaDesde;
+      if (fechaHasta) params.fechaHasta = fechaHasta;
+      if (searchProducto) params.producto = searchProducto;
+      if (filterTipoPago) params.tipoPago = filterTipoPago;
       const res = await api.get('/reservations/admin', { params });
       setReservations(res.data.data);
       setTotal(res.data.pagination.total);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
-  }, [page, limit, filterEstado, search]);
+  }, [page, limit, filterEstado, search, filterVendor, fechaDesde, fechaHasta, searchProducto, filterTipoPago]);
 
   useEffect(() => { fetchReservations(); }, [fetchReservations]);
 
@@ -127,7 +152,15 @@ const ReservationsManager = () => {
 
   const handleExport = async () => {
     setExporting(true);
-    await exportCSV(filterEstado, search);
+    await exportCSV({
+      estado: filterEstado,
+      search,
+      vendorId: filterVendor,
+      fechaDesde,
+      fechaHasta,
+      producto: searchProducto,
+      tipoPago: filterTipoPago,
+    });
     setExporting(false);
   };
 
@@ -135,27 +168,19 @@ const ReservationsManager = () => {
 
   return (
     <div className="space-y-5">
+      {/* Cabecera */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Gestión de Reservas</h2>
           <p className="text-gray-400 text-sm">{total} reservas en total</p>
         </div>
-        <div className="flex gap-2 flex-wrap items-center">
-          <input
-            type="text"
-            placeholder="Buscar cliente, CURP..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { setPage(1); fetchReservations(); } }}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"
-          />
-          <select
-            value={filterEstado}
-            onChange={(e) => { setFilterEstado(e.target.value); setPage(1); }}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Todos los estados</option>
-            {ESTADOS.map((e) => <option key={e} value={e}>{estadoLabel[e]}</option>)}
+        <div className="flex gap-2 items-center">
+          <select value={limit} onChange={(e) => setLimit(Number(e.target.value))}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value={10}>Mostrar 10</option>
+            <option value={15}>Mostrar 15</option>
+            <option value={25}>Mostrar 25</option>
+            <option value={50}>Mostrar 50</option>
           </select>
           <button
             onClick={handleExport}
@@ -169,6 +194,169 @@ const ReservationsManager = () => {
             {exporting ? 'Exportando...' : 'CSV'}
           </button>
         </div>
+      </div>
+
+      {/* Búsqueda avanzada */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <div className="flex flex-wrap gap-3 items-end">
+          {/* Buscador principal */}
+          <div className="flex-1 min-w-[200px]">
+            <label className="text-xs text-gray-500 block mb-1">Buscar</label>
+            <input
+              type="text"
+              placeholder="Cliente, CURP, teléfono..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          {/* Filtro por Estado */}
+          <div className="w-36">
+            <label className="text-xs text-gray-500 block mb-1">Estado</label>
+            <select
+              value={filterEstado}
+              onChange={(e) => setFilterEstado(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todos</option>
+              {ESTADOS.map((e) => (
+                <option key={e} value={e}>{estadoLabel[e]}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Filtro por Vendedor */}
+          <div className="w-40">
+            <label className="text-xs text-gray-500 block mb-1">Vendedor</label>
+            <select
+              value={filterVendor}
+              onChange={(e) => setFilterVendor(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todos</option>
+              {vendors.map((v) => (
+                <option key={v.id} value={v.id}>{v.nombre}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Filtro por Tipo de Pago */}
+          <div className="w-32">
+            <label className="text-xs text-gray-500 block mb-1">Pago</label>
+            <select
+              value={filterTipoPago}
+              onChange={(e) => setFilterTipoPago(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todos</option>
+              <option value="CONTADO">Contado</option>
+              <option value="CREDITO">Crédito</option>
+            </select>
+          </div>
+        </div>
+        
+        {/* Segunda fila: Fechas y búsqueda por producto */}
+        <div className="flex flex-wrap gap-3 items-end mt-3">
+          {/* Buscador por producto */}
+          <div className="flex-1 min-w-[200px]">
+            <label className="text-xs text-gray-500 block mb-1">Producto</label>
+            <input
+              type="text"
+              placeholder="Buscar por nombre de celular..."
+              value={searchProducto}
+              onChange={(e) => setSearchProducto(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          {/* Fecha Desde */}
+          <div className="w-40">
+            <label className="text-xs text-gray-500 block mb-1">Fecha Desde</label>
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => setFechaDesde(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          {/* Fecha Hasta */}
+          <div className="w-40">
+            <label className="text-xs text-gray-500 block mb-1">Fecha Hasta</label>
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => setFechaHasta(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          {/* Botón limpiar */}
+          <button
+            onClick={() => {
+              setSearch('');
+              setFilterEstado('');
+              setFilterVendor('');
+              setFilterTipoPago('');
+              setSearchProducto('');
+              setFechaDesde('');
+              setFechaHasta('');
+            }}
+            className="text-sm text-blue-600 hover:text-blue-800 px-2 py-2"
+          >
+            Limpiar filtros
+          </button>
+        </div>
+        
+        {/* Filtros activos */}
+        {(search || filterEstado || filterVendor || filterTipoPago || searchProducto || fechaDesde || fechaHasta) && (
+          <div className="mt-3 flex flex-wrap gap-2 items-center">
+            <span className="text-xs text-gray-500">Filtros activos:</span>
+            {search && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                Búsqueda: "{search}"
+                <button onClick={() => setSearch('')} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+            {filterEstado && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                Estado: {estadoLabel[filterEstado as EstadoReserva]}
+                <button onClick={() => setFilterEstado('')} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+            {filterVendor && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                Vendedor: {vendors.find(v => v.id === filterVendor)?.nombre || ''}
+                <button onClick={() => setFilterVendor('')} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+            {filterTipoPago && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                Pago: {filterTipoPago === 'CONTADO' ? 'Contado' : 'Crédito'}
+                <button onClick={() => setFilterTipoPago('')} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+            {searchProducto && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                Producto: "{searchProducto}"
+                <button onClick={() => setSearchProducto('')} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+            {fechaDesde && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                Desde: {new Date(fechaDesde).toLocaleDateString('es-MX')}
+                <button onClick={() => setFechaDesde('')} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+            {fechaHasta && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                Hasta: {new Date(fechaHasta).toLocaleDateString('es-MX')}
+                <button onClick={() => setFechaHasta('')} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">

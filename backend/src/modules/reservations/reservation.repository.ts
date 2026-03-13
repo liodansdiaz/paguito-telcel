@@ -8,6 +8,8 @@ export interface ReservationFilters {
   fechaDesde?: Date;
   fechaHasta?: Date;
   search?: string;
+  tipoPago?: 'CONTADO' | 'CREDITO';
+  producto?: string;
   page?: number;
   limit?: number;
 }
@@ -20,13 +22,14 @@ const reservationInclude = {
 
 export class ReservationRepository {
   async findAll(filters: ReservationFilters = {}) {
-    const { estado, vendorId, customerId, fechaDesde, fechaHasta, search, page = 1, limit = 20 } = filters;
+    const { estado, vendorId, customerId, fechaDesde, fechaHasta, search, tipoPago, producto, page = 1, limit = 20 } = filters;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ReservationWhereInput = {};
     if (estado) where.estado = estado;
     if (vendorId) where.vendorId = vendorId;
     if (customerId) where.customerId = customerId;
+    if (tipoPago) where.tipoPago = tipoPago;
     if (fechaDesde || fechaHasta) {
       where.createdAt = {};
       if (fechaDesde) (where.createdAt as any).gte = fechaDesde;
@@ -38,6 +41,11 @@ export class ReservationRepository {
         { telefono: { contains: search } },
         { curp: { contains: search, mode: 'insensitive' } },
       ];
+    }
+    if (producto) {
+      where.product = {
+        nombre: { contains: producto, mode: 'insensitive' }
+      };
     }
 
     const [data, total] = await Promise.all([
@@ -86,7 +94,7 @@ export class ReservationRepository {
     const upper = busqueda.toUpperCase().trim();
 
     // Estados que el cliente puede consultar: NUEVA, ASIGNADA, EN_VISITA
-    const estadosConsultables = ['NUEVA', 'ASIGNADA', 'EN_VISITA'] as const;
+    const estadosConsultables: EstadoReserva[] = ['NUEVA', 'ASIGNADA', 'EN_VISITA'];
 
     // Determinar modo de búsqueda por longitud/formato
     let where: Prisma.ReservationWhereInput;
