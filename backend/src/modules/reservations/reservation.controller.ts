@@ -3,12 +3,26 @@ import { z } from 'zod';
 import { reservationService } from './reservation.service';
 import { sendSuccess, sendPaginated } from '../../shared/utils/response.helper';
 import { EstadoReserva } from '@prisma/client';
+import { isValidCURP, isValidPhoneMX, formatCURP, cleanPhoneMX, validationMessages } from '../../shared/utils/validators';
 
 const createReservationSchema = z.object({
   productId: z.string().uuid('ID de producto inválido'),
   nombreCompleto: z.string().min(3, 'Nombre completo requerido'),
-  telefono: z.string().regex(/^[\d\s\-\+\(\)]{10,15}$/, 'Teléfono inválido. Ej: 55 1234 5678 o +52 55 1234 5678').min(10).max(15),
-  curp: z.string().regex(/^[A-Z]{4}\d{6}[HM][A-Z]{2}[A-Z\d]{3}\d$/, 'CURP inválida. Formato: 4 letras, 6 dígitos, H/M, 2 letras, 3 caracteres, 1 dígito').length(18, 'CURP debe tener 18 caracteres'),
+  telefono: z.string()
+    .min(1, validationMessages.phone.required)
+    .transform((val) => cleanPhoneMX(val))
+    .refine((val) => isValidPhoneMX(val), {
+      message: validationMessages.phone.invalid,
+    }),
+  curp: z.string()
+    .min(1, validationMessages.curp.required)
+    .transform((val) => formatCURP(val))
+    .refine((val) => val.length === 18, {
+      message: validationMessages.curp.length,
+    })
+    .refine((val) => isValidCURP(val), {
+      message: validationMessages.curp.invalid,
+    }),
   tipoPago: z.enum(['CONTADO', 'CREDITO']),
   direccion: z.string().min(10, 'Dirección completa requerida'),
   fechaPreferida: z.string().transform((val) => new Date(val)),

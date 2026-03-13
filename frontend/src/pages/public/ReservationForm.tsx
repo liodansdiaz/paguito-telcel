@@ -12,6 +12,7 @@ import { getColorHex } from '../../utils/colors';
 import type { Product } from '../../types';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { validateSchedule, getMinTime, getMaxTime } from '../../hooks/useScheduleValidator';
+import { isValidCURP, isValidPhoneMX, formatCURP, cleanPhoneMX, validationMessages } from '../../utils/validators';
 
 // ── Tapachula, Chiapas ──────────────────────────────────────────────────────
 const DEFAULT_CENTER: [number, number] = [14.9054, -92.2634];
@@ -81,13 +82,26 @@ const MapPanner = ({ center, zoom }: { center: [number, number]; zoom: number })
   return null;
 };
 
-// ── Zod schema ──────────────────────────────────────────────────────────────
+// ── Zod schema con validaciones reales ─────────────────────────────────────
 const schema = z.object({
-  nombreCompleto: z.string().min(3, 'Nombre requerido'),
-  telefono: z.string().min(10).max(15),
-  curp: z.string().length(18, 'CURP debe tener 18 caracteres'),
+  nombreCompleto: z.string().min(3, 'El nombre completo debe tener al menos 3 caracteres'),
+  telefono: z.string()
+    .min(1, validationMessages.phone.required)
+    .transform((val) => cleanPhoneMX(val))
+    .refine((val) => isValidPhoneMX(val), {
+      message: validationMessages.phone.invalid,
+    }),
+  curp: z.string()
+    .min(1, validationMessages.curp.required)
+    .transform((val) => formatCURP(val))
+    .refine((val) => val.length === 18, {
+      message: validationMessages.curp.length,
+    })
+    .refine((val) => isValidCURP(val), {
+      message: validationMessages.curp.invalid,
+    }),
   tipoPago: z.enum(['CONTADO', 'CREDITO']),
-  direccion: z.string().min(10, 'Direccion completa requerida'),
+  direccion: z.string().min(10, 'La dirección completa es requerida (mínimo 10 caracteres)'),
   fechaPreferida: z.string().min(1, 'Selecciona una fecha'),
   horarioPreferido: z.string().min(1, 'Selecciona un horario'),
 });
@@ -335,14 +349,52 @@ const ReservationForm = () => {
         {/* Teléfono + CURP */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Telefono *</label>
-            <input {...register('telefono')} type="tel" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm" placeholder="55 1234 5678" />
-            {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono.message}</p>}
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Teléfono *
+            </label>
+            <input 
+              {...register('telefono')} 
+              type="tel" 
+              className={`w-full border rounded-lg px-4 py-2.5 text-sm ${
+                errors.telefono ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
+              placeholder="9621234567" 
+            />
+            {errors.telefono && (
+              <p className="text-red-500 text-xs mt-1 flex items-start gap-1">
+                <svg className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.telefono.message}
+              </p>
+            )}
+            {!errors.telefono && (
+              <p className="text-gray-500 text-xs mt-1">10 dígitos sin espacios (ej: 9621234567)</p>
+            )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">CURP *</label>
-            <input {...register('curp')} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm uppercase" placeholder="XXXX000000XXXXXX00" maxLength={18} />
-            {errors.curp && <p className="text-red-500 text-xs mt-1">{errors.curp.message}</p>}
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              CURP *
+            </label>
+            <input 
+              {...register('curp')} 
+              className={`w-full border rounded-lg px-4 py-2.5 text-sm uppercase ${
+                errors.curp ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
+              placeholder="XXXX000000XXXXXX00" 
+              maxLength={18} 
+            />
+            {errors.curp && (
+              <p className="text-red-500 text-xs mt-1 flex items-start gap-1">
+                <svg className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.curp.message}
+              </p>
+            )}
+            {!errors.curp && (
+              <p className="text-gray-500 text-xs mt-1">18 caracteres (ej: DIAZ901215HCSRZL09)</p>
+            )}
           </div>
         </div>
 
