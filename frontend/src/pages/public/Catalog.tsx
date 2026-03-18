@@ -43,16 +43,6 @@ const IconCart = () => (
     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
   </svg>
 );
-const IconHeart = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-  </svg>
-);
-const IconStar = ({ filled = false }: { filled?: boolean }) => (
-  <svg className="w-3 h-3" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-  </svg>
-);
 
 // ── Sección colapsable del sidebar ────────────────────────────────────────────
 const FilterSection = ({ title, children, defaultOpen = true }: {
@@ -686,11 +676,8 @@ const Catalog = () => {
                       key={product.id}
                       className={`bg-white rounded-2xl shadow-md hover:shadow-xl transition-all border border-gray-200 overflow-hidden ${unavailable ? 'opacity-70' : ''}`}
                     >
-                      {/* Área de imagen con badge y wishlist */}
+                      {/* Área de imagen con badge */}
                       <div className="relative bg-white h-44 flex items-center justify-center group">
-                        <button className="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md hover:bg-red-50 transition-colors z-10">
-                          <IconHeart />
-                        </button>
                         {product.precioAnterior ? (
                           <span className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg z-10">
                             Oferta
@@ -720,15 +707,9 @@ const Catalog = () => {
                       {/* Contenido de la tarjeta */}
                       <div className="p-3 flex flex-col flex-1">
                         {/* Título del producto */}
-                        <h3 className="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2 min-h-[2.5rem]">
+                        <h3 className="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 min-h-[2.5rem]">
                           {product.nombre}
                         </h3>
-
-                        {/* Ratings */}
-                        <div className="flex items-center gap-0.5 mb-2">
-                          {[1,2,3,4,5].map(i => <IconStar key={i} filled={i <= 4} />)}
-                          <span className="text-[9px] text-gray-500 ml-1">(120)</span>
-                        </div>
 
                         {/* Precio */}
                         <div className="mb-2">
@@ -739,6 +720,23 @@ const Catalog = () => {
                             )}
                           </div>
                         </div>
+
+                        {/* Colores disponibles */}
+                        {product.colores && product.colores.length > 0 && (
+                          <div className="flex gap-1.5 mb-3">
+                            {product.colores.slice(0, 5).map((color, idx) => (
+                              <div
+                                key={idx}
+                                className="w-5 h-5 rounded-full border-2 border-gray-300"
+                                style={{ backgroundColor: getColorHex(color) }}
+                                title={color}
+                              />
+                            ))}
+                            {product.colores.length > 5 && (
+                              <span className="text-xs text-gray-400 self-center">+{product.colores.length - 5}</span>
+                            )}
+                          </div>
+                        )}
 
                         {/* Opciones de pago */}
                         {product.disponibleCredito && (
@@ -757,7 +755,7 @@ const Catalog = () => {
                               className="w-full bg-[#0f49bd] hover:bg-[#002f87] text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 mb-1.5 transition-colors"
                             >
                               <IconCart />
-                              Agregar al carrito
+                              Reservar
                             </button>
                           ) : (
                             <button 
@@ -769,7 +767,7 @@ const Catalog = () => {
                           )}
                           <Link
                             to={`/producto/${product.id}`}
-                            className="block text-center text-[#0f49bd] text-[10px] hover:underline"
+                            className="block text-center text-[#0f49bd] text-[10px] font-bold hover:underline"
                           >
                             Ver detalles completos
                           </Link>
