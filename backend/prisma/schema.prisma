@@ -20,9 +20,18 @@ enum EstadoReserva {
   NUEVA
   ASIGNADA
   EN_VISITA
-  VENDIDA
-  NO_CONCRETADA
+  PARCIAL
+  COMPLETADA
   CANCELADA
+  SIN_STOCK
+}
+
+enum EstadoReservaItem {
+  PENDIENTE
+  EN_PROCESO
+  VENDIDO
+  NO_CONCRETADO
+  CANCELADO
   SIN_STOCK
 }
 
@@ -81,12 +90,12 @@ model Product {
   memorias        String[]  @default([])
   badge           String?
   disponibleCredito Boolean @default(true)
-  pagosSemanales  Decimal?  @db.Decimal(10, 2)
+  pagosSemanales  String?
   especificaciones Json?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  reservations    Reservation[]
+  reservationItems ReservationItem[]
 
   @@map("products")
   @@index([isActive, marca, createdAt])
@@ -113,13 +122,11 @@ model Customer {
 model Reservation {
   id              String        @id @default(uuid())
   customerId      String
-  productId       String
   vendorId        String?
 
   nombreCompleto  String
   telefono        String
   curp            String
-  tipoPago        TipoPago      @default(CONTADO)
   direccion       String
   fechaPreferida  DateTime
   horarioPreferido String
@@ -127,21 +134,46 @@ model Reservation {
   longitude       Decimal?      @db.Decimal(11, 8)
 
   estado          EstadoReserva @default(NUEVA)
+  estadoDetalle   Json?
   notas           String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   customer        Customer      @relation(fields: [customerId], references: [id])
-  product         Product       @relation(fields: [productId], references: [id])
   vendor          User?         @relation(fields: [vendorId], references: [id])
+  items           ReservationItem[]
   notifications   Notification[]
 
   @@map("reservations")
   @@index([vendorId, estado, createdAt])
-  @@index([curp, tipoPago, estado])
   @@index([curp, estado])
   @@index([estado, createdAt])
   @@index([vendorId, fechaPreferida])
+}
+
+model ReservationItem {
+  id            String        @id @default(uuid())
+  reservationId String
+  productId     String
+
+  color         String?
+  memoria       String?
+  tipoPago      TipoPago      @default(CONTADO)
+  estado        EstadoReservaItem @default(PENDIENTE)
+  precioCapturado Decimal      @db.Decimal(10, 2)
+
+  notas         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  reservation   Reservation   @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id])
+
+  @@map("reservation_items")
+  @@index([reservationId])
+  @@index([productId])
+  @@index([tipoPago, estado])
+  @@index([reservationId, estado])
 }
 
 model Notification {

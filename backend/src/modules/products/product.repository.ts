@@ -76,27 +76,57 @@ export class ProductRepository {
       prisma.product.count({ where }),
     ]);
 
-    return { data, total };
+    // Convertir Decimal a number para serialización JSON
+    const serializedData = data.map(product => ({
+      ...product,
+      precio: Number(product.precio),
+      precioAnterior: product.precioAnterior ? Number(product.precioAnterior) : null,
+    }));
+
+    return { data: serializedData, total };
   }
 
   async findById(id: string) {
-    return prisma.product.findUnique({ where: { id } });
+    const product = await prisma.product.findUnique({ where: { id } });
+    if (!product) return null;
+    
+    // Convertir Decimal a number para serialización JSON
+    return {
+      ...product,
+      precio: Number(product.precio),
+      precioAnterior: product.precioAnterior ? Number(product.precioAnterior) : null,
+    };
   }
 
   async create(data: Prisma.ProductCreateInput) {
-    return prisma.product.create({ data });
+    const product = await prisma.product.create({ data });
+    return {
+      ...product,
+      precio: Number(product.precio),
+      precioAnterior: product.precioAnterior ? Number(product.precioAnterior) : null,
+    };
   }
 
   async update(id: string, data: Prisma.ProductUpdateInput) {
-    return prisma.product.update({ where: { id }, data });
+    const product = await prisma.product.update({ where: { id }, data });
+    return {
+      ...product,
+      precio: Number(product.precio),
+      precioAnterior: product.precioAnterior ? Number(product.precioAnterior) : null,
+    };
   }
 
   async toggleActive(id: string) {
     const product = await prisma.product.findUniqueOrThrow({ where: { id } });
-    return prisma.product.update({
+    const updated = await prisma.product.update({
       where: { id },
       data: { isActive: !product.isActive },
     });
+    return {
+      ...updated,
+      precio: Number(updated.precio),
+      precioAnterior: updated.precioAnterior ? Number(updated.precioAnterior) : null,
+    };
   }
 
   async delete(id: string) {
@@ -137,26 +167,33 @@ export class ProductRepository {
     });
   }
 
-  // Productos con más reservas completadas (VENDIDA), para la sección "Más populares"
+  // Productos con más items vendidos, para la sección "Más populares"
   async findPopulares(limit = 6) {
     const result = await prisma.product.findMany({
       where: { isActive: true },
       include: {
         _count: {
-          select: { reservations: { where: { estado: 'VENDIDA' } } },
+          select: { reservationItems: { where: { estado: 'VENDIDO' } } },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
     // Ordenar por ventas completadas desc; si empatan, priorizar los con badge
-    return result
+    const sorted = result
       .sort((a, b) => {
-        const diff = b._count.reservations - a._count.reservations;
+        const diff = b._count.reservationItems - a._count.reservationItems;
         if (diff !== 0) return diff;
         return a.badge ? -1 : 1;
       })
       .slice(0, limit);
+
+    // Convertir Decimal a number para serialización JSON
+    return sorted.map(product => ({
+      ...product,
+      precio: Number(product.precio),
+      precioAnterior: product.precioAnterior ? Number(product.precioAnterior) : null,
+    }));
   }
 
   // Productos en oferta (tienen precioAnterior definido)

@@ -12,7 +12,7 @@ import VendorLayout from '../components/layout/VendorLayout';
 import Home from '../pages/public/Home';
 import Catalog from '../pages/public/Catalog';
 import ProductDetail from '../pages/public/ProductDetail';
-import ReservationForm from '../pages/public/ReservationForm';
+import CartCheckout from '../pages/public/CartCheckout';
 import ReservationSuccess from '../pages/public/ReservationSuccess';
 import FAQ from '../pages/public/FAQ';
 import Nosotros from '../pages/public/Nosotros';
@@ -51,7 +51,7 @@ export const router = createBrowserRouter([
       { path: '/', element: <Home /> },
       { path: '/catalogo', element: <Catalog /> },
       { path: '/producto/:id', element: <ProductDetail /> },
-      { path: '/reservar/:productId', element: <ReservationForm /> },
+      { path: '/carrito', element: <CartCheckout /> },
       { path: '/reserva/exitosa', element: <ReservationSuccess /> },
       { path: '/faq', element: <FAQ /> },
       { path: '/nosotros', element: <Nosotros /> },

@@ -2,11 +2,24 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { reservationService } from './reservation.service';
 import { sendSuccess, sendPaginated } from '../../shared/utils/response.helper';
-import { EstadoReserva } from '@prisma/client';
+import { EstadoReserva, EstadoReservaItem } from '@prisma/client';
 import { isValidCURP, isValidPhoneMX, formatCURP, cleanPhoneMX, validationMessages } from '../../shared/utils/validators';
 
-const createReservationSchema = z.object({
+/**
+ * Schema para un item del carrito
+ */
+const reservationItemSchema = z.object({
   productId: z.string().uuid('ID de producto inválido'),
+  color: z.string().optional(),
+  memoria: z.string().optional(),
+  tipoPago: z.enum(['CONTADO', 'CREDITO']),
+});
+
+/**
+ * Schema para crear reserva con carrito multi-producto
+ */
+const createReservationSchema = z.object({
+  items: z.array(reservationItemSchema).min(1, 'Debes agregar al menos un producto'),
   nombreCompleto: z.string().min(3, 'Nombre completo requerido'),
   telefono: z.string()
     .min(1, validationMessages.phone.required)
@@ -23,7 +36,6 @@ const createReservationSchema = z.object({
     .refine((val) => isValidCURP(val), {
       message: validationMessages.curp.invalid,
     }),
-  tipoPago: z.enum(['CONTADO', 'CREDITO']),
   direccion: z.string().min(10, 'Dirección completa requerida'),
   fechaPreferida: z.string().transform((val) => new Date(val)),
   horarioPreferido: z.string().regex(/^\d{1,2}:\d{2}$/, 'Formato de horario inválido (HH:MM)'),
@@ -32,13 +44,35 @@ const createReservationSchema = z.object({
   notas: z.string().optional(),
 });
 
+/**
+ * Schema para actualizar estado de reserva
+ */
 const updateStatusSchema = z.object({
   estado: z.nativeEnum(EstadoReserva),
   notas: z.string().optional(),
 });
 
+/**
+ * Schema para actualizar estado de item
+ */
+const updateItemStatusSchema = z.object({
+  estado: z.nativeEnum(EstadoReservaItem),
+  notas: z.string().optional(),
+});
+
+/**
+ * Schema para cancelar item o reserva desde página pública
+ */
+const cancelarPorClienteSchema = z.object({
+  busqueda: z.string().min(8, 'Folio o CURP requerido'),
+  itemId: z.string().uuid().optional(), // Si se proporciona, cancela solo ese item
+});
+
 export class ReservationController {
-  // Crear reserva — ruta pública
+  /**
+   * Crear reserva con carrito multi-producto — ruta pública
+   * POST /api/reservations
+   */
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const dto = createReservationSchema.parse(req.body);
@@ -49,7 +83,10 @@ export class ReservationController {
     }
   }
 
-  // Admin: listado
+  /**
+   * Admin: listado de todas las reservas con filtros
+   * GET /api/reservations
+   */
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
       const { estado, vendorId, search, fechaDesde, fechaHasta, tipoPago, producto, page, limit } = req.query;
@@ -70,6 +107,10 @@ export class ReservationController {
     }
   }
 
+  /**
+   * Obtener reserva por ID con todos sus items
+   * GET /api/reservations/:id
+   */
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const reservation = await reservationService.getById(req.params['id'] as string);
@@ -79,6 +120,10 @@ export class ReservationController {
     }
   }
 
+  /**
+   * Actualizar estado general de la reserva
+   * PATCH /api/reservations/:id/status
+   */
   async updateStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const { estado, notas } = updateStatusSchema.parse(req.body);
@@ -89,6 +134,10 @@ export class ReservationController {
     }
   }
 
+  /**
+   * Asignar o reasignar vendedor
+   * PATCH /api/reservations/:id/vendor
+   */
   async assignVendor(req: Request, res: Response, next: NextFunction) {
     try {
       const { vendorId } = z.object({ vendorId: z.string().uuid() }).parse(req.body);
@@ -99,7 +148,79 @@ export class ReservationController {
     }
   }
 
-  // Vendedor: sus reservas
+  /**
+   * Actualizar estado de un item individual
+   * PATCH /api/reservations/items/:itemId/status
+   */
+  async updateItemStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { estado, notas } = updateItemStatusSchema.parse(req.body);
+      const item = await reservationService.updateItemStatus(req.params['itemId'] as string, estado, notas);
+      sendSuccess(res, item, 'Estado del item actualizado');
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Marcar item como VENDIDO (decrementa stock)
+   * POST /api/reservations/items/:itemId/sold
+   */
+  async markItemAsSold(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { notas } = z.object({ notas: z.string().optional() }).parse(req.body);
+      const item = await reservationService.markItemAsSold(req.params['itemId'] as string, notas);
+      sendSuccess(res, item, 'Producto marcado como vendido');
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Cancelar un item individual (admin/vendedor)
+   * POST /api/reservations/items/:itemId/cancel
+   */
+  async cancelItem(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { notas } = z.object({ notas: z.string().optional() }).parse(req.body);
+      const item = await reservationService.cancelItem(req.params['itemId'] as string, notas);
+      sendSuccess(res, item, 'Producto cancelado');
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Cancelar toda la reserva (admin/vendedor)
+   * POST /api/reservations/:id/cancel
+   */
+  async cancelReservation(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { notas } = z.object({ notas: z.string().optional() }).parse(req.body);
+      const reservation = await reservationService.cancelReservation(req.params['id'] as string, notas);
+      sendSuccess(res, reservation, 'Reserva cancelada');
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Obtener un item específico
+   * GET /api/reservations/items/:itemId
+   */
+  async getItemById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const item = await reservationService.getItemById(req.params['itemId'] as string);
+      sendSuccess(res, item);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Vendedor: obtener mis reservas
+   * GET /api/reservations/vendor/my-reservations
+   */
   async getMyReservations(req: Request, res: Response, next: NextFunction) {
     try {
       const { estado, page, limit } = req.query;
@@ -114,7 +235,10 @@ export class ReservationController {
     }
   }
 
-  // Vendedor: datos del mapa
+  /**
+   * Vendedor: obtener datos para mapa
+   * GET /api/reservations/vendor/map-data
+   */
   async getMyMapData(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await reservationService.getVendorMapData(req.user!.userId);
@@ -124,7 +248,10 @@ export class ReservationController {
     }
   }
 
-  // Público: consultar reserva por folio o CURP
+  /**
+   * Público: consultar reserva por folio o CURP
+   * POST /api/reservations/consulta
+   */
   async consulta(req: Request, res: Response, next: NextFunction) {
     try {
       const { busqueda } = z.object({ busqueda: z.string().min(8) }).parse(req.body);
@@ -135,12 +262,24 @@ export class ReservationController {
     }
   }
 
-  // Público: cancelar reserva por folio o CURP
+  /**
+   * Público: cancelar reserva completa o item individual por folio o CURP
+   * POST /api/reservations/cancelar
+   * 
+   * Body:
+   * - busqueda: folio o CURP (requerido)
+   * - itemId: UUID del item (opcional, si se proporciona cancela solo ese item)
+   */
   async cancelarPorCliente(req: Request, res: Response, next: NextFunction) {
     try {
-      const { busqueda } = z.object({ busqueda: z.string().min(8) }).parse(req.body);
-      await reservationService.cancelarPorCliente(busqueda);
-      sendSuccess(res, null, 'Tu reserva fue cancelada exitosamente.');
+      const { busqueda, itemId } = cancelarPorClienteSchema.parse(req.body);
+      await reservationService.cancelarPorCliente(busqueda, itemId);
+      
+      const mensaje = itemId 
+        ? 'El producto fue cancelado exitosamente.'
+        : 'Tu reserva fue cancelada exitosamente.';
+      
+      sendSuccess(res, null, mensaje);
     } catch (err) {
       next(err);
     }

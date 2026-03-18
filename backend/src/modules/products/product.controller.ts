@@ -18,7 +18,7 @@ const createProductSchema = z.object({
   stockMinimo: z.number().int().min(0).optional(),
   badge: z.string().optional(),
   disponibleCredito: z.boolean().optional(),
-  pagosSemanales: z.number().positive().optional(),
+  pagosSemanales: z.string().optional(),
   especificaciones: z.record(z.string(), z.unknown()).optional(),
 });
 
@@ -129,7 +129,7 @@ export class ProductController {
       if (body.precioAnterior) body.precioAnterior = parseFloat(body.precioAnterior);
       if (body.stock !== undefined) body.stock = parseInt(body.stock);
       if (body.stockMinimo !== undefined) body.stockMinimo = parseInt(body.stockMinimo);
-      if (body.pagosSemanales) body.pagosSemanales = parseFloat(body.pagosSemanales);
+      // pagosSemanales ahora es string, no necesita conversión
       if (body.disponibleCredito !== undefined) body.disponibleCredito = body.disponibleCredito === 'true' || body.disponibleCredito === true;
       if (body.especificaciones && typeof body.especificaciones === 'string') {
         try { body.especificaciones = JSON.parse(body.especificaciones); } catch { delete body.especificaciones; }
@@ -177,7 +177,7 @@ export class ProductController {
       }
       if (body.stock !== undefined) body.stock = parseInt(body.stock);
       if (body.stockMinimo !== undefined) body.stockMinimo = parseInt(body.stockMinimo);
-      if (body.pagosSemanales) body.pagosSemanales = parseFloat(body.pagosSemanales);
+      // pagosSemanales ahora es string, no necesita conversión
       if (body.disponibleCredito !== undefined) body.disponibleCredito = body.disponibleCredito === 'true' || body.disponibleCredito === true;
       if (body.especificaciones && typeof body.especificaciones === 'string') {
         try { body.especificaciones = JSON.parse(body.especificaciones); } catch { delete body.especificaciones; }
@@ -207,9 +207,18 @@ export class ProductController {
       // URLs existentes que el admin decidió conservar (puede ser array, string, o vacío)
       let imagenesExistentes: string[] = [];
       if (body.imagenesExistentes) {
-        imagenesExistentes = Array.isArray(body.imagenesExistentes)
-          ? body.imagenesExistentes
-          : [body.imagenesExistentes];
+        if (typeof body.imagenesExistentes === 'string') {
+          // Puede venir como JSON string "[]" o como una URL individual
+          try {
+            const parsed = JSON.parse(body.imagenesExistentes);
+            imagenesExistentes = Array.isArray(parsed) ? parsed : [];
+          } catch {
+            // No es JSON, es una URL individual
+            imagenesExistentes = [body.imagenesExistentes];
+          }
+        } else if (Array.isArray(body.imagenesExistentes)) {
+          imagenesExistentes = body.imagenesExistentes;
+        }
       }
 
       // Nuevas imágenes subidas

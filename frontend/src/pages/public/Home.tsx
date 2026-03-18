@@ -1,18 +1,88 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { toImageUrl } from '../../services/config';
+import { useCarritoStore } from '../../store/carrito.store';
 import type { Product } from '../../types';
 
 const formatPrice = (p: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(p);
 
+const COLOR_MAP: Record<string, string> = {
+  negro: '#1a1a1a', blanco: '#f5f5f5', plata: '#C0C0C0', gris: '#808080',
+  azul: '#2563eb', 'azul oscuro': '#1e3a8a', 'azul claro': '#60a5fa',
+  verde: '#16a34a', 'verde menta': '#6ee7b7', morado: '#7c3aed',
+  rojo: '#dc2626', rosa: '#ec4899', dorado: '#d97706', amarillo: '#eab308',
+  naranja: '#ea580c', titanio: '#a0a098', 'titanio negro': '#3a3a3a',
+  'titanio natural': '#a0a098', beige: '#d4b896', café: '#92400e', cafe: '#92400e',
+};
+const getColorHex = (c: string) => COLOR_MAP[c.toLowerCase()] ?? '#9ca3af';
+
+// ─── Ícono de ojo ────────────────────────────────────────────────────────────
+const IconEye = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
 // ─── Tarjeta de producto reutilizable ────────────────────────────────────────
 const ProductCard = ({ product }: { product: Product }) => {
+  const navigate = useNavigate();
+  const { agregarAlCarrito } = useCarritoStore();
   const imagen = product.imagenes && product.imagenes.length > 0
     ? toImageUrl(product.imagenes[0])
     : null;
   const sinStock = product.stock === 0;
+
+  /**
+   * Función inteligente de reserva:
+   * - Si el producto tiene opciones (color/memoria) → redirige a ProductDetail
+   * - Si no tiene opciones → agrega directo al carrito
+   */
+  const handleReservar = () => {
+    const tieneColores = product.colores && product.colores.length > 0;
+    const tieneMemorias = product.memorias && product.memorias.length > 0;
+
+    // Si tiene opciones, redirigir a detalle para que el usuario seleccione
+    if (tieneColores || tieneMemorias) {
+      navigate(`/producto/${product.id}`);
+      return;
+    }
+
+    // Agregar al carrito directamente
+    try {
+      agregarAlCarrito({
+        productId: product.id,
+        nombre: product.nombre,
+        marca: product.marca,
+        precio: product.precio,
+        imagen: product.imagenes?.[0],
+        tipoPago: 'CONTADO', // Default, el usuario puede cambiarlo en el carrito
+      });
+
+      toast.success(
+        (t) => (
+          <div className="flex items-center gap-3">
+            <span>✅ {product.nombre} agregado al carrito</span>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                navigate('/carrito');
+              }}
+              className="bg-[#0f49bd] text-white px-3 py-1 rounded text-sm font-medium hover:bg-[#002f87] transition-colors"
+            >
+              Ver carrito
+            </button>
+          </div>
+        ),
+        { duration: 4000 }
+      );
+    } catch (error: any) {
+      toast.error(error.message || 'Error al agregar al carrito');
+    }
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100 flex flex-col">
@@ -34,7 +104,25 @@ const ProductCard = ({ product }: { product: Product }) => {
       {/* Info */}
       <div className="p-4 flex flex-col flex-1">
         <p className="text-xs text-gray-400 font-medium mb-0.5">{product.marca}</p>
-        <h3 className="font-semibold text-gray-900 text-sm leading-tight flex-1 mb-3">{product.nombre}</h3>
+        <h3 className="font-semibold text-gray-900 text-sm leading-tight flex-1 mb-2">{product.nombre}</h3>
+        
+        {/* Colores disponibles */}
+        {product.colores && product.colores.length > 0 && (
+          <div className="flex gap-1 mb-3">
+            {product.colores.slice(0, 5).map((color, idx) => (
+              <div
+                key={idx}
+                className="w-4 h-4 rounded-full border border-gray-300"
+                style={{ backgroundColor: getColorHex(color) }}
+                title={color}
+              />
+            ))}
+            {product.colores.length > 5 && (
+              <span className="text-xs text-gray-400 self-center ml-1">+{product.colores.length - 5}</span>
+            )}
+          </div>
+        )}
+
         <div className="mb-3">
           <div className="flex items-baseline gap-2">
             <span className="text-lg font-bold text-[#002f87]">{formatPrice(product.precio)}</span>
@@ -44,25 +132,33 @@ const ProductCard = ({ product }: { product: Product }) => {
           </div>
           {product.disponibleCredito && product.pagosSemanales && (
             <p className="text-xs text-gray-500 mt-0.5">
-              o desde {formatPrice(product.pagosSemanales)}/semana
+              {product.pagosSemanales}
             </p>
           )}
         </div>
         <div className="flex gap-2 mt-auto">
-          <Link
-            to={`/producto/${product.id}`}
-            className="flex-1 text-center border border-[#0f49bd] text-[#0f49bd] py-2 rounded-lg text-xs font-semibold hover:bg-blue-50 transition-colors"
-          >
-            Ver detalle
-          </Link>
-          {!sinStock && (
-            <Link
-              to={`/reservar/${product.id}`}
-              className="flex-1 text-center bg-[#13ec6d] text-[#002f87] py-2 rounded-lg text-xs font-bold hover:bg-green-400 transition-colors"
+          {!sinStock ? (
+            <button
+              onClick={handleReservar}
+              className="flex-1 text-center bg-[#13ec6d] text-[#002f87] py-2.5 px-2 rounded-xl text-xs font-bold hover:bg-green-400 transition-colors"
             >
               Reservar
-            </Link>
+            </button>
+          ) : (
+            <button
+              disabled
+              className="flex-1 text-center bg-gray-200 text-gray-400 py-2.5 px-2 rounded-xl text-xs font-bold cursor-not-allowed"
+            >
+              Sin stock
+            </button>
           )}
+          <Link
+            to={`/producto/${product.id}`}
+            className="flex-1 text-center border border-[#0f49bd] text-[#0f49bd] py-2.5 px-2 rounded-xl text-xs font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center gap-1.5"
+          >
+            <IconEye />
+            Detalles
+          </Link>
         </div>
       </div>
     </div>

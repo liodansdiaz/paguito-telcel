@@ -44,8 +44,8 @@ export class DashboardService {
         : prisma.reservation.count({ where: { createdAt: { gte: startOfMonth } } }),
       
       // Métricas de estado (sin filtro de fecha, siempre son totales)
-      prisma.reservation.count({ where: { estado: { in: ['NUEVA', 'ASIGNADA', 'EN_VISITA'] } } }),
-      prisma.reservation.count({ where: { estado: 'VENDIDA' } }),
+      prisma.reservation.count({ where: { estado: { in: ['NUEVA', 'ASIGNADA', 'EN_VISITA', 'PARCIAL'] } } }),
+      prisma.reservation.count({ where: { estado: 'COMPLETADA' } }),
       prisma.reservation.count({ where: { estado: 'CANCELADA' } }),
       prisma.reservation.count({ where: { estado: 'SIN_STOCK' } }),
       
@@ -172,7 +172,7 @@ export class DashboardService {
         reservations: {
           where: { 
             ...reservationWhere,
-            estado: 'VENDIDA' 
+            estado: 'COMPLETADA' 
           },
           select: { id: true },
         },
@@ -200,8 +200,8 @@ export class DashboardService {
 
     const [asignadas, activas, completadas, pendientesHoy] = await Promise.all([
       prisma.reservation.count({ where: { vendorId } }),
-      prisma.reservation.count({ where: { vendorId, estado: { in: ['ASIGNADA', 'EN_VISITA'] } } }),
-      prisma.reservation.count({ where: { vendorId, estado: 'VENDIDA' } }),
+      prisma.reservation.count({ where: { vendorId, estado: { in: ['ASIGNADA', 'EN_VISITA', 'PARCIAL'] } } }),
+      prisma.reservation.count({ where: { vendorId, estado: 'COMPLETADA' } }),
       prisma.reservation.count({
         where: {
           vendorId,

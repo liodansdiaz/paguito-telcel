@@ -1,4 +1,4 @@
-import { reservationRepository, ReservationFilters } from './reservation.repository';
+import { reservationRepository, ReservationFilters, CreateReservationItemInput } from './reservation.repository';
 import { customerRepository } from '../customers/customer.repository';
 import { productRepository } from '../products/product.repository';
 import { prisma } from '../../config/database';
@@ -6,52 +6,99 @@ import { AppError } from '../../shared/middleware/error.middleware';
 import { RoundRobinService } from '../../shared/services/roundrobin.service';
 import { ScheduleValidatorService } from '../../shared/services/schedule.validator';
 import { NotificationService } from '../../shared/services/notification.service';
-import { EstadoReserva, TipoPago } from '@prisma/client';
+import { EstadoReserva, EstadoReservaItem, TipoPago } from '@prisma/client';
 import { logger } from '../../shared/utils/logger';
 
-export interface CreateReservationDTO {
+/**
+ * DTO para crear un item de reserva
+ */
+export interface CreateReservationItemDTO {
   productId: string;
+  color?: string;
+  memoria?: string;
+  tipoPago: TipoPago;
+}
+
+/**
+ * DTO para crear una reserva completa (carrito multi-producto)
+ */
+export interface CreateReservationDTO {
+  items: CreateReservationItemDTO[]; // Array de productos
   nombreCompleto: string;
   telefono: string;
   curp: string;
-  tipoPago: TipoPago;
   direccion: string;
   fechaPreferida: Date;
   horarioPreferido: string;
   latitude?: number | null;
   longitude?: number | null;
+  notas?: string;
 }
 
 export class ReservationService {
+  /**
+   * Crear nueva reserva con carrito multi-producto
+   * 
+   * REGLAS DE NEGOCIO:
+   * 1. Solo se permite 1 producto a crédito activo por cliente (CURP)
+   * 2. Se permite múltiples productos de contado
+   * 3. Si algún producto no tiene stock, se crea de todas formas y se notifica al admin
+   * 4. Se asigna un solo vendedor para toda la reserva (Round Robin)
+   */
   async createReservation(dto: CreateReservationDTO) {
-    // 1. Validar producto existe y está activo
-    const product = await productRepository.findById(dto.productId);
-    if (!product || !product.isActive) {
-      throw new AppError('El producto no está disponible.', 404);
+    // Validación básica
+    if (!dto.items || dto.items.length === 0) {
+      throw new AppError('Debes agregar al menos un producto al carrito.', 400);
     }
 
-    // Si el stock está en 0, se permite reservar de todas formas.
-    // El negocio intentará conseguir el producto. Se notificará al admin después de crear la reserva.
-    const stockAgotado = product.stock <= 0;
-
-    // 2. Validar horario
-    ScheduleValidatorService.validateOrThrow(dto.fechaPreferida, dto.horarioPreferido);
-
-    // 3. Verificar reservas activas según tipo de pago
     const curpUpper = dto.curp.toUpperCase().trim();
 
-    if (dto.tipoPago === 'CREDITO') {
-      // A crédito: solo se permite un celular a la vez
-      const existingCredit = await reservationRepository.findActiveCreditByCustomer(curpUpper);
-      if (existingCredit) {
+    // 1. Validar horario de visita
+    ScheduleValidatorService.validateOrThrow(dto.fechaPreferida, dto.horarioPreferido);
+
+    // 2. Contar productos a crédito en el carrito
+    const productosCredito = dto.items.filter(item => item.tipoPago === 'CREDITO');
+
+    // 3. VALIDACIÓN CRÍTICA: Solo 1 producto a crédito activo por CURP
+    if (productosCredito.length > 0) {
+      const existingCreditItem = await reservationRepository.findActiveCreditItemByCustomer(curpUpper);
+      
+      if (existingCreditItem) {
         throw new AppError(
-          `Ya tienes una reserva a crédito en proceso (#${existingCredit.id.slice(0, 8).toUpperCase()}). Nuestro sistema únicamente otorga crédito para un celular a la vez.`,
+          `Ya tienes un producto a crédito en proceso (${existingCreditItem.product.nombre}). Solo puedes tener un celular a crédito a la vez.`,
           409
+        );
+      }
+
+      // No permitir más de 1 producto a crédito en el mismo carrito
+      if (productosCredito.length > 1) {
+        throw new AppError(
+          'Solo puedes agregar un producto a crédito por reserva. Los demás deben ser de contado.',
+          400
         );
       }
     }
 
-    // 4. Upsert cliente
+    // 4. Validar que todos los productos existen y están activos
+    const productsMap = new Map<string, any>();
+    const productosAgotados: string[] = [];
+
+    for (const item of dto.items) {
+      const product = await productRepository.findById(item.productId);
+      
+      if (!product || !product.isActive) {
+        throw new AppError(`El producto ${item.productId} no está disponible.`, 404);
+      }
+
+      productsMap.set(item.productId, product);
+
+      // Detectar stock agotado (se permite de todas formas)
+      if (product.stock <= 0) {
+        productosAgotados.push(product.nombre);
+      }
+    }
+
+    // 5. Upsert cliente
     const customer = await customerRepository.upsertByCurp({
       nombreCompleto: dto.nombreCompleto,
       telefono: dto.telefono,
@@ -59,47 +106,61 @@ export class ReservationService {
       direccion: dto.direccion,
     });
 
-    // 5. Asignar vendedor Round Robin
+    // 6. Asignar vendedor usando Round Robin
     const vendorId = await RoundRobinService.getNextVendor();
     const vendor = await prisma.user.findUniqueOrThrow({
       where: { id: vendorId },
       select: { id: true, nombre: true, email: true },
     });
 
-    // 6. Crear la reserva
+    // 7. Preparar items con precio capturado
+    const itemsToCreate: CreateReservationItemInput[] = dto.items.map(item => {
+      const product = productsMap.get(item.productId)!;
+      return {
+        productId: item.productId,
+        color: item.color,
+        memoria: item.memoria,
+        tipoPago: item.tipoPago,
+        precioCapturado: parseFloat(product.precio.toString()),
+      };
+    });
+
+    // 8. Crear la reserva con todos sus items
     const reservation = await reservationRepository.create({
+      customerId: customer.id,
       nombreCompleto: dto.nombreCompleto,
       telefono: dto.telefono,
       curp: curpUpper,
-      tipoPago: dto.tipoPago,
       direccion: dto.direccion,
+      latitude: dto.latitude ?? undefined,
+      longitude: dto.longitude ?? undefined,
       fechaPreferida: dto.fechaPreferida,
       horarioPreferido: dto.horarioPreferido,
-      latitude: dto.latitude ?? null,
-      longitude: dto.longitude ?? null,
-      estado: 'ASIGNADA',
-      customer: { connect: { id: customer.id } },
-      product: { connect: { id: product.id } },
-      vendor: { connect: { id: vendorId } },
+      notas: dto.notas,
+      items: itemsToCreate,
     });
 
-    logger.info(`Reserva creada: ${reservation.id} — Cliente: ${dto.nombreCompleto} — Producto: ${product.nombre} — Vendedor: ${vendor.nombre}`);
+    // 9. Asignar vendedor (cambia estado a ASIGNADA)
+    const reservationWithVendor = await reservationRepository.assignVendor(reservation.id, vendorId);
 
-    // 7. Enviar notificaciones (no bloquea si falla)
+    logger.info(`Reserva creada: ${reservation.id} — Cliente: ${dto.nombreCompleto} — Items: ${dto.items.length} — Vendedor: ${vendor.nombre}`);
 
-    // 7a. Si el stock estaba en 0, notificar a todos los admins
-    if (stockAgotado) {
+    // 10. Enviar notificaciones (no bloquea si falla)
+
+    // 10a. Si hay productos sin stock, notificar a admins
+    if (productosAgotados.length > 0) {
       NotificationService.sendStockAgotadoAlert({
         reservationId: reservation.id,
-        productId: product.id,
-        productoNombre: product.nombre,
+        productId: dto.items[0].productId, // Primer producto para referencia
+        productoNombre: productosAgotados.join(', '),
         clienteNombre: dto.nombreCompleto,
-        stockActual: product.stock,
+        stockActual: 0,
       }).catch((err) => {
         logger.error(`Alerta de stock agotado falló para reserva ${reservation.id}:`, err);
       });
     }
 
+    // 10b. Notificar al vendedor asignado
     NotificationService.sendReservationNotification({
       reservationId: reservation.id,
       vendorEmail: vendor.email,
@@ -107,8 +168,8 @@ export class ReservationService {
       clienteNombre: dto.nombreCompleto,
       clienteTelefono: dto.telefono,
       clienteCurp: curpUpper,
-      productoNombre: product.nombre,
-      tipoPago: dto.tipoPago,
+      productoNombre: Array.from(productsMap.values()).map(p => p.nombre).join(', '),
+      tipoPago: productosCredito.length > 0 ? 'CREDITO' : 'CONTADO', // Simplificado para notificación
       direccion: dto.direccion,
       fechaPreferida: dto.fechaPreferida,
       horarioPreferido: dto.horarioPreferido,
@@ -118,47 +179,117 @@ export class ReservationService {
       logger.error(`Notificación falló para reserva ${reservation.id}:`, err);
     });
 
-    return reservation;
+    return reservationWithVendor;
   }
 
+  /**
+   * Obtener todas las reservas con filtros
+   */
   async getAll(filters: ReservationFilters) {
     return reservationRepository.findAll(filters);
   }
 
+  /**
+   * Obtener reserva por ID con todos sus items
+   */
   async getById(id: string) {
     const reservation = await reservationRepository.findById(id);
     if (!reservation) throw new AppError('Reserva no encontrada.', 404);
     return reservation;
   }
 
+  /**
+   * Actualizar estado general de la reserva
+   * NOTA: En el nuevo modelo, es mejor actualizar items individuales
+   */
   async updateStatus(id: string, estado: EstadoReserva, notas?: string) {
-    const reservation = await this.getById(id);
-
-    // Al marcar como VENDIDA, decrementar stock en transacción atómica
-    if (estado === 'VENDIDA') {
-      return reservationRepository.updateStatusVendida(id, reservation.product.id, notas);
-    }
-
+    await this.getById(id);
     return reservationRepository.updateStatus(id, estado, notas);
   }
 
+  /**
+   * Actualizar estado de un item individual
+   */
+  async updateItemStatus(itemId: string, estado: EstadoReservaItem, notas?: string) {
+    const item = await reservationRepository.findItemById(itemId);
+    if (!item) throw new AppError('Item no encontrado.', 404);
+
+    return reservationRepository.updateItemStatus(itemId, estado, notas);
+  }
+
+  /**
+   * Marcar un item como VENDIDO y decrementar stock
+   */
+  async markItemAsSold(itemId: string, notas?: string) {
+    const item = await reservationRepository.findItemById(itemId);
+    if (!item) throw new AppError('Item no encontrado.', 404);
+
+    if (item.estado !== 'PENDIENTE' && item.estado !== 'EN_PROCESO') {
+      throw new AppError('El item no está en un estado que permita marcarlo como vendido.', 400);
+    }
+
+    return reservationRepository.markItemAsSold(itemId, notas);
+  }
+
+  /**
+   * Cancelar un item individual
+   * Solo se permite si está en estado PENDIENTE o EN_PROCESO
+   */
+  async cancelItem(itemId: string, notas?: string) {
+    const item = await reservationRepository.findItemById(itemId);
+    if (!item) throw new AppError('Item no encontrado.', 404);
+
+    if (item.estado !== 'PENDIENTE' && item.estado !== 'EN_PROCESO') {
+      throw new AppError('El item no puede cancelarse porque ya fue procesado.', 400);
+    }
+
+    return reservationRepository.cancelItem(itemId, notas);
+  }
+
+  /**
+   * Cancelar toda la reserva (todos los items activos)
+   */
+  async cancelReservation(reservationId: string, notas?: string) {
+    const reservation = await this.getById(reservationId);
+
+    // Validar que la reserva esté en un estado cancelable
+    if (!['NUEVA', 'ASIGNADA', 'EN_VISITA', 'PARCIAL'].includes(reservation.estado)) {
+      throw new AppError('Esta reserva no puede cancelarse porque ya fue completada.', 400);
+    }
+
+    return reservationRepository.cancelReservation(reservationId, notas);
+  }
+
+  /**
+   * Asignar o reasignar vendedor a una reserva
+   */
   async assignVendor(id: string, vendorId: string) {
     await this.getById(id);
     const vendor = await prisma.user.findUnique({
       where: { id: vendorId, isActive: true },
     });
     if (!vendor) throw new AppError('Vendedor no encontrado o inactivo.', 404);
+
     return reservationRepository.assignVendor(id, vendorId);
   }
 
+  /**
+   * Obtener reservas de un vendedor
+   */
   async getVendorReservations(vendorId: string, filters: ReservationFilters) {
     return reservationRepository.findByVendor(vendorId, filters);
   }
 
+  /**
+   * Obtener datos de mapa para un vendedor
+   */
   async getVendorMapData(vendorId: string) {
     return reservationRepository.findMapDataByVendor(vendorId);
   }
 
+  /**
+   * Consultar reserva activa por folio o CURP (consulta pública)
+   */
   async consultarReserva(busqueda: string) {
     if (!busqueda || busqueda.trim().length < 8) {
       throw new AppError('Ingresa tu número de folio o CURP para buscar tu reserva.', 400);
@@ -170,18 +301,51 @@ export class ReservationService {
     return reservation;
   }
 
-  async cancelarPorCliente(busqueda: string) {
+  /**
+   * Cancelar reserva desde la página pública "Mi Reserva"
+   * El cliente puede cancelar:
+   * - La reserva completa (si está en NUEVA o ASIGNADA)
+   * - Items individuales (si están en PENDIENTE)
+   */
+  async cancelarPorCliente(busqueda: string, itemId?: string) {
     if (!busqueda || busqueda.trim().length < 8) {
-      throw new AppError('Ingresa tu número de folio o CURP para cancelar tu reserva.', 400);
+      throw new AppError('Ingresa tu número de folio o CURP para cancelar.', 400);
     }
+
     const reservation = await reservationRepository.findActiveByCurpOrId(busqueda);
     if (!reservation) {
       throw new AppError('No encontramos ninguna reserva activa con ese dato.', 404);
     }
+
+    // Cancelar item individual
+    if (itemId) {
+      const item = reservation.items.find(i => i.id === itemId);
+      if (!item) {
+        throw new AppError('El producto no pertenece a esta reserva.', 404);
+      }
+
+      if (item.estado !== 'PENDIENTE') {
+        throw new AppError('Este producto no puede cancelarse porque ya está en proceso.', 400);
+      }
+
+      return this.cancelItem(itemId, 'Cancelado por el cliente desde la web.');
+    }
+
+    // Cancelar reserva completa
     if (!['NUEVA', 'ASIGNADA'].includes(reservation.estado)) {
       throw new AppError('Esta reserva no puede cancelarse porque ya está en proceso de visita.', 409);
     }
-    return reservationRepository.updateStatus(reservation.id, 'CANCELADA', 'Cancelada por el cliente desde la web.');
+
+    return this.cancelReservation(reservation.id, 'Cancelada por el cliente desde la web.');
+  }
+
+  /**
+   * Obtener un item específico (para vendedor/admin)
+   */
+  async getItemById(itemId: string) {
+    const item = await reservationRepository.findItemById(itemId);
+    if (!item) throw new AppError('Item no encontrado.', 404);
+    return item;
   }
 }
 

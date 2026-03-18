@@ -3,9 +3,9 @@ import type { EstadoReserva, EstadoCliente } from '../../types';
 const reservaColors: Record<EstadoReserva, string> = {
   NUEVA: 'bg-blue-100 text-blue-700',
   ASIGNADA: 'bg-indigo-100 text-indigo-700',
-  EN_VISITA: 'bg-yellow-100 text-yellow-700',
-  VENDIDA: 'bg-green-100 text-green-700',
-  NO_CONCRETADA: 'bg-orange-100 text-orange-700',
+  EN_VISITA: 'bg-purple-100 text-purple-700',
+  PARCIAL: 'bg-yellow-100 text-yellow-700',
+  COMPLETADA: 'bg-green-100 text-green-700',
   CANCELADA: 'bg-red-100 text-red-700',
   SIN_STOCK: 'bg-gray-100 text-gray-600',
 };
@@ -14,8 +14,8 @@ const reservaLabels: Record<EstadoReserva, string> = {
   NUEVA: 'Nueva',
   ASIGNADA: 'Asignada',
   EN_VISITA: 'En visita',
-  VENDIDA: 'Vendida',
-  NO_CONCRETADA: 'No concretada',
+  PARCIAL: 'Parcial',
+  COMPLETADA: 'Completada',
   CANCELADA: 'Cancelada',
   SIN_STOCK: 'Sin stock',
 };

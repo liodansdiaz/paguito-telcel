@@ -45,7 +45,14 @@ export class CustomerRepository {
       where: { id },
       include: {
         reservations: {
-          include: { product: true, vendor: true },
+          include: { 
+            items: {
+              include: {
+                product: true,
+              }
+            },
+            vendor: true 
+          },
           orderBy: { createdAt: 'desc' },
         },
       },

@@ -19,7 +19,7 @@ const productSchema = z.object({
   stockMinimo: z.number().int().min(0).optional(),
   badge: z.string().optional(),
   disponibleCredito: z.boolean().optional(),
-  pagosSemanales: z.number().positive().optional(),
+  pagosSemanales: z.string().optional(),
 });
 type ProductForm = z.infer<typeof productSchema>;
 
@@ -184,7 +184,7 @@ const InventoryManager = () => {
     setValue('stockMinimo', product.stockMinimo);
     setValue('badge', product.badge ?? '');
     setValue('disponibleCredito', product.disponibleCredito);
-    setValue('pagosSemanales', product.pagosSemanales ?? undefined);
+    setValue('pagosSemanales', product.pagosSemanales ? String(product.pagosSemanales) : '');
     setShowForm(true);
   };
 
@@ -195,14 +195,38 @@ const InventoryManager = () => {
     setSelectedColores([]);
     setSelectedMemorias([]);
     setEspecificaciones({});
-    reset();
+    reset({
+      sku: '',
+      nombre: '',
+      marca: '',
+      descripcion: '',
+      precio: 0,
+      precioAnterior: undefined,
+      stock: 0,
+      stockMinimo: 5,
+      badge: '',
+      disponibleCredito: true,
+      pagosSemanales: '',
+    });
     setShowForm(true);
   };
 
   const closeForm = () => {
     setShowForm(false);
     setEditingProduct(null);
-    reset();
+    reset({
+      sku: '',
+      nombre: '',
+      marca: '',
+      descripcion: '',
+      precio: 0,
+      precioAnterior: undefined,
+      stock: 0,
+      stockMinimo: 5,
+      badge: '',
+      disponibleCredito: true,
+      pagosSemanales: '',
+    });
     setImageFiles([]);
     setExistingImageUrls([]);
     setSelectedColores([]);
@@ -215,7 +239,10 @@ const InventoryManager = () => {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
         const isEmpty = value === undefined || value === null || (typeof value === 'number' && isNaN(value));
-        if (key === 'precioAnterior' && isEditing) {
+        // Campos opcionales que pueden estar vacíos (los enviamos siempre en edición)
+        if ((key === 'badge' || key === 'pagosSemanales' || key === 'descripcion') && isEditing) {
+          formData.append(key, value === undefined || value === null ? '' : String(value));
+        } else if (key === 'precioAnterior' && isEditing) {
           formData.append(key, isEmpty ? '' : String(value));
         } else if (!isEmpty && value !== '') {
           formData.append(key, String(value));
@@ -229,7 +256,13 @@ const InventoryManager = () => {
       }
 
       if (isEditing) {
-        existingImageUrls.forEach((url) => formData.append('imagenesExistentes', url));
+        // Siempre enviar imagenesExistentes, aunque sea un array vacío
+        if (existingImageUrls.length > 0) {
+          existingImageUrls.forEach((url) => formData.append('imagenesExistentes', url));
+        } else {
+          // Enviar un marcador para indicar que no hay imágenes existentes
+          formData.append('imagenesExistentes', JSON.stringify([]));
+        }
         await api.put(`/products/admin/${editingProduct!.id}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -488,7 +521,7 @@ const InventoryManager = () => {
       {/* Modal crear / editar producto */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl w-full max-w-lg p-6 my-4">
+          <div className="bg-white rounded-2xl w-full max-w-3xl p-6 my-8 max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-lg text-gray-900 mb-5">
               {isEditing ? `Editar: ${editingProduct!.nombre}` : 'Agregar Producto'}
             </h3>
@@ -529,31 +562,330 @@ const InventoryManager = () => {
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-1 block">Stock *</label>
                   <input {...register('stock', { valueAsNumber: true })} type="number" min="0"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   {errors.stock && <p className="text-red-500 text-xs mt-1">{errors.stock.message}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-1 block">Stock mínimo</label>
                   <input {...register('stockMinimo', { valueAsNumber: true })} type="number" min="0"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1 block">Pagos/semana ($)</label>
-                  <input {...register('pagosSemanales', { valueAsNumber: true })} type="number" step="0.01"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-1 block">Badge (opcional)</label>
-                <input {...register('badge')} placeholder="Más Vendido / Oferta / Nuevo Ingreso"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                <input 
+                  {...register('badge')}
+                  type="text"
+                  placeholder="Ej: Más Vendido, Oferta, Nuevo Ingreso"
+                  autoComplete="off"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                />
+                <p className="text-xs text-gray-500 mt-1">Etiqueta destacada que se mostrará en el producto</p>
               </div>
-              
-              {/* ImageUploader component would go here */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Información de pagos a crédito (opcional)</label>
+                <textarea 
+                  {...register('pagosSemanales')} 
+                  rows={2}
+                  placeholder="Ej: Desde $150/semana, A crédito desde $200/semana en 12 meses"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" 
+                />
+                <p className="text-xs text-gray-500 mt-1">Describe las opciones de pago a crédito disponibles</p>
+              </div>
+
+              {/* Selector de Colores */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Colores disponibles</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {['Negro', 'Blanco', 'Azul', 'Gris', 'Plata', 'Dorado', 'Rojo', 'Verde', 'Rosa', 'Morado', 'Titanio', 'Beige'].map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => {
+                        setSelectedColores(prev =>
+                          prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]
+                        );
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                        selectedColores.includes(color)
+                          ? 'bg-[#0f49bd] text-white border-[#0f49bd]'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-[#0f49bd]'
+                      }`}
+                    >
+                      {color}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500">{selectedColores.length} colores seleccionados</p>
+              </div>
+
+              {/* Selector de Memorias */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Capacidades de almacenamiento</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {['64 GB', '128 GB', '256 GB', '512 GB', '1 TB'].map((memoria) => (
+                    <button
+                      key={memoria}
+                      type="button"
+                      onClick={() => {
+                        setSelectedMemorias(prev =>
+                          prev.includes(memoria) ? prev.filter(m => m !== memoria) : [...prev, memoria]
+                        );
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                        selectedMemorias.includes(memoria)
+                          ? 'bg-[#0f49bd] text-white border-[#0f49bd]'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-[#0f49bd]'
+                      }`}
+                    >
+                      {memoria}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500">{selectedMemorias.length} capacidades seleccionadas</p>
+              </div>
+
+              {/* Especificaciones Técnicas */}
+              <div className="border-t pt-4">
+                <label className="text-sm font-medium text-gray-700 mb-3 block">Especificaciones Técnicas</label>
+                
+                {/* Categorías disponibles para agregar */}
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs font-medium text-gray-600 mb-2">Selecciona una categoría para agregar:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['Red', 'Pantalla', 'Memoria', 'Cámara', 'Procesador', 'Sistema Operativo', 'Conexiones Inalámbricas', 'Batería', 'Dimensiones', 'Peso'].map((categoria) => (
+                      <button
+                        key={categoria}
+                        type="button"
+                        onClick={() => {
+                          if (!especificaciones[categoria]) {
+                            setEspecificaciones(prev => ({ ...prev, [categoria]: '' }));
+                          }
+                        }}
+                        disabled={!!especificaciones[categoria]}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          especificaciones[categoria]
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-white text-[#0f49bd] border border-[#0f49bd] hover:bg-[#0f49bd] hover:text-white'
+                        }`}
+                      >
+                        {especificaciones[categoria] ? '✓ ' : '+ '}{categoria}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Especificaciones agregadas */}
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                  {Object.entries(especificaciones).map(([key, value]) => {
+                    // Obtener icono según la categoría
+                    let icon = null;
+                    const keyLower = key.toLowerCase();
+                    
+                    if (keyLower.includes('red')) {
+                      icon = (
+                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                        </svg>
+                      );
+                    } else if (keyLower.includes('pantalla')) {
+                      icon = (
+                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      );
+                    } else if (keyLower.includes('memoria')) {
+                      icon = (
+                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                        </svg>
+                      );
+                    } else if (keyLower.includes('cámara') || keyLower.includes('camara')) {
+                      icon = (
+                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <circle cx="12" cy="13" r="3" />
+                        </svg>
+                      );
+                    } else if (keyLower.includes('procesador') || keyLower.includes('cpu')) {
+                      icon = (
+                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                        </svg>
+                      );
+                    } else if (keyLower.includes('sistema')) {
+                      icon = (
+                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      );
+                    } else if (keyLower.includes('conexi') || keyLower.includes('inalám')) {
+                      icon = (
+                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0" />
+                        </svg>
+                      );
+                    } else if (keyLower.includes('bater')) {
+                      icon = (
+                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v1m0 16v1m9-9h1M3 12h1m13.28-7.636l.707.707M5.636 5.636l.707.707m12.02 12.02l.707.707M5.636 18.364l.707.707M17 12a5 5 0 11-10 0 5 5 0 0110 0z" />
+                        </svg>
+                      );
+                    } else if (keyLower.includes('dimension')) {
+                      icon = (
+                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        </svg>
+                      );
+                    } else if (keyLower.includes('peso')) {
+                      icon = (
+                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                        </svg>
+                      );
+                    } else {
+                      icon = (
+                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      );
+                    }
+
+                    return (
+                      <div key={key} className="flex gap-2 items-start p-3 bg-white border border-gray-200 rounded-lg hover:border-[#0f49bd] transition-colors">
+                        <div className="flex-shrink-0 mt-0.5">
+                          {icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <label className="text-xs font-semibold text-gray-700 block mb-1">{key}</label>
+                          <textarea
+                            value={value}
+                            onChange={(e) => setEspecificaciones(prev => ({ ...prev, [key]: e.target.value }))}
+                            placeholder={`Ej: ${
+                              keyLower.includes('red') ? '5G' :
+                              keyLower.includes('pantalla') ? '6.8"' :
+                              keyLower.includes('memoria') ? 'Total: 1TB' :
+                              keyLower.includes('cámara') ? 'Frontal: 12MP\nTrasera: 200MP' :
+                              keyLower.includes('procesador') ? 'Snapdragon 8 Gen 2' :
+                              keyLower.includes('sistema') ? 'Android 14' :
+                              keyLower.includes('conexi') ? 'Wi-Fi\nUSB\nBluetooth' :
+                              keyLower.includes('bater') ? 'Duración: 27 horas' :
+                              keyLower.includes('dimension') ? '162.3 x 79 x 8.6 mm' :
+                              keyLower.includes('peso') ? '233 gramos' :
+                              'Valor de la especificación'
+                            }`}
+                            rows={3}
+                            className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setEspecificaciones(prev => {
+                            const updated = { ...prev };
+                            delete updated[key];
+                            return updated;
+                          })}
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                          title="Eliminar"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {Object.keys(especificaciones).length === 0 && (
+                  <p className="text-xs text-gray-400 text-center py-4">Selecciona una categoría arriba para comenzar</p>
+                )}
+                
+                <p className="text-xs text-gray-500 mt-3 px-1">
+                  💡 Tip: Usa saltos de línea para listas (Ej: Cámara → "Frontal: 12MP" + Enter + "Trasera: 200MP")
+                </p>
+              </div>
+
+              {/* Imágenes del producto */}
+              <div className="border-t pt-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Imágenes del producto (máx. 3)</label>
+                
+                {/* Imágenes existentes */}
+                {existingImageUrls.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500 mb-2">Imágenes actuales:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {existingImageUrls.map((url, idx) => (
+                        <div key={idx} className="relative group">
+                          <img src={toImageUrl(url)} alt={`Imagen ${idx + 1}`} className="w-16 h-16 object-contain rounded-lg border border-gray-200" />
+                          <button
+                            type="button"
+                            onClick={() => setExistingImageUrls(prev => prev.filter((_, i) => i !== idx))}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Eliminar imagen"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Nuevas imágenes */}
+                {imageFiles.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500 mb-2">Nuevas imágenes:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {imageFiles.map((file, idx) => (
+                        <div key={idx} className="relative group">
+                          <img src={URL.createObjectURL(file)} alt={`Nueva ${idx + 1}`} className="w-16 h-16 object-contain rounded-lg border border-gray-200" />
+                          <button
+                            type="button"
+                            onClick={() => setImageFiles(prev => prev.filter((_, i) => i !== idx))}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Eliminar imagen"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Input para subir imágenes */}
+                {(existingImageUrls.length + imageFiles.length) < 3 && (
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        const remaining = 3 - existingImageUrls.length - imageFiles.length;
+                        setImageFiles(prev => [...prev, ...files.slice(0, remaining)]);
+                        e.target.value = '';
+                      }}
+                      className="hidden"
+                    />
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#0f49bd] transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-xs text-gray-600">Click para seleccionar imágenes</p>
+                      <p className="text-xs text-gray-400 mt-1">JPG, PNG o WebP (máx. 5MB c/u)</p>
+                    </div>
+                  </label>
+                )}
+                <p className="text-xs text-gray-500 mt-2">
+                  {existingImageUrls.length + imageFiles.length} de 3 imágenes
+                </p>
+              </div>
               
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={closeForm} className="flex-1 border border-gray-300 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50">

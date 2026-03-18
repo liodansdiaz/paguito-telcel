@@ -10,9 +10,9 @@ import Pagination from '../../components/ui/Pagination';
 // Estados que el vendedor puede asignar desde su panel
 const ESTADOS_VENDEDOR: { value: EstadoReserva; label: string; color: string }[] = [
   { value: 'EN_VISITA',      label: 'En visita',      color: 'bg-purple-100 text-purple-700' },
-  { value: 'VENDIDA',        label: 'Vendida',         color: 'bg-green-100 text-green-700' },
-  { value: 'NO_CONCRETADA',  label: 'No concretada',   color: 'bg-gray-100 text-gray-600' },
-  { value: 'SIN_STOCK',      label: 'Sin stock',       color: 'bg-orange-100 text-orange-700' },
+  { value: 'PARCIAL',        label: 'Parcial',        color: 'bg-yellow-100 text-yellow-700' },
+  { value: 'COMPLETADA',     label: 'Completada',     color: 'bg-green-100 text-green-700' },
+  { value: 'SIN_STOCK',      label: 'Sin stock',      color: 'bg-orange-100 text-orange-700' },
   { value: 'CANCELADA',      label: 'Cancelada',       color: 'bg-red-100 text-red-600' },
 ];
 
@@ -60,7 +60,10 @@ const StatusModal = ({ reservation: r, onClose, onSaved }: StatusModalProps) => 
         <p className="text-sm text-gray-500 mb-1">
           #{r.id.slice(0, 8).toUpperCase()} — <span className="font-medium text-gray-700">{r.nombreCompleto}</span>
         </p>
-        <p className="text-xs text-gray-400 mb-5">{r.product?.nombre}</p>
+        <p className="text-xs text-gray-400 mb-5">
+          {r.items?.length} {r.items?.length === 1 ? 'producto' : 'productos'}
+          {r.items && r.items.length > 0 && `: ${r.items[0].product?.nombre}${r.items.length > 1 ? ` +${r.items.length - 1} más` : ''}`}
+        </p>
 
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Nuevo estado</p>
         <div className="grid grid-cols-2 gap-2 mb-4">

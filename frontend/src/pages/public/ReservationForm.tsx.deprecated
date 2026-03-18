@@ -308,7 +308,7 @@ const ReservationForm = () => {
           <p className="font-bold text-gray-900">{product.nombre}</p>
           <p className="text-[#0f49bd] font-semibold text-sm">{fmt(product.precio)} al contado</p>
           {product.disponibleCredito && product.pagosSemanales && (
-            <p className="text-gray-400 text-xs">o desde {fmt(product.pagosSemanales)}/semana a credito</p>
+            <p className="text-gray-400 text-xs">{product.pagosSemanales}</p>
           )}
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {selectedColor && (

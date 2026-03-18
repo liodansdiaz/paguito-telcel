@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { toImageUrl } from '../../services/config';
 import { getColorHex } from '../../utils/colors';
 import { formatPrice } from '../../utils/format';
+import { useCarritoStore } from '../../store/carrito.store';
 import type { Product } from '../../types';
 
 const PAGE_SIZE = 12;
@@ -37,6 +39,12 @@ const IconTruck = () => (
   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <rect x="1" y="3" width="15" height="13" rx="1" />
     <path d="M16 8h4l3 3v5h-7V8z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
+  </svg>
+);
+const IconEye = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
   </svg>
 );
 
@@ -302,6 +310,7 @@ const Catalog = () => {
   // Selección de color/memoria por tarjeta (para el botón Reservar directo)
   const [cardSelection, setCardSelection] = useState<Record<string, { color: string; memoria: string }>>({});
   const navigate = useNavigate();
+  const { agregarAlCarrito } = useCarritoStore();
 
   const getCardColor = (productId: string) => cardSelection[productId]?.color ?? '';
   const getCardMemoria = (productId: string) => cardSelection[productId]?.memoria ?? '';
@@ -310,14 +319,56 @@ const Catalog = () => {
   const setCardMemoria = (productId: string, memoria: string) =>
     setCardSelection(prev => ({ ...prev, [productId]: { ...(prev[productId] || { color: '' }), memoria } }));
 
-  const handleReservar = (productId: string) => {
-    const color = getCardColor(productId);
-    const memoria = getCardMemoria(productId);
-    const params = new URLSearchParams();
-    if (color) params.set('color', color);
-    if (memoria) params.set('memoria', memoria);
-    const query = params.toString();
-    navigate(`/reservar/${productId}${query ? `?${query}` : ''}`);
+  /**
+   * Función inteligente de reserva:
+   * - Si el producto tiene opciones (color/memoria) y el usuario NO las seleccionó → redirige a ProductDetail
+   * - Si no tiene opciones o ya fueron seleccionadas → agrega directo al carrito
+   */
+  const handleReservar = (product: Product) => {
+    const tieneColores = product.colores && product.colores.length > 0;
+    const tieneMemorias = product.memorias && product.memorias.length > 0;
+    const colorSeleccionado = getCardColor(product.id);
+    const memoriaSeleccionada = getCardMemoria(product.id);
+
+    // Si tiene opciones y no están seleccionadas, redirigir a detalle
+    if ((tieneColores && !colorSeleccionado) || (tieneMemorias && !memoriaSeleccionada)) {
+      navigate(`/producto/${product.id}`);
+      return;
+    }
+
+    // Agregar al carrito directamente
+    try {
+      agregarAlCarrito({
+        productId: product.id,
+        nombre: product.nombre,
+        marca: product.marca,
+        precio: product.precio,
+        imagen: product.imagenes?.[0],
+        color: colorSeleccionado || undefined,
+        memoria: memoriaSeleccionada || undefined,
+        tipoPago: 'CONTADO', // Default, el usuario puede cambiarlo en el carrito
+      });
+
+      toast.success(
+        (t) => (
+          <div className="flex items-center gap-3">
+            <span>✅ {product.nombre} agregado al carrito</span>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                navigate('/carrito');
+              }}
+              className="bg-[#0f49bd] text-white px-3 py-1 rounded text-sm font-medium hover:bg-[#002f87] transition-colors"
+            >
+              Ver carrito
+            </button>
+          </div>
+        ),
+        { duration: 4000 }
+      );
+    } catch (error: any) {
+      toast.error(error.message || 'Error al agregar al carrito');
+    }
   };
 
   // UI móvil
@@ -746,21 +797,22 @@ const Catalog = () => {
                         <div className="mt-auto pt-2 flex flex-col gap-2">
                           {!unavailable ? (
                             <button
-                              onClick={() => handleReservar(product.id)}
-                              className="w-full text-center bg-[#0f49bd] hover:bg-[#002f87] text-white py-2.5 rounded-lg text-sm font-bold transition-colors"
+                              onClick={() => handleReservar(product)}
+                              className="w-full text-center bg-[#0f49bd] hover:bg-[#002f87] text-white py-2.5 px-2 rounded-xl text-sm font-bold transition-colors"
                             >
                               Reservar
                             </button>
                           ) : (
-                            <button disabled className="w-full bg-gray-200 text-gray-400 py-2.5 rounded-lg text-sm font-bold cursor-not-allowed">
+                            <button disabled className="w-full bg-gray-200 text-gray-400 py-2.5 px-2 rounded-xl text-sm font-bold cursor-not-allowed">
                               Sin stock
                             </button>
                           )}
                           <Link
                             to={`/producto/${product.id}`}
-                            className="w-full text-center border border-gray-300 text-gray-600 py-2 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+                            className="w-full text-center border border-gray-300 text-gray-600 py-2.5 px-2 rounded-xl text-xs font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
                           >
-                            Ver detalle
+                            <IconEye />
+                            Detalles
                           </Link>
                         </div>
                       </div>

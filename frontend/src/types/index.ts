@@ -1,6 +1,7 @@
 export type Rol = 'ADMIN' | 'VENDEDOR';
 export type EstadoCliente = 'ACTIVO' | 'BLOQUEADO';
-export type EstadoReserva = 'NUEVA' | 'ASIGNADA' | 'EN_VISITA' | 'VENDIDA' | 'NO_CONCRETADA' | 'CANCELADA' | 'SIN_STOCK';
+export type EstadoReserva = 'NUEVA' | 'ASIGNADA' | 'EN_VISITA' | 'PARCIAL' | 'COMPLETADA' | 'CANCELADA' | 'SIN_STOCK';
+export type EstadoReservaItem = 'PENDIENTE' | 'EN_PROCESO' | 'VENDIDO' | 'NO_CONCRETADO' | 'CANCELADO' | 'SIN_STOCK';
 export type TipoPago = 'CONTADO' | 'CREDITO';
 
 export interface User {
@@ -50,27 +51,54 @@ export interface Customer {
   reservations?: Reservation[];
 }
 
+export interface ReservationItem {
+  id: string;
+  reservationId: string;
+  productId: string;
+  color?: string;
+  memoria?: string;
+  tipoPago: TipoPago;
+  estado: 'PENDIENTE' | 'EN_PROCESO' | 'VENDIDO' | 'NO_CONCRETADO' | 'CANCELADO' | 'SIN_STOCK';
+  precioCapturado: number;
+  notas?: string;
+  createdAt: string;
+  updatedAt: string;
+  product?: Pick<Product, 'id' | 'nombre' | 'marca' | 'precio' | 'imagenes' | 'stock'>;
+}
+
 export interface Reservation {
   id: string;
   customerId: string;
-  productId: string;
   vendorId?: string;
   nombreCompleto: string;
   telefono: string;
   curp: string;
-  tipoPago: TipoPago;
   direccion: string;
   fechaPreferida: string;
   horarioPreferido: string;
   latitude: number | null;
   longitude: number | null;
   estado: EstadoReserva;
+  estadoDetalle?: {
+    total: number;
+    pendientes: number;
+    enProceso?: number;
+    vendidos: number;
+    noConcretados?: number;
+    cancelados: number;
+    sinStock?: number;
+  };
   notas?: string;
   createdAt: string;
   updatedAt: string;
+  items: ReservationItem[];
   customer?: Pick<Customer, 'id' | 'nombreCompleto' | 'telefono' | 'curp' | 'estado'>;
-  product?: Pick<Product, 'id' | 'nombre' | 'marca' | 'precio' | 'imagenes'>;
   vendor?: Pick<User, 'id' | 'nombre' | 'email' | 'telefono' | 'zona'>;
+  
+  // Deprecated fields (for backwards compatibility)
+  productId?: string;
+  tipoPago?: TipoPago;
+  product?: Pick<Product, 'id' | 'nombre' | 'marca' | 'precio' | 'imagenes'>;
 }
 
 export interface AdminMetrics {

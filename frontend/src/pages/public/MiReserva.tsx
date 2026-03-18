@@ -1,36 +1,97 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { toImageUrl } from '../../services/config';
 
 const formatFecha = (fecha: string) =>
   new Date(fecha).toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
+const formatPrice = (price: number) =>
+  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(price);
+
+interface ReservaItem {
+  id: string;
+  tipoPago: 'CONTADO' | 'CREDITO';
+  estado: string;
+  precioCapturado: number;
+  color?: string;
+  memoria?: string;
+  product: {
+    id: string;
+    nombre: string;
+    marca: string;
+    imagenes: string[];
+  };
+}
+
 interface ReservaConsulta {
   id: string;
   nombreCompleto: string;
   telefono: string;
-  tipoPago: 'CONTADO' | 'CREDITO';
   direccion: string;
   fechaPreferida: string;
   horarioPreferido: string;
   estado: string;
+  estadoDetalle: {
+    total: number;
+    pendientes: number;
+    enProceso?: number;
+    vendidos: number;
+    noConcretados?: number;
+    cancelados: number;
+    sinStock?: number;
+  };
   createdAt: string;
-  product: { id: string; nombre: string; marca: string; imagenes: string[] };
-  vendor: { nombre: string } | null;
+  items: ReservaItem[];
+  vendor: { nombre: string; telefono?: string } | null;
 }
 
 const EstadoBadge = ({ estado }: { estado: string }) => {
   const map: Record<string, string> = {
     NUEVA: 'bg-blue-100 text-blue-700',
     ASIGNADA: 'bg-indigo-100 text-indigo-700',
+    EN_VISITA: 'bg-purple-100 text-purple-700',
+    PARCIAL: 'bg-yellow-100 text-yellow-700',
+    COMPLETADA: 'bg-green-100 text-green-700',
+    CANCELADA: 'bg-red-100 text-red-700',
+    SIN_STOCK: 'bg-orange-100 text-orange-700',
   };
   const label: Record<string, string> = {
     NUEVA: 'Nueva',
     ASIGNADA: 'Asignada',
+    EN_VISITA: 'En visita',
+    PARCIAL: 'Parcial',
+    COMPLETADA: 'Completada',
+    CANCELADA: 'Cancelada',
+    SIN_STOCK: 'Sin stock',
   };
   return (
     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${map[estado] ?? 'bg-gray-100 text-gray-600'}`}>
+      {label[estado] ?? estado}
+    </span>
+  );
+};
+
+const EstadoItemBadge = ({ estado }: { estado: string }) => {
+  const map: Record<string, string> = {
+    PENDIENTE: 'bg-blue-50 text-blue-700 border-blue-200',
+    EN_PROCESO: 'bg-purple-50 text-purple-700 border-purple-200',
+    VENDIDO: 'bg-green-50 text-green-700 border-green-200',
+    NO_CONCRETADO: 'bg-orange-50 text-orange-700 border-orange-200',
+    CANCELADO: 'bg-red-50 text-red-700 border-red-200',
+    SIN_STOCK: 'bg-gray-50 text-gray-700 border-gray-200',
+  };
+  const label: Record<string, string> = {
+    PENDIENTE: '⏳ Pendiente',
+    EN_PROCESO: '🔄 En proceso',
+    VENDIDO: '✅ Vendido',
+    NO_CONCRETADO: '❌ No concretado',
+    CANCELADO: '🚫 Cancelado',
+    SIN_STOCK: '📦 Sin stock',
+  };
+  return (
+    <span className={`text-xs font-medium px-2 py-1 rounded border ${map[estado] ?? 'bg-gray-50 text-gray-600 border-gray-200'}`}>
       {label[estado] ?? estado}
     </span>
   );
@@ -41,8 +102,9 @@ const MiReserva = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [reserva, setReserva] = useState<ReservaConsulta | null>(null);
-  const [cancelando, setCancelando] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [cancelando, setCancelando] = useState<string | null>(null);
+  const [showConfirmReserva, setShowConfirmReserva] = useState(false);
+  const [showConfirmItem, setShowConfirmItem] = useState<string | null>(null);
   const [cancelada, setCancelada] = useState(false);
 
   const handleBuscar = async (e: React.FormEvent) => {
@@ -62,27 +124,50 @@ const MiReserva = () => {
     }
   };
 
-  const handleCancelar = async () => {
+  const handleCancelarReserva = async () => {
     if (!reserva) return;
-    setCancelando(true);
+    setCancelando('reserva');
     try {
-      await api.patch('/reservations/cancelar', { busqueda: busqueda.trim() });
-      setShowConfirm(false);
+      await api.post('/reservations/cancelar', { busqueda: busqueda.trim() });
+      setShowConfirmReserva(false);
       setCancelada(true);
       setReserva(null);
+      toast.success('Reserva cancelada exitosamente');
     } catch (err: any) {
-      setShowConfirm(false);
-      setError(err.response?.data?.message || 'Error al cancelar la reserva.');
+      setShowConfirmReserva(false);
+      toast.error(err.response?.data?.message || 'Error al cancelar la reserva');
     } finally {
-      setCancelando(false);
+      setCancelando(null);
     }
   };
 
-  const imagen = reserva?.product?.imagenes?.[0] ? toImageUrl(reserva.product.imagenes[0]) : null;
+  const handleCancelarItem = async (itemId: string) => {
+    if (!reserva) return;
+    setCancelando(itemId);
+    try {
+      await api.post('/reservations/cancelar', { 
+        busqueda: busqueda.trim(),
+        itemId 
+      });
+      setShowConfirmItem(null);
+      toast.success('Producto cancelado exitosamente');
+      
+      // Refrescar la reserva
+      const res = await api.post('/reservations/consulta', { busqueda: busqueda.trim() });
+      setReserva(res.data.data);
+    } catch (err: any) {
+      setShowConfirmItem(null);
+      toast.error(err.response?.data?.message || 'Error al cancelar el producto');
+    } finally {
+      setCancelando(null);
+    }
+  };
+
+  const folio = reserva?.id.substring(0, 8).toUpperCase();
+  const puedeCancelarReserva = reserva && ['NUEVA', 'ASIGNADA'].includes(reserva.estado);
 
   return (
     <div className="min-h-screen bg-gray-50">
-
       {/* Hero */}
       <section className="bg-gradient-to-br from-[#002f87] to-[#0f49bd] text-white py-14 px-4">
         <div className="max-w-2xl mx-auto text-center">
@@ -91,194 +176,263 @@ const MiReserva = () => {
           </span>
           <h1 className="text-3xl font-extrabold mb-2">Consulta tu reserva</h1>
           <p className="text-blue-100 text-sm max-w-md mx-auto">
-            Ingresa tu número de folio o tu CURP para ver el estado de tu reserva y cancelarla si lo necesitas.
+            Ingresa tu número de folio o tu CURP para ver el estado de tu reserva y gestionar tus productos.
           </p>
         </div>
       </section>
 
       {/* Formulario de búsqueda */}
       <section className="py-10 px-4">
-        <div className="max-w-lg mx-auto">
-          <form onSubmit={handleBuscar} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="max-w-md mx-auto">
+          <form onSubmit={handleBuscar} className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Número de folio o CURP
+              Folio o CURP
             </label>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value.toUpperCase())}
-                placeholder="Ej: A3F2B1C0 o GOML850101..."
-                className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                maxLength={36}
-              />
-              <button
-                type="submit"
-                disabled={loading || !busqueda.trim()}
-                className="bg-[#0f49bd] text-white px-5 py-3 rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 whitespace-nowrap"
-              >
-                {loading ? 'Buscando...' : 'Buscar'}
-              </button>
-            </div>
-            <p className="text-xs text-gray-400 mt-2">
-              El folio son los primeros 8 caracteres de tu número de reserva (lo encontrarás en tu pantalla de confirmación).
-            </p>
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Ej: A1B2C3D4 o PEGJ900101HCHRRS01"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm uppercase"
+            />
+            <button
+              type="submit"
+              disabled={loading || !busqueda.trim()}
+              className="w-full mt-4 bg-[#0f49bd] text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Buscando...' : 'Buscar mi reserva'}
+            </button>
           </form>
 
-          {/* Error */}
           {error && (
-            <div className="mt-4 bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex gap-3 items-start">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-              </svg>
+            <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-4">
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
 
-          {/* Cancelación exitosa */}
           {cancelada && (
-            <div className="mt-4 bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
-              <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="font-bold text-gray-900 text-lg mb-2">Reserva cancelada</h3>
-              <p className="text-gray-500 text-sm mb-5">
-                Tu reserva fue cancelada exitosamente. Ya puedes hacer una nueva reserva cuando quieras.
-              </p>
-              <Link
-                to="/catalogo"
-                className="inline-block bg-[#13ec6d] text-[#002f87] px-8 py-3 rounded-xl font-bold text-sm hover:bg-green-400 transition-all"
-              >
-                Ver catálogo
-              </Link>
-            </div>
-          )}
-
-          {/* Tarjeta de reserva */}
-          {reserva && (
-            <div className="mt-4 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-
-              {/* Header de la tarjeta */}
-              <div className="bg-gradient-to-r from-[#002f87] to-[#0f49bd] px-6 py-4 flex items-center justify-between">
-                <div>
-                  <p className="text-blue-200 text-xs mb-0.5">Número de folio</p>
-                  <p className="text-white font-bold font-mono tracking-wider">#{reserva.id.slice(0, 8).toUpperCase()}</p>
-                </div>
-                <EstadoBadge estado={reserva.estado} />
-              </div>
-
-              {/* Producto */}
-              <div className="flex items-center gap-4 px-6 py-5 border-b border-gray-50">
-                <div className="w-16 h-16 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {imagen
-                    ? <img src={imagen} alt={reserva.product.nombre} className="w-full h-full object-contain" />
-                    : <span className="text-3xl">📱</span>
-                  }
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-medium">{reserva.product.marca}</p>
-                  <p className="font-bold text-gray-900">{reserva.product.nombre}</p>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full mt-1 inline-block ${reserva.tipoPago === 'CREDITO' ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-700'}`}>
-                    {reserva.tipoPago === 'CREDITO' ? 'Pago a crédito' : 'Pago al contado'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Detalles */}
-              <div className="px-6 py-5 space-y-3">
-                <div className="flex items-start gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <div>
-                    <p className="text-xs text-gray-400">Cliente</p>
-                    <p className="text-sm font-medium text-gray-900">{reserva.nombreCompleto}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <div>
-                    <p className="text-xs text-gray-400">Fecha y hora preferida</p>
-                    <p className="text-sm font-medium text-gray-900 capitalize">{formatFecha(reserva.fechaPreferida)} · {reserva.horarioPreferido}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <div>
-                    <p className="text-xs text-gray-400">Dirección de entrega</p>
-                    <p className="text-sm font-medium text-gray-900">{reserva.direccion}</p>
-                  </div>
-                </div>
-                {reserva.vendor && (
-                  <div className="flex items-start gap-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <div>
-                      <p className="text-xs text-gray-400">Vendedor asignado</p>
-                      <p className="text-sm font-medium text-gray-900">{reserva.vendor.nombre}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Botón cancelar */}
-              <div className="px-6 pb-6">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
-                  <p className="text-yellow-700 text-xs leading-relaxed">
-                    <strong>Nota:</strong> Solo puedes cancelar si el vendedor aún no ha iniciado la visita. Una vez cancelada, podrás hacer una nueva reserva.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowConfirm(true)}
-                  className="w-full bg-red-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-red-700 transition-colors"
-                >
-                  Cancelar mi reserva
-                </button>
-              </div>
+            <div className="mt-6 bg-green-50 border border-green-200 rounded-xl p-4">
+              <p className="text-green-700 text-sm font-medium">✓ Tu reserva ha sido cancelada exitosamente</p>
             </div>
           )}
         </div>
       </section>
 
-      {/* Modal confirmación cancelar */}
-      {showConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-6 text-center">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-              </svg>
+      {/* Resultado */}
+      {reserva && (
+        <section className="pb-16 px-4">
+          <div className="max-w-4xl mx-auto">
+            {/* Header de la reserva */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h2 className="text-2xl font-bold text-gray-900">Reserva #{folio}</h2>
+                    <EstadoBadge estado={reserva.estado} />
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    Creada el {formatFecha(reserva.createdAt)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Estadísticas de items */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div className="bg-blue-50 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-blue-600">{reserva.estadoDetalle.total}</p>
+                  <p className="text-xs text-gray-600">Total productos</p>
+                </div>
+                {reserva.estadoDetalle.pendientes > 0 && (
+                  <div className="bg-purple-50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-purple-600">{reserva.estadoDetalle.pendientes}</p>
+                    <p className="text-xs text-gray-600">Pendientes</p>
+                  </div>
+                )}
+                {reserva.estadoDetalle.vendidos > 0 && (
+                  <div className="bg-green-50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-green-600">{reserva.estadoDetalle.vendidos}</p>
+                    <p className="text-xs text-gray-600">Vendidos</p>
+                  </div>
+                )}
+                {reserva.estadoDetalle.cancelados > 0 && (
+                  <div className="bg-red-50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-red-600">{reserva.estadoDetalle.cancelados}</p>
+                    <p className="text-xs text-gray-600">Cancelados</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Info del cliente y visita */}
+              <div className="grid sm:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Cliente</p>
+                  <p className="font-semibold text-gray-900">{reserva.nombreCompleto}</p>
+                  <p className="text-sm text-gray-600">{reserva.telefono}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Visita programada</p>
+                  <p className="font-semibold text-gray-900">{formatFecha(reserva.fechaPreferida)}</p>
+                  <p className="text-sm text-gray-600">⏰ {reserva.horarioPreferido}</p>
+                </div>
+                {reserva.vendor && (
+                  <div className="sm:col-span-2">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Vendedor asignado</p>
+                    <p className="font-semibold text-gray-900">👤 {reserva.vendor.nombre}</p>
+                    {reserva.vendor.telefono && (
+                      <p className="text-sm text-gray-600">📞 {reserva.vendor.telefono}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Botón cancelar reserva completa */}
+              {puedeCancelarReserva && (
+                <div>
+                  <button
+                    onClick={() => setShowConfirmReserva(true)}
+                    className="w-full sm:w-auto border-2 border-red-500 text-red-600 px-6 py-2.5 rounded-lg font-medium hover:bg-red-50 transition-colors"
+                  >
+                    🚫 Cancelar toda la reserva
+                  </button>
+
+                  {showConfirmReserva && (
+                    <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4">
+                      <p className="text-red-800 font-semibold mb-3">
+                        ¿Estás seguro de cancelar toda la reserva?
+                      </p>
+                      <p className="text-red-600 text-sm mb-4">
+                        Se cancelarán todos los productos pendientes. Esta acción no se puede deshacer.
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setShowConfirmReserva(false)}
+                          disabled={cancelando === 'reserva'}
+                          className="flex-1 border border-gray-300 bg-white py-2 rounded-lg font-medium hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          No, mantener
+                        </button>
+                        <button
+                          onClick={handleCancelarReserva}
+                          disabled={cancelando === 'reserva'}
+                          className="flex-1 bg-red-600 text-white py-2 rounded-lg font-bold hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {cancelando === 'reserva' ? 'Cancelando...' : 'Sí, cancelar todo'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            <h3 className="font-bold text-gray-900 text-lg mb-2">¿Cancelar tu reserva?</h3>
-            <p className="text-gray-500 text-sm mb-6">
-              Esta acción no se puede deshacer. El vendedor será notificado y quedará disponible para otro cliente.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowConfirm(false)}
-                disabled={cancelando}
-                className="flex-1 border border-gray-300 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+
+            {/* Lista de productos */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Productos de tu reserva</h3>
+              {reserva.items.map((item) => {
+                const imagen = item.product.imagenes?.[0] ? toImageUrl(item.product.imagenes[0]) : null;
+                const puedeCancelarItem = item.estado === 'PENDIENTE';
+
+                return (
+                  <div key={item.id} className="bg-white rounded-xl shadow-md border border-gray-100 p-5">
+                    <div className="flex gap-4">
+                      {/* Imagen */}
+                      <div className="w-20 h-20 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-100">
+                        {imagen ? (
+                          <img src={imagen} alt={item.product.nombre} className="w-full h-full object-contain" />
+                        ) : (
+                          <span className="text-3xl">📱</span>
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-400 font-medium uppercase mb-1">{item.product.marca}</p>
+                        <h4 className="font-bold text-gray-900 text-lg mb-2">{item.product.nombre}</h4>
+                        
+                        {/* Opciones y estado */}
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          {item.color && (
+                            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                              {item.color}
+                            </span>
+                          )}
+                          {item.memoria && (
+                            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                              {item.memoria}
+                            </span>
+                          )}
+                          <span className={`text-xs font-medium px-2 py-1 rounded ${
+                            item.tipoPago === 'CREDITO' 
+                              ? 'bg-blue-50 text-blue-600' 
+                              : 'bg-green-50 text-green-700'
+                          }`}>
+                            {item.tipoPago === 'CREDITO' ? '📊 Crédito' : '💵 Contado'}
+                          </span>
+                          <EstadoItemBadge estado={item.estado} />
+                        </div>
+
+                        {/* Precio */}
+                        <p className="text-lg font-extrabold text-[#002f87]">
+                          {formatPrice(item.precioCapturado)}
+                        </p>
+                      </div>
+
+                      {/* Botón cancelar item */}
+                      {puedeCancelarItem && (
+                        <div className="flex-shrink-0">
+                          <button
+                            onClick={() => setShowConfirmItem(item.id)}
+                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Cancelar este producto"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Confirmación de cancelación de item */}
+                    {showConfirmItem === item.id && (
+                      <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                        <p className="text-red-700 text-sm font-medium mb-3">
+                          ¿Cancelar este producto?
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setShowConfirmItem(null)}
+                            disabled={cancelando === item.id}
+                            className="flex-1 border border-gray-300 bg-white py-1.5 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+                          >
+                            No
+                          </button>
+                          <button
+                            onClick={() => handleCancelarItem(item.id)}
+                            disabled={cancelando === item.id}
+                            className="flex-1 bg-red-600 text-white py-1.5 rounded-lg text-sm font-bold hover:bg-red-700 disabled:opacity-50"
+                          >
+                            {cancelando === item.id ? 'Cancelando...' : 'Sí, cancelar'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-8 text-center">
+              <Link
+                to="/catalogo"
+                className="inline-block text-[#0f49bd] font-medium hover:underline"
               >
-                No, mantener
-              </button>
-              <button
-                onClick={handleCancelar}
-                disabled={cancelando}
-                className="flex-1 bg-red-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 disabled:opacity-50"
-              >
-                {cancelando ? 'Cancelando...' : 'Sí, cancelar'}
-              </button>
+                ← Volver al catálogo
+              </Link>
             </div>
           </div>
-        </div>
+        </section>
       )}
     </div>
   );

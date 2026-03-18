@@ -5,10 +5,10 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
 import { showSuccess, showError } from '../../utils/notifications';
 
-const ESTADOS: EstadoReserva[] = ['NUEVA', 'ASIGNADA', 'EN_VISITA', 'VENDIDA', 'NO_CONCRETADA', 'CANCELADA', 'SIN_STOCK'];
+const ESTADOS: EstadoReserva[] = ['NUEVA', 'ASIGNADA', 'EN_VISITA', 'PARCIAL', 'COMPLETADA', 'CANCELADA', 'SIN_STOCK'];
 const estadoLabel: Record<EstadoReserva, string> = {
   NUEVA: 'Nueva', ASIGNADA: 'Asignada', EN_VISITA: 'En visita',
-  VENDIDA: 'Vendida', NO_CONCRETADA: 'No concretada', CANCELADA: 'Cancelada', SIN_STOCK: 'Sin stock',
+  PARCIAL: 'Parcial', COMPLETADA: 'Completada', CANCELADA: 'Cancelada', SIN_STOCK: 'Sin stock',
 };
 
 // ── Exportar a CSV ────────────────────────────────────────────────────────────
@@ -33,15 +33,15 @@ const exportCSV = async (filters: {
     const res = await api.get('/reservations/admin', { params });
     const rows: Reservation[] = res.data.data;
 
-    const headers = ['Folio', 'Nombre', 'Teléfono', 'CURP', 'Celular', 'Notas', 'Tipo Pago', 'Dirección', 'Fecha preferida', 'Horario', 'Vendedor', 'Estado', 'Fecha creación'];
+    const headers = ['Folio', 'Nombre', 'Teléfono', 'CURP', 'Total Productos', 'Productos', 'Notas', 'Dirección', 'Fecha preferida', 'Horario', 'Vendedor', 'Estado', 'Fecha creación'];
     const data = rows.map((r) => [
       r.id.slice(0, 8).toUpperCase(),
       r.nombreCompleto,
       r.telefono,
       r.curp,
-      r.product?.nombre ?? '',
+      r.items?.length ?? 0,
+      r.items?.map(i => `${i.product?.nombre} (${i.tipoPago})`).join('; ') ?? '',
       r.notas ?? '',
-      r.tipoPago === 'CONTADO' ? 'Contado' : 'Crédito',
       r.direccion,
       new Date(r.fechaPreferida).toLocaleDateString('es-MX'),
       r.horarioPreferido,
@@ -92,7 +92,7 @@ const ReservationsManager = () => {
   const [assignModal, setAssignModal] = useState<{ open: boolean; reservation: Reservation | null }>({ open: false, reservation: null });
   const [statusModal, setStatusModal] = useState<{ open: boolean; reservation: Reservation | null }>({ open: false, reservation: null });
   const [assignVendorId, setAssignVendorId] = useState('');
-  const [newStatus, setNewStatus] = useState<EstadoReserva>('VENDIDA');
+  const [newStatus, setNewStatus] = useState<EstadoReserva>('COMPLETADA');
   const [notas, setNotas] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -364,7 +364,7 @@ const ReservationsManager = () => {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {['ID', 'Cliente', 'Producto', 'Dirección', 'Notas', 'Pago', 'Fecha', 'Vendedor', 'Estado', 'Acciones'].map((h) => (
+                {['ID', 'Cliente', 'Productos', 'Dirección', 'Notas', 'Fecha', 'Vendedor', 'Estado', 'Acciones'].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -373,13 +373,13 @@ const ReservationsManager = () => {
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: 10 }).map((__, j) => (
+                    {Array.from({ length: 9 }).map((__, j) => (
                       <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
                     ))}
                   </tr>
                 ))
               ) : reservations.length === 0 ? (
-                <tr><td colSpan={10} className="text-center py-12 text-gray-400">Sin reservas</td></tr>
+                <tr><td colSpan={9} className="text-center py-12 text-gray-400">Sin reservas</td></tr>
               ) : (
                 reservations.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50 transition-colors">
@@ -388,7 +388,25 @@ const ReservationsManager = () => {
                       <p className="font-medium text-gray-900 whitespace-nowrap">{r.nombreCompleto}</p>
                       <p className="text-gray-400 text-xs">{r.telefono}</p>
                     </td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{r.product?.nombre}</td>
+                     <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+                          {r.items?.length ?? 0}
+                        </span>
+                        <div className="text-xs">
+                          {r.items && r.items.length > 0 ? (
+                            <>
+                              <p className="text-gray-900 font-medium">{r.items[0].product?.nombre}</p>
+                              {r.items.length > 1 && (
+                                <p className="text-gray-400">+{r.items.length - 1} más</p>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-gray-400">Sin productos</p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
                     <td className="px-4 py-3 max-w-[200px]">
                       <p className="text-gray-700 text-xs truncate" title={r.direccion}>{r.direccion}</p>
                       {r.latitude !== null && r.longitude !== null && (
@@ -417,11 +435,7 @@ const ReservationsManager = () => {
                         <span className="text-xs text-gray-400">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-medium ${r.tipoPago === 'CONTADO' ? 'text-green-600' : 'text-blue-600'}`}>
-                        {r.tipoPago === 'CONTADO' ? 'Contado' : 'Crédito'}
-                      </span>
-                    </td>
+
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">
                       {new Date(r.fechaPreferida).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })} {r.horarioPreferido}
                     </td>
