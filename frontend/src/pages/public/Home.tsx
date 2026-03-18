@@ -19,7 +19,7 @@ const COLOR_MAP: Record<string, string> = {
 };
 const getColorHex = (c: string) => COLOR_MAP[c.toLowerCase()] ?? '#9ca3af';
 
-// ─── Ícono de ojo ────────────────────────────────────────────────────────────
+// ─── Íconos ──────────────────────────────────────────────────────────────────
 const IconEye = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -27,14 +27,35 @@ const IconEye = () => (
   </svg>
 );
 
+const IconCart = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="9" cy="21" r="1" />
+    <circle cx="20" cy="21" r="1" />
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+  </svg>
+);
+
+const IconHeart = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </svg>
+);
+
+const IconStar = ({ filled = false }: { filled?: boolean }) => (
+  <svg className="w-3 h-3" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+  </svg>
+);
+
+type CardVariant = 'original' | 'compact' | 'premium' | 'minimal' | 'horizontal' | 'hybrid';
+
 // ─── Tarjeta de producto reutilizable ────────────────────────────────────────
-const ProductCard = ({ product }: { product: Product }) => {
+const ProductCard = ({ product, variant = 'original' }: { product: Product; variant?: CardVariant }) => {
   const navigate = useNavigate();
   const { agregarAlCarrito } = useCarritoStore();
   const imagen = product.imagenes && product.imagenes.length > 0
     ? toImageUrl(product.imagenes[0])
     : null;
-  const sinStock = product.stock === 0;
 
   /**
    * Función inteligente de reserva:
@@ -84,81 +105,186 @@ const ProductCard = ({ product }: { product: Product }) => {
     }
   };
 
-  return (
-    <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100 flex flex-col">
-      {/* Badge */}
-      {product.badge && (
-        <div className="absolute">
-          <span className="bg-[#13ec6d] text-[#002f87] text-xs font-bold px-3 py-1 rounded-br-xl rounded-tl-xl">
-            {product.badge}
-          </span>
+  // Helpers para parsear pagos
+  const parsePagos = (text: string) => {
+    const engancheMatch = text.match(/Enganche:\s*([^P]+)/);
+    const pagosMatch = text.match(/Pagos semanales:\s*(.+)/);
+    return { enganche: engancheMatch?.[1]?.trim(), pagos: pagosMatch?.[1]?.trim() };
+  };
+
+  // VARIANT 1: ORIGINAL (diseño actual)
+  if (variant === 'original') {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100 flex flex-col">
+        <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 h-44 flex items-center justify-center">
+          {imagen ? <img src={imagen} alt={product.nombre} className="h-36 w-36 object-contain" /> : <span className="text-5xl">📱</span>}
         </div>
-      )}
-      {/* Imagen */}
-      <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 h-44 flex items-center justify-center">
-        {imagen
-          ? <img src={imagen} alt={product.nombre} className="h-36 w-36 object-contain" />
-          : <span className="text-5xl">📱</span>
-        }
+        <div className="p-4 flex flex-col flex-1">
+          <p className="text-xs text-gray-400 font-medium mb-0.5">{product.marca}</p>
+          <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-2">{product.nombre}</h3>
+          <span className="text-lg font-bold text-[#002f87] mb-3">{formatPrice(product.precio)}</span>
+          <div className="flex gap-2 mt-auto">
+            <button onClick={handleReservar} className="flex-1 bg-[#13ec6d] text-[#002f87] py-2.5 px-2 rounded-xl text-xs font-bold">Reservar</button>
+            <Link to={`/producto/${product.id}`} className="flex-1 border border-[#0f49bd] text-[#0f49bd] py-2.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"><IconEye />Detalles</Link>
+          </div>
+        </div>
       </div>
-      {/* Info */}
-      <div className="p-4 flex flex-col flex-1">
-        <p className="text-xs text-gray-400 font-medium mb-0.5">{product.marca}</p>
-        <h3 className="font-semibold text-gray-900 text-sm leading-tight flex-1 mb-2">{product.nombre}</h3>
-        
-        {/* Colores disponibles */}
-        {product.colores && product.colores.length > 0 && (
-          <div className="flex gap-1 mb-3">
-            {product.colores.slice(0, 5).map((color, idx) => (
-              <div
-                key={idx}
-                className="w-4 h-4 rounded-full border border-gray-300"
-                style={{ backgroundColor: getColorHex(color) }}
-                title={color}
-              />
-            ))}
-            {product.colores.length > 5 && (
-              <span className="text-xs text-gray-400 self-center ml-1">+{product.colores.length - 5}</span>
-            )}
+    );
+  }
+
+  // VARIANT 2: COMPACT (compacto y moderno)
+  if (variant === 'compact') {
+    const { enganche } = parsePagos(String(product.pagosSemanales || ''));
+    return (
+      <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100">
+        <div className="relative bg-gray-50 h-36 flex items-center justify-center">
+          {product.precioAnterior && <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">PROMO</span>}
+          {imagen ? <img src={imagen} alt={product.nombre} className="h-28 w-28 object-contain" /> : <span className="text-4xl">📱</span>}
+        </div>
+        <div className="p-3">
+          <p className="text-[9px] text-gray-400 uppercase tracking-wide">{product.marca} | {product.sku}</p>
+          <h3 className="font-bold text-gray-900 text-xs mb-2 line-clamp-1">{product.nombre}</h3>
+          {product.colores && product.colores.length > 0 && (
+            <div className="flex gap-1.5 mb-2 items-center">
+              {product.colores.slice(0, 3).map((c, i) => <div key={i} className="w-5 h-5 rounded-full border-2 border-gray-300" style={{ backgroundColor: getColorHex(c) }} />)}
+              {product.memorias && <span className="text-[9px] text-gray-500 ml-1">{product.memorias[0]}</span>}
+            </div>
+          )}
+          <div className="mb-2">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xl font-bold text-[#0f49bd]">{formatPrice(product.precio)}</span>
+              {product.precioAnterior && <span className="text-[10px] text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
+            </div>
+            {enganche && <p className="text-[9px] text-gray-500">💵 Contado • 📊 Desde {enganche} enganche</p>}
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button onClick={handleReservar} className="bg-[#0f49bd] text-white py-2 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1"><IconCart />Reservar</button>
+            <Link to={`/producto/${product.id}`} className="border border-gray-300 text-gray-700 py-2 rounded-lg text-[10px] font-medium flex items-center justify-center gap-1"><IconEye />Ver</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // VARIANT 3: PREMIUM (tipo Amazon)
+  if (variant === 'premium') {
+    return (
+      <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-200">
+        <div className="relative bg-white h-48 flex items-center justify-center group">
+          <button className="absolute top-3 right-3 bg-white rounded-full p-2 shadow-md hover:bg-red-50 transition-colors"><IconHeart /></button>
+          {product.badge && <span className="absolute top-3 left-3 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-full">{product.badge}</span>}
+          {imagen ? <img src={imagen} alt={product.nombre} className="h-40 w-40 object-contain group-hover:scale-105 transition-transform" /> : <span className="text-5xl">📱</span>}
+        </div>
+        <div className="p-4">
+          <div className="flex items-start justify-between mb-1">
+            <h3 className="font-bold text-gray-900 text-sm flex-1">{product.nombre}</h3>
+            <span className="text-[9px] text-gray-400 ml-2">{product.sku}</span>
+          </div>
+          <div className="flex items-center gap-1 mb-2">
+            {[1,2,3,4,5].map(i => <IconStar key={i} filled={i <= 4} />)}
+            <span className="text-[10px] text-gray-500 ml-1">(120)</span>
+          </div>
+          <div className="mb-3">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-extrabold text-[#0f49bd]">{formatPrice(product.precio)}</span>
+              {product.precioAnterior && <span className="text-sm text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
+            </div>
+          </div>
+          {product.colores && product.colores.length > 0 && (
+            <div className="flex gap-1.5 mb-3 items-center">
+              <span className="text-[10px] text-gray-600">Color:</span>
+              {product.colores.slice(0, 4).map((c, i) => <div key={i} className="w-6 h-6 rounded-full border-2 border-gray-300 hover:border-[#0f49bd] cursor-pointer" style={{ backgroundColor: getColorHex(c) }} />)}
+            </div>
+          )}
+          {product.disponibleCredito && <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 mb-3"><p className="text-[10px] text-blue-700">💳 Opciones de pago: Contado o crédito disponible</p></div>}
+          <button onClick={handleReservar} className="w-full bg-[#0f49bd] hover:bg-[#002f87] text-white py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 mb-2"><IconCart />Agregar al carrito</button>
+          <Link to={`/producto/${product.id}`} className="block text-center text-[#0f49bd] text-xs hover:underline">Ver detalles completos</Link>
+        </div>
+      </div>
+    );
+  }
+
+  // VARIANT 4: MINIMAL (minimalista escandinavo)
+  if (variant === 'minimal') {
+    return (
+      <div className="bg-white rounded-3xl shadow-sm hover:shadow-lg transition-all overflow-hidden border border-gray-50">
+        <div className="bg-gray-50 h-52 flex items-center justify-center p-6">
+          {imagen ? <img src={imagen} alt={product.nombre} className="h-full w-full object-contain" /> : <span className="text-6xl">📱</span>}
+        </div>
+        <div className="p-6 text-center">
+          <h3 className="font-bold text-gray-900 text-base mb-2">{product.nombre}</h3>
+          <p className="text-3xl font-bold text-gray-900 mb-3">{formatPrice(product.precio)}</p>
+          {product.colores && product.colores.length > 0 && (
+            <div className="flex gap-2 justify-center mb-3">
+              {product.colores.slice(0, 4).map((c, i) => <div key={i} className="w-7 h-7 rounded-full border border-gray-200" style={{ backgroundColor: getColorHex(c) }} />)}
+            </div>
+          )}
+          {product.disponibleCredito && <span className="inline-block bg-gray-100 text-gray-700 text-[10px] font-medium px-3 py-1 rounded-full mb-4">📊 A crédito disponible</span>}
+          <div className="flex gap-3">
+            <button onClick={handleReservar} className="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-2xl text-sm font-medium">Agregar</button>
+            <Link to={`/producto/${product.id}`} className="flex-1 border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white py-3 rounded-2xl text-sm font-medium flex items-center justify-center transition-colors">Detalles</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // VARIANT 5: HORIZONTAL (lista horizontal)
+  if (variant === 'horizontal') {
+    return (
+      <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex overflow-hidden h-28">
+        <div className="bg-gray-50 w-28 flex-shrink-0 flex items-center justify-center">
+          {imagen ? <img src={imagen} alt={product.nombre} className="h-20 w-20 object-contain" /> : <span className="text-4xl">📱</span>}
+        </div>
+        <div className="flex-1 p-3 flex flex-col justify-between">
+          <div>
+            <h3 className="font-bold text-gray-900 text-xs line-clamp-1 mb-0.5">{product.nombre}</h3>
+            <p className="text-[9px] text-gray-400">{product.marca}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {product.colores && product.colores.length > 0 && <div className="flex gap-1">{product.colores.slice(0, 3).map((c, i) => <div key={i} className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: getColorHex(c) }} />)}</div>}
+            <span className="text-[9px] text-gray-500">{product.stock > 0 ? 'Disponible' : 'Sin stock'}</span>
+          </div>
+        </div>
+        <div className="w-32 flex-shrink-0 p-3 flex flex-col justify-between items-end border-l border-gray-100">
+          <span className="text-lg font-bold text-[#0f49bd]">{formatPrice(product.precio)}</span>
+          {product.disponibleCredito && <p className="text-[8px] text-gray-500">💳 Crédito</p>}
+          <div className="flex gap-1">
+            <button onClick={handleReservar} className="bg-[#0f49bd] text-white p-2 rounded-lg hover:bg-[#002f87]"><IconCart /></button>
+            <Link to={`/producto/${product.id}`} className="border border-gray-300 text-gray-700 p-2 rounded-lg hover:bg-gray-50"><IconEye /></Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // VARIANT 6: HYBRID (recomendada)
+  return (
+    <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all overflow-hidden border border-gray-100">
+      <div className="relative bg-gradient-to-br from-blue-50 to-gray-50 h-44 flex items-center justify-center">
+        {product.precioAnterior && <span className="absolute top-2 left-2 bg-gradient-to-r from-red-500 to-orange-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">-{Math.round((1 - product.precio / product.precioAnterior) * 100)}%</span>}
+        {imagen ? <img src={imagen} alt={product.nombre} className="h-36 w-36 object-contain drop-shadow-lg" /> : <span className="text-5xl">📱</span>}
+      </div>
+      <div className="p-4">
+        <p className="text-[9px] text-gray-400 uppercase tracking-wider mb-1">{product.marca} | {product.sku}</p>
+        <h3 className="font-bold text-gray-900 text-sm mb-3 line-clamp-2 leading-tight">{product.nombre}</h3>
+        {product.colores && product.colores.length > 0 && product.memorias && product.memorias.length > 0 && (
+          <div className="flex items-center gap-2 mb-3 text-[10px] text-gray-600">
+            <div className="flex gap-1">{product.colores.slice(0, 3).map((c, i) => <div key={i} className="w-5 h-5 rounded-full border-2 border-gray-300" style={{ backgroundColor: getColorHex(c) }} />)}</div>
+            <span>•</span>
+            <span>{product.memorias[0]}</span>
           </div>
         )}
-
         <div className="mb-3">
-          <div className="flex items-baseline gap-2">
-            <span className="text-lg font-bold text-[#002f87]">{formatPrice(product.precio)}</span>
-            {product.precioAnterior && (
-              <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>
-            )}
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="text-2xl font-extrabold text-[#0f49bd]">{formatPrice(product.precio)}</span>
+            {product.precioAnterior && <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
           </div>
-          {product.disponibleCredito && product.pagosSemanales && (
-            <p className="text-xs text-gray-500 mt-0.5">
-              {product.pagosSemanales}
-            </p>
-          )}
+          {product.disponibleCredito && <p className="text-[10px] text-gray-600">💳 Desde <span className="font-semibold">${product.pagosSemanales?.toString().match(/\$?\d+/)?.[0] || '350'}</span> enganche</p>}
         </div>
-        <div className="flex gap-2 mt-auto">
-          {!sinStock ? (
-            <button
-              onClick={handleReservar}
-              className="flex-1 text-center bg-[#13ec6d] text-[#002f87] py-2.5 px-2 rounded-xl text-xs font-bold hover:bg-green-400 transition-colors"
-            >
-              Reservar
-            </button>
-          ) : (
-            <button
-              disabled
-              className="flex-1 text-center bg-gray-200 text-gray-400 py-2.5 px-2 rounded-xl text-xs font-bold cursor-not-allowed"
-            >
-              Sin stock
-            </button>
-          )}
-          <Link
-            to={`/producto/${product.id}`}
-            className="flex-1 text-center border border-[#0f49bd] text-[#0f49bd] py-2.5 px-2 rounded-xl text-xs font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center gap-1.5"
-          >
-            <IconEye />
-            Detalles
-          </Link>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={handleReservar} className="bg-[#0f49bd] hover:bg-[#002f87] text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"><IconCart />Reservar</button>
+          <Link to={`/producto/${product.id}`} className="border-2 border-[#0f49bd] text-[#0f49bd] hover:bg-blue-50 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"><IconEye />Detalles</Link>
         </div>
       </div>
     </div>
@@ -451,7 +577,10 @@ const Home = () => {
             {loadingPopulares
               ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
               : populares.length > 0
-                ? populares.map((p) => <ProductCard key={p.id} product={p} />)
+                ? populares.map((p, index) => {
+                    const variants: CardVariant[] = ['original', 'compact', 'premium', 'minimal', 'horizontal', 'hybrid'];
+                    return <ProductCard key={p.id} product={p} variant={variants[index % 6]} />;
+                  })
                 : (
                   <div className="col-span-6 text-center py-10 text-gray-400">
                     <p className="text-4xl mb-3">📱</p>
@@ -489,7 +618,10 @@ const Home = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {loadingOfertas
                 ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
-                : ofertas.map((p) => <ProductCard key={p.id} product={p} />)
+                : ofertas.map((p, index) => {
+                    const variants: CardVariant[] = ['hybrid', 'compact', 'premium', 'minimal', 'original', 'horizontal'];
+                    return <ProductCard key={p.id} product={p} variant={variants[index % 6]} />;
+                  })
               }
             </div>
           </div>
