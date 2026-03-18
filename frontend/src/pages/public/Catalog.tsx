@@ -773,7 +773,6 @@ const Catalog = () => {
                         )}
 
                         <div className="mb-1.5">
-                          <p className="text-[10px] text-gray-500 mb-0.5">En Amigo Kit desde</p>
                           <div className="flex items-baseline gap-2 flex-wrap">
                             <span className="text-lg font-bold text-[#0f49bd]">{formatPrice(product.precio)}</span>
                             {product.precioAnterior && (
@@ -782,7 +781,7 @@ const Catalog = () => {
                           </div>
                           {product.disponibleCredito && product.pagosSemanales && (
                             <p className="text-[10px] text-gray-500 mt-0.5">
-                              o en pagos de {formatPrice(product.pagosSemanales)}/semana a crédito
+                              {product.pagosSemanales}
                             </p>
                           )}
                         </div>
