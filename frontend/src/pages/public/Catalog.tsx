@@ -35,16 +35,22 @@ const IconChevron = ({ open }: { open: boolean }) => (
     <polyline points="6 9 12 15 18 9" />
   </svg>
 );
-const IconTruck = () => (
-  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="1" y="3" width="15" height="13" rx="1" />
-    <path d="M16 8h4l3 3v5h-7V8z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
+
+const IconCart = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="9" cy="21" r="1" />
+    <circle cx="20" cy="21" r="1" />
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
   </svg>
 );
-const IconEye = () => (
+const IconHeart = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-    <circle cx="12" cy="12" r="3" />
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </svg>
+);
+const IconStar = ({ filled = false }: { filled?: boolean }) => (
+  <svg className="w-3 h-3" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
   </svg>
 );
 
@@ -307,31 +313,20 @@ const Catalog = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const hasMore = products.length < total;
 
-  // Selección de color/memoria por tarjeta (para el botón Reservar directo)
-  const [cardSelection, setCardSelection] = useState<Record<string, { color: string; memoria: string }>>({});
   const navigate = useNavigate();
   const { agregarAlCarrito } = useCarritoStore();
 
-  const getCardColor = (productId: string) => cardSelection[productId]?.color ?? '';
-  const getCardMemoria = (productId: string) => cardSelection[productId]?.memoria ?? '';
-  const setCardColor = (productId: string, color: string) =>
-    setCardSelection(prev => ({ ...prev, [productId]: { ...prev[productId], color, memoria: prev[productId]?.memoria ?? '' } }));
-  const setCardMemoria = (productId: string, memoria: string) =>
-    setCardSelection(prev => ({ ...prev, [productId]: { ...(prev[productId] || { color: '' }), memoria } }));
-
   /**
    * Función inteligente de reserva:
-   * - Si el producto tiene opciones (color/memoria) y el usuario NO las seleccionó → redirige a ProductDetail
-   * - Si no tiene opciones o ya fueron seleccionadas → agrega directo al carrito
+   * - Si el producto tiene opciones (color/memoria) → redirige a ProductDetail
+   * - Si no tiene opciones → agrega directo al carrito
    */
   const handleReservar = (product: Product) => {
     const tieneColores = product.colores && product.colores.length > 0;
     const tieneMemorias = product.memorias && product.memorias.length > 0;
-    const colorSeleccionado = getCardColor(product.id);
-    const memoriaSeleccionada = getCardMemoria(product.id);
 
-    // Si tiene opciones y no están seleccionadas, redirigir a detalle
-    if ((tieneColores && !colorSeleccionado) || (tieneMemorias && !memoriaSeleccionada)) {
+    // Si tiene opciones, redirigir a detalle
+    if (tieneColores || tieneMemorias) {
       navigate(`/producto/${product.id}`);
       return;
     }
@@ -344,9 +339,7 @@ const Catalog = () => {
         marca: product.marca,
         precio: product.precio,
         imagen: product.imagenes?.[0],
-        color: colorSeleccionado || undefined,
-        memoria: memoriaSeleccionada || undefined,
-        tipoPago: 'CONTADO', // Default, el usuario puede cambiarlo en el carrito
+        tipoPago: 'CONTADO',
       });
 
       toast.success(
@@ -691,22 +684,27 @@ const Catalog = () => {
                   return (
                     <div
                       key={product.id}
-                      className={`bg-white rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 flex flex-col overflow-hidden ${unavailable ? 'opacity-70' : ''}`}
+                      className={`bg-white rounded-2xl shadow-md hover:shadow-xl transition-all border border-gray-200 overflow-hidden ${unavailable ? 'opacity-70' : ''}`}
                     >
-                      {product.badge && (
-                        <div className="px-3 pt-3 pb-0">
-                          <span className={`inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full ${getBadgeStyle(product.badge)}`}>
+                      {/* Área de imagen con badge y wishlist */}
+                      <div className="relative bg-white h-44 flex items-center justify-center group">
+                        <button className="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md hover:bg-red-50 transition-colors z-10">
+                          <IconHeart />
+                        </button>
+                        {product.precioAnterior ? (
+                          <span className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg z-10">
+                            Oferta
+                          </span>
+                        ) : product.badge ? (
+                          <span className={`absolute top-2 left-2 text-white text-[10px] font-bold px-2.5 py-1 rounded-full z-10 ${getBadgeStyle(product.badge)}`}>
                             {product.badge}
                           </span>
-                        </div>
-                      )}
-
-                      <div className="relative flex items-center justify-center bg-gray-50 h-44 mx-3 mt-2 rounded-lg overflow-hidden">
+                        ) : null}
                         {product.imagenes && product.imagenes.length > 0 ? (
                           <img
                             src={toImageUrl(product.imagenes[0])}
                             alt={product.nombre}
-                            className="h-36 w-36 object-contain drop-shadow-sm"
+                            className="h-36 w-36 object-contain group-hover:scale-105 transition-transform"
                             loading="lazy"
                           />
                         ) : (
@@ -719,121 +717,61 @@ const Catalog = () => {
                         )}
                       </div>
 
+                      {/* Contenido de la tarjeta */}
                       <div className="p-3 flex flex-col flex-1">
-                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide mb-0.5">
-                          {product.marca} | {product.sku}
-                        </p>
-                        <h3 className="font-bold text-gray-900 text-sm leading-snug mb-2 line-clamp-2">
+                        {/* Título del producto */}
+                        <h3 className="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2 min-h-[2.5rem]">
                           {product.nombre}
                         </h3>
 
-                        {/* Selector de color */}
-                        {product.colores && product.colores.length > 0 && (
-                          <div className="mb-2">
-                            <p className="text-[10px] text-gray-400 mb-1">Color</p>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {product.colores.map((c) => {
-                                const selected = getCardColor(product.id) === c;
-                                return (
-                                  <button
-                                    key={c}
-                                    title={c}
-                                    onClick={() => setCardColor(product.id, selected ? '' : c)}
-                                    className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${selected ? 'border-[#0f49bd] scale-110 shadow-md' : 'border-gray-300 hover:border-gray-400'}`}
-                                    style={{ backgroundColor: getColorHex(c) }}
-                                  />
-                                );
-                              })}
-                            </div>
-                            {getCardColor(product.id) && (
-                              <p className="text-[10px] text-[#0f49bd] mt-0.5 capitalize">{getCardColor(product.id)}</p>
-                            )}
-                          </div>
-                        )}
+                        {/* Ratings */}
+                        <div className="flex items-center gap-0.5 mb-2">
+                          {[1,2,3,4,5].map(i => <IconStar key={i} filled={i <= 4} />)}
+                          <span className="text-[9px] text-gray-500 ml-1">(120)</span>
+                        </div>
 
-                        {/* Selector de memoria */}
-                        {product.memorias && product.memorias.length > 0 && (
-                          <div className="mb-2">
-                            <p className="text-[10px] text-gray-400 mb-1">Almacenamiento</p>
-                            <div className="flex items-center gap-1 flex-wrap">
-                              {product.memorias.map((m) => {
-                                const selected = getCardMemoria(product.id) === m;
-                                return (
-                                  <button
-                                    key={m}
-                                    onClick={() => setCardMemoria(product.id, selected ? '' : m)}
-                                    className={`text-[10px] px-2 py-0.5 rounded border font-medium transition-all ${selected ? 'bg-[#0f49bd] text-white border-[#0f49bd]' : 'border-gray-300 text-gray-600 hover:border-[#0f49bd] hover:text-[#0f49bd]'}`}
-                                  >
-                                    {m}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="mb-1.5">
-                          <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="text-lg font-bold text-[#0f49bd]">{formatPrice(product.precio)}</span>
+                        {/* Precio */}
+                        <div className="mb-2">
+                          <div className="flex items-baseline gap-1.5 flex-wrap">
+                            <span className="text-xl font-extrabold text-[#0f49bd]">{formatPrice(product.precio)}</span>
                             {product.precioAnterior && (
                               <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>
                             )}
                           </div>
-                          {product.disponibleCredito && product.pagosSemanales && (
-                            <div className="text-[10px] text-gray-500 mt-1">
-                              {(() => {
-                                const text = String(product.pagosSemanales);
-                                const engancheMatch = text.match(/Enganche:\s*([^P]+)/);
-                                const pagosMatch = text.match(/Pagos semanales:\s*(.+)/);
-                                
-                                return (
-                                  <>
-                                    {engancheMatch && (
-                                      <p className="leading-tight">
-                                        <span className="font-bold">Enganche:</span> {engancheMatch[1].trim()}
-                                      </p>
-                                    )}
-                                    {pagosMatch && (
-                                      <p className="leading-tight">
-                                        <span className="font-bold">Pagos semanales:</span> {pagosMatch[1].trim()}
-                                      </p>
-                                    )}
-                                    {!engancheMatch && !pagosMatch && (
-                                      <p className="leading-tight">{text}</p>
-                                    )}
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          )}
                         </div>
 
-                        {product.precioAnterior && (
-                          <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-2 bg-gray-50 rounded px-2 py-1">
-                            <IconTruck />
-                            Envío gratis
+                        {/* Opciones de pago */}
+                        {product.disponibleCredito && (
+                          <div className="bg-blue-50 border border-blue-100 rounded-lg p-1.5 mb-2">
+                            <p className="text-[9px] text-blue-700 leading-tight">
+                              💳 Opciones de pago: Contado o crédito disponible
+                            </p>
                           </div>
                         )}
 
-                        <div className="mt-auto pt-2 flex flex-col gap-2">
+                        {/* Botones de acción */}
+                        <div className="mt-auto">
                           {!unavailable ? (
                             <button
                               onClick={() => handleReservar(product)}
-                              className="w-full text-center bg-[#0f49bd] hover:bg-[#002f87] text-white py-2.5 px-2 rounded-xl text-sm font-bold transition-colors"
+                              className="w-full bg-[#0f49bd] hover:bg-[#002f87] text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 mb-1.5 transition-colors"
                             >
-                              Reservar
+                              <IconCart />
+                              Agregar al carrito
                             </button>
                           ) : (
-                            <button disabled className="w-full bg-gray-200 text-gray-400 py-2.5 px-2 rounded-xl text-sm font-bold cursor-not-allowed">
+                            <button 
+                              disabled 
+                              className="w-full bg-gray-200 text-gray-400 py-2.5 rounded-xl text-xs font-bold cursor-not-allowed mb-1.5"
+                            >
                               Sin stock
                             </button>
                           )}
                           <Link
                             to={`/producto/${product.id}`}
-                            className="w-full text-center border border-gray-300 text-gray-600 py-2.5 px-2 rounded-xl text-xs font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
+                            className="block text-center text-[#0f49bd] text-[10px] hover:underline"
                           >
-                            <IconEye />
-                            Detalles
+                            Ver detalles completos
                           </Link>
                         </div>
                       </div>
