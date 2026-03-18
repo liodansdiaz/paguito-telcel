@@ -166,39 +166,46 @@ const ProductCard = ({ product, variant = 'original' }: { product: Product; vari
     );
   }
 
-  // VARIANT 3: PREMIUM (tipo Amazon)
+  // VARIANT 3: PREMIUM (tipo Amazon) - Diseño principal
   if (variant === 'premium') {
     return (
       <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-200">
-        <div className="relative bg-white h-48 flex items-center justify-center group">
-          <button className="absolute top-3 right-3 bg-white rounded-full p-2 shadow-md hover:bg-red-50 transition-colors"><IconHeart /></button>
-          {product.badge && <span className="absolute top-3 left-3 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-full">{product.badge}</span>}
-          {imagen ? <img src={imagen} alt={product.nombre} className="h-40 w-40 object-contain group-hover:scale-105 transition-transform" /> : <span className="text-5xl">📱</span>}
+        <div className="relative bg-white h-44 flex items-center justify-center group">
+          <button className="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md hover:bg-red-50 transition-colors z-10"><IconHeart /></button>
+          {product.precioAnterior ? (
+            <span className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg z-10">
+              Oferta
+            </span>
+          ) : product.badge ? (
+            <span className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full z-10">
+              {product.badge}
+            </span>
+          ) : null}
+          {imagen ? <img src={imagen} alt={product.nombre} className="h-36 w-36 object-contain group-hover:scale-105 transition-transform" /> : <span className="text-5xl">📱</span>}
         </div>
-        <div className="p-4">
-          <div className="flex items-start justify-between mb-1">
-            <h3 className="font-bold text-gray-900 text-sm flex-1">{product.nombre}</h3>
-            <span className="text-[9px] text-gray-400 ml-2">{product.sku}</span>
-          </div>
-          <div className="flex items-center gap-1 mb-2">
+        <div className="p-3">
+          <h3 className="font-bold text-gray-900 text-sm leading-tight mb-1 line-clamp-2 min-h-[2.5rem]">{product.nombre}</h3>
+          <div className="flex items-center gap-0.5 mb-2">
             {[1,2,3,4,5].map(i => <IconStar key={i} filled={i <= 4} />)}
-            <span className="text-[10px] text-gray-500 ml-1">(120)</span>
+            <span className="text-[9px] text-gray-500 ml-1">(120)</span>
           </div>
-          <div className="mb-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold text-[#0f49bd]">{formatPrice(product.precio)}</span>
-              {product.precioAnterior && <span className="text-sm text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
+          <div className="mb-2">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-xl font-extrabold text-[#0f49bd]">{formatPrice(product.precio)}</span>
+              {product.precioAnterior && <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
             </div>
           </div>
-          {product.colores && product.colores.length > 0 && (
-            <div className="flex gap-1.5 mb-3 items-center">
-              <span className="text-[10px] text-gray-600">Color:</span>
-              {product.colores.slice(0, 4).map((c, i) => <div key={i} className="w-6 h-6 rounded-full border-2 border-gray-300 hover:border-[#0f49bd] cursor-pointer" style={{ backgroundColor: getColorHex(c) }} />)}
+          {product.disponibleCredito && (
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-1.5 mb-2">
+              <p className="text-[9px] text-blue-700 leading-tight">💳 Opciones de pago: Contado o crédito disponible</p>
             </div>
           )}
-          {product.disponibleCredito && <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 mb-3"><p className="text-[10px] text-blue-700">💳 Opciones de pago: Contado o crédito disponible</p></div>}
-          <button onClick={handleReservar} className="w-full bg-[#0f49bd] hover:bg-[#002f87] text-white py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 mb-2"><IconCart />Agregar al carrito</button>
-          <Link to={`/producto/${product.id}`} className="block text-center text-[#0f49bd] text-xs hover:underline">Ver detalles completos</Link>
+          <button onClick={handleReservar} className="w-full bg-[#0f49bd] hover:bg-[#002f87] text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 mb-1.5 transition-colors">
+            <IconCart />Agregar al carrito
+          </button>
+          <Link to={`/producto/${product.id}`} className="block text-center text-[#0f49bd] text-[10px] hover:underline">
+            Ver detalles completos
+          </Link>
         </div>
       </div>
     );
@@ -583,16 +590,13 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             {loadingPopulares
               ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
               : populares.length > 0
-                ? populares.map((p, index) => {
-                    const variants: CardVariant[] = ['original', 'compact', 'premium', 'minimal', 'horizontal', 'hybrid'];
-                    return <ProductCard key={p.id} product={p} variant={variants[index % 6]} />;
-                  })
+                ? populares.map((p) => <ProductCard key={p.id} product={p} variant="premium" />)
                 : (
-                  <div className="col-span-3 text-center py-10 text-gray-400">
+                  <div className="col-span-6 text-center py-10 text-gray-400">
                     <p className="text-4xl mb-3">📱</p>
                     <p className="text-sm">Pronto habrá productos destacados aquí</p>
                   </div>
@@ -625,13 +629,10 @@ const Home = () => {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {loadingOfertas
                 ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
-                : ofertas.map((p, index) => {
-                    const variants: CardVariant[] = ['hybrid', 'compact', 'premium', 'minimal', 'original', 'horizontal'];
-                    return <ProductCard key={p.id} product={p} variant={variants[index % 6]} />;
-                  })
+                : ofertas.map((p) => <ProductCard key={p.id} product={p} variant="premium" />)
               }
             </div>
           </div>
