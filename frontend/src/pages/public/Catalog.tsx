@@ -780,9 +780,31 @@ const Catalog = () => {
                             )}
                           </div>
                           {product.disponibleCredito && product.pagosSemanales && (
-                            <p className="text-[10px] text-gray-500 mt-0.5">
-                              {product.pagosSemanales}
-                            </p>
+                            <div className="text-[10px] text-gray-500 mt-1">
+                              {(() => {
+                                const text = String(product.pagosSemanales);
+                                const engancheMatch = text.match(/Enganche:\s*([^P]+)/);
+                                const pagosMatch = text.match(/Pagos semanales:\s*(.+)/);
+                                
+                                return (
+                                  <>
+                                    {engancheMatch && (
+                                      <p className="leading-tight">
+                                        <span className="font-bold">Enganche:</span> {engancheMatch[1].trim()}
+                                      </p>
+                                    )}
+                                    {pagosMatch && (
+                                      <p className="leading-tight">
+                                        <span className="font-bold">Pagos semanales:</span> {pagosMatch[1].trim()}
+                                      </p>
+                                    )}
+                                    {!engancheMatch && !pagosMatch && (
+                                      <p className="leading-tight">{text}</p>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </div>
                           )}
                         </div>
 
