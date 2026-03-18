@@ -187,9 +187,31 @@ const ProductDetail = () => {
               <div className="mt-3">
                 <p className="text-sm font-medium text-gray-700 mb-2">A crédito</p>
                 <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 inline-block">
-                  <p className="text-sm text-[#0f49bd] font-medium whitespace-pre-line">
-                    {String(product.pagosSemanales)}
-                  </p>
+                  <div className="text-sm text-[#0f49bd]">
+                    {(() => {
+                      const text = String(product.pagosSemanales);
+                      const engancheMatch = text.match(/Enganche:\s*([^P]+)/);
+                      const pagosMatch = text.match(/Pagos semanales:\s*(.+)/);
+                      
+                      return (
+                        <>
+                          {engancheMatch && (
+                            <p className="mb-1">
+                              <span className="font-bold">Enganche:</span> {engancheMatch[1].trim()}
+                            </p>
+                          )}
+                          {pagosMatch && (
+                            <p>
+                              <span className="font-bold">Pagos semanales:</span> {pagosMatch[1].trim()}
+                            </p>
+                          )}
+                          {!engancheMatch && !pagosMatch && (
+                            <p className="font-medium">{text}</p>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
               </div>
             )}
