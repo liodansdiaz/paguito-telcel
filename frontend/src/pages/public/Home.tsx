@@ -174,35 +174,78 @@ const ProductCard = ({ product, variant = 'original' }: { product: Product; vari
           <h3 className="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 min-h-[2.5rem]">{product.nombre}</h3>
           
           {/* Precio */}
-          <div className="mb-2">
+          <div className="mb-1">
             <div className="flex items-baseline gap-1.5 flex-wrap">
               <span className="text-xl font-extrabold text-[#0f49bd]">{formatPrice(product.precio)}</span>
               {product.precioAnterior && <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
             </div>
+            {/* Ahorro calculado */}
+            {product.precioAnterior && (
+              <p className="text-[10px] text-green-600 font-semibold">
+                Ahorra {formatPrice(product.precioAnterior - product.precio)}
+              </p>
+            )}
           </div>
 
-          {/* Colores disponibles */}
-          {product.colores && product.colores.length > 0 && (
-            <div className="flex gap-1.5 mb-3">
-              {product.colores.slice(0, 5).map((color, idx) => (
-                <div
-                  key={idx}
-                  className="w-5 h-5 rounded-full border-2 border-gray-300"
-                  style={{ backgroundColor: getColorHex(color) }}
-                  title={color}
-                />
-              ))}
-              {product.colores.length > 5 && (
-                <span className="text-xs text-gray-400 self-center">+{product.colores.length - 5}</span>
+          {/* Colores + Almacenamiento */}
+          {((product.colores && product.colores.length > 0) || (product.memorias && product.memorias.length > 0)) && (
+            <div className="flex items-center gap-2 mb-2">
+              {/* Colores */}
+              {product.colores && product.colores.length > 0 && (
+                <div className="flex gap-1">
+                  {product.colores.slice(0, 4).map((color, idx) => (
+                    <div
+                      key={idx}
+                      className="w-4 h-4 rounded-full border-2 border-gray-300"
+                      style={{ backgroundColor: getColorHex(color) }}
+                      title={color}
+                    />
+                  ))}
+                  {product.colores.length > 4 && (
+                    <span className="text-[9px] text-gray-400 self-center">+{product.colores.length - 4}</span>
+                  )}
+                </div>
+              )}
+              {/* Separador */}
+              {product.colores && product.colores.length > 0 && product.memorias && product.memorias.length > 0 && (
+                <span className="text-gray-300">•</span>
+              )}
+              {/* Almacenamiento */}
+              {product.memorias && product.memorias.length > 0 && (
+                <span className="text-[10px] text-gray-600 font-medium">
+                  {product.memorias.join(' / ')}
+                </span>
               )}
             </div>
           )}
 
-          {/* Opciones de pago */}
-          {product.disponibleCredito && (
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-1.5 mb-2">
-              <p className="text-[9px] text-blue-700 leading-tight">💳 Opciones de pago: Contado o crédito disponible</p>
+          {/* Información de crédito mejorada */}
+          {product.disponibleCredito && product.pagosSemanales && (
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 mb-2">
+              {(() => {
+                const text = String(product.pagosSemanales);
+                const engancheMatch = text.match(/Enganche:\s*\$?(\d+)/);
+                const pagosMatch = text.match(/Pagos semanales:\s*\$?(\d+)/);
+                
+                return (
+                  <>
+                    <p className="text-[11px] text-blue-700 font-bold leading-tight">
+                      💳 Desde ${pagosMatch?.[1] || '120'}/semana
+                    </p>
+                    <p className="text-[9px] text-blue-600 leading-tight mt-0.5">
+                      Enganche desde ${engancheMatch?.[1] || '350'}
+                    </p>
+                  </>
+                );
+              })()}
             </div>
+          )}
+
+          {/* Disponibilidad */}
+          {product.stock > 0 && (
+            <p className="text-[9px] text-green-600 font-semibold mb-2 flex items-center gap-1">
+              <span>✓</span> Disponible - Entrega inmediata
+            </p>
           )}
 
           {/* Botones de acción */}
