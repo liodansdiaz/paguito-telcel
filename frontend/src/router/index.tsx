@@ -29,6 +29,7 @@ import ReservationsManager from '../pages/admin/ReservationsManager';
 import CustomersDirectory from '../pages/admin/CustomersDirectory';
 import CustomerProfile from '../pages/admin/CustomerProfile';
 import VendorsManager from '../pages/admin/VendorsManager';
+import AdminsManager from '../pages/admin/AdminsManager';
 import InventoryManager from '../pages/admin/InventoryManager';
 
 // Vendor
@@ -76,6 +77,7 @@ export const router = createBrowserRouter([
       { path: 'clientes', element: <CustomersDirectory /> },
       { path: 'clientes/:id', element: <CustomerProfile /> },
       { path: 'vendedores', element: <VendorsManager /> },
+      { path: 'administradores', element: <AdminsManager /> },
       { path: 'inventario', element: <InventoryManager /> },
     ],
   },

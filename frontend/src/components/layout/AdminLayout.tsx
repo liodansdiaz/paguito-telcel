@@ -6,6 +6,7 @@ const navItems = [
   { label: 'Reservas', path: '/admin/reservas', icon: '📋' },
   { label: 'Clientes', path: '/admin/clientes', icon: '👥' },
   { label: 'Vendedores', path: '/admin/vendedores', icon: '🧑‍💼' },
+  { label: 'Administradores', path: '/admin/administradores', icon: '🔑' },
   { label: 'Inventario', path: '/admin/inventario', icon: '📦' },
 ];
 
