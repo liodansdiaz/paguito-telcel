@@ -20,6 +20,8 @@ import MiReserva from '../pages/public/MiReserva';
 
 // Auth
 import Login from '../pages/auth/Login';
+import ForgotPassword from '../pages/auth/ForgotPassword';
+import ResetPassword from '../pages/auth/ResetPassword';
 
 // Admin
 import AdminDashboard from '../pages/admin/AdminDashboard';
@@ -58,8 +60,10 @@ export const router = createBrowserRouter([
       { path: '/mi-reserva', element: <MiReserva /> },
     ],
   },
-  // Login
+  // Auth
   { path: '/login', element: <Login /> },
+  { path: '/forgot-password', element: <ForgotPassword /> },
+  { path: '/reset-password', element: <ResetPassword /> },
   // Admin
   {
     path: '/admin',
