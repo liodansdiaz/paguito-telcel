@@ -366,9 +366,9 @@ const CartCheckout = () => {
             /* PASO 1: Lista de productos */
             <div className="space-y-4">
               {items.map((item) => (
-                <div key={item.tempId} className="bg-white border border-gray-200 rounded-xl p-5 flex gap-4">
+                <div key={item.tempId} className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row gap-3 sm:gap-4">
                   {/* Imagen */}
-                  <div className="w-20 h-20 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-100">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-100">
                     {item.imagen
                       ? <img src={toImageUrl(item.imagen)} alt={item.nombre} className="w-full h-full object-contain" />
                       : <span className="text-3xl">📱</span>
@@ -378,7 +378,7 @@ const CartCheckout = () => {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-400 font-medium uppercase mb-1">{item.marca}</p>
-                    <h3 className="font-bold text-gray-900 text-lg mb-2">{item.nombre}</h3>
+                    <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-2">{item.nombre}</h3>
                     
                     {/* Opciones seleccionadas */}
                     <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -422,7 +422,7 @@ const CartCheckout = () => {
                   </div>
 
                   {/* Precio y eliminar */}
-                  <div className="flex flex-col items-end justify-between">
+                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-between">
                     <button
                       onClick={() => handleEliminar(item.tempId)}
                       className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -432,7 +432,7 @@ const CartCheckout = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
-                    <p className="text-xl font-extrabold text-[#002f87]">
+                    <p className="text-lg sm:text-xl font-extrabold text-[#002f87]">
                       {formatPrice(item.precio)}
                     </p>
                   </div>
@@ -664,18 +664,18 @@ const CartCheckout = () => {
                 )}
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setStep('cart')}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors text-sm"
                 >
                   ← Volver al carrito
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-[#13ec6d] text-[#002f87] py-3 rounded-xl font-bold hover:bg-green-400 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-[#13ec6d] text-[#002f87] py-3 rounded-xl font-bold hover:bg-green-400 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {loading ? 'Confirmando...' : 'Confirmar reserva'}
                 </button>
