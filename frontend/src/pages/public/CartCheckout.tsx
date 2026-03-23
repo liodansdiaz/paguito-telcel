@@ -170,7 +170,13 @@ const CartCheckout = () => {
     }, 800);
   }, [showMap, pinConfirmed, geo]);
 
-  useEffect(() => { handleDireccionChange(formData.direccion); }, [formData.direccion, handleDireccionChange]);
+  useEffect(() => {
+    if (pinConfirmed && debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    handleDireccionChange(formData.direccion);
+  }, [formData.direccion, handleDireccionChange, pinConfirmed]);
 
   const handleOpenMap = useCallback(async () => {
     setShowMap(true);
@@ -200,6 +206,7 @@ const CartCheckout = () => {
   const handleAcceptReverseAddr = () => {
     if (reverseAddr) setFormData(prev => ({ ...prev, direccion: reverseAddr }));
     setReverseAddr(null);
+    setPinConfirmed(true); // Bloquear geocodificación para evitar ciclo infinito
   };
 
   const handleResetPin = () => {
