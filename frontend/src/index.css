@@ -16,7 +16,8 @@ html, body {
 /* Leaflet fix */
 .leaflet-container {
   z-index: 1;
-  max-width: 100%;
+  max-width: 100% !important;
+  overflow: hidden !important;
 }
 
 .leaflet-control-attribution {
@@ -24,6 +25,12 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.leaflet-pane,
+.leaflet-map-pane,
+.leaflet-tile-pane {
+  max-width: 100% !important;
 }
 
 /* ══════════════════════════════════════════════════════════

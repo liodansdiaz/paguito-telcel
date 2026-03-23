@@ -59,7 +59,11 @@ const MapClickHandler = ({ onSelect }: { onSelect: (lat: number, lng: number) =>
 
 const MapPanner = ({ center, zoom }: { center: [number, number]; zoom: number }) => {
   const map = useMap();
-  useEffect(() => { map.flyTo(center, zoom, { duration: 0.8 }); }, [center, zoom, map]);
+  useEffect(() => {
+    map.flyTo(center, zoom, { duration: 0.8 });
+    // Forzar que el mapa se contenga después de mover
+    setTimeout(() => map.invalidateSize(), 100);
+  }, [center, zoom, map]);
   return null;
 };
 
@@ -612,8 +616,8 @@ const CartCheckout = () => {
                       </span>
                     </div>
 
-                    <div className="h-64 w-full overflow-hidden relative">
-                      <MapContainer center={mapCenter} zoom={mapZoom} className="h-full w-full z-10" style={{ maxWidth: '100%' }}>
+                    <div className="h-64 overflow-hidden" style={{ contain: 'layout style', maxWidth: '100%' }}>
+                      <MapContainer center={mapCenter} zoom={mapZoom} className="h-full w-full z-10" style={{ maxWidth: '100%', width: '100%' }}>
                         <TileLayer
                           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
