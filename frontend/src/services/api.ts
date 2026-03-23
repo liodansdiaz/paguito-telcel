@@ -37,8 +37,10 @@ export const clearTokens = () => {
   notifyListeners();
 };
 
+const PROD_API = 'https://paguito-telcel-api.onrender.com/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.PROD ? PROD_API : '/api',
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
   withCredentials: true,
@@ -72,7 +74,8 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const { data } = await axios.post('/api/auth/refresh', { refreshToken }, { withCredentials: true });
+          const refreshUrl = import.meta.env.PROD ? `${PROD_API}/auth/refresh` : '/api/auth/refresh';
+          const { data } = await axios.post(refreshUrl, { refreshToken }, { withCredentials: true });
           const newToken = data.data.accessToken;
           accessToken = newToken;
           notifyListeners();
@@ -82,7 +85,8 @@ api.interceptors.response.use(
           return api(originalRequest);
         } catch {
           try {
-            await axios.post('/api/auth/logout', { refreshToken }, { withCredentials: true });
+            const logoutUrl = import.meta.env.PROD ? `${PROD_API}/auth/logout` : '/api/auth/logout';
+            await axios.post(logoutUrl, { refreshToken }, { withCredentials: true });
           } catch {}
           clearTokens();
           window.location.href = '/login';
