@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { showError, showSuccess } from '../../utils/notifications';
 import api from '../../services/api';
 
 const ForgotPassword = () => {
@@ -12,7 +12,7 @@ const ForgotPassword = () => {
     e.preventDefault();
 
     if (!email.trim()) {
-      toast.error('Por favor ingresa tu correo electrónico');
+      showError('Por favor ingresa tu correo electrónico');
       return;
     }
 
@@ -21,9 +21,9 @@ const ForgotPassword = () => {
     try {
       const { data } = await api.post('/auth/forgot-password', { email: email.trim() });
       setSubmitted(true);
-      toast.success(data.data.message || 'Revisa tu correo electrónico');
+      showSuccess(data.data.message || 'Revisa tu correo electrónico');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Error al enviar el correo. Intenta de nuevo.');
+      showError(error.response?.data?.message || 'Error al enviar el correo. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }

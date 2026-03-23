@@ -90,7 +90,9 @@ model Product {
   memorias        String[]  @default([])
   badge           String?
   disponibleCredito Boolean @default(true)
-  pagosSemanales  String?
+  pagosSemanales  String?   // Deprecated: mantener para compatibilidad
+  enganche        String?   // Ej: "Desde $300 a $800" o "Desde $350"
+  pagoSemanal     String?   // Ej: "Desde $150 a $240" o "$120/semana"
   especificaciones Json?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

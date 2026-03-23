@@ -205,6 +205,19 @@ export class ReservationController {
   }
 
   /**
+   * Eliminar físicamente una reserva (admin)
+   * DELETE /api/reservations/admin/:id
+   */
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      await reservationService.delete(req.params['id'] as string);
+      sendSuccess(res, null, 'Reserva eliminada correctamente');
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
    * Obtener un item específico
    * GET /api/reservations/items/:itemId
    */

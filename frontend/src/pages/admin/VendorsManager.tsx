@@ -3,9 +3,10 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import api from '../../services/api';
-import type { User } from '../../types';
+import type { User, Reservation } from '../../types';
 import { showSuccess, showError } from '../../utils/notifications';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import StatusBadge from '../../components/ui/StatusBadge';
 
 const createSchema = z.object({
   nombre: z.string().min(2, 'Nombre requerido'),
@@ -28,6 +29,11 @@ const VendorsManager = () => {
   const [formError, setFormError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Modal reservas del vendedor
+  const [reservationsModal, setReservationsModal] = useState<{ open: boolean; vendor: User | null }>({ open: false, vendor: null });
+  const [vendorReservations, setVendorReservations] = useState<Reservation[]>([]);
+  const [loadingReservations, setLoadingReservations] = useState(false);
   
   // Filtros
   const [search, setSearch] = useState('');
@@ -118,15 +124,15 @@ const VendorsManager = () => {
 
   const openCreate = () => {
     setEditingVendor(null);
-    reset({ nombre: '', email: '', password: '', zona: '', telefono: '' });
     setFormError('');
+    reset({ nombre: '', email: '', password: '', zona: '', telefono: '' });
     setShowModal(true);
   };
 
   const openEdit = (vendor: User) => {
     setEditingVendor(vendor);
-    reset({ nombre: vendor.nombre, email: vendor.email, password: '', zona: vendor.zona ?? '', telefono: vendor.telefono ?? '' });
     setFormError('');
+    reset({ nombre: vendor.nombre, email: vendor.email, password: '', zona: vendor.zona ?? '', telefono: vendor.telefono ?? '' });
     setShowModal(true);
   };
 
@@ -184,6 +190,26 @@ const VendorsManager = () => {
     } finally {
       setDeleting(false);
     }
+  };
+
+  const openReservationsModal = async (vendor: User) => {
+    setReservationsModal({ open: true, vendor });
+    setLoadingReservations(true);
+    try {
+      const res = await api.get('/reservations/admin', { params: { vendorId: vendor.id, limit: '9999' } });
+      const allReservations: Reservation[] = res.data.data;
+      setVendorReservations(allReservations.filter((r) => r.estado !== 'CANCELADA' && r.estado !== 'COMPLETADA'));
+    } catch (err) {
+      console.error(err);
+      setVendorReservations([]);
+    } finally {
+      setLoadingReservations(false);
+    }
+  };
+
+  const closeReservationsModal = () => {
+    setReservationsModal({ open: false, vendor: null });
+    setVendorReservations([]);
   };
 
   const activos = vendors.filter((v) => v.isActive).length;
@@ -305,7 +331,14 @@ const VendorsManager = () => {
                         {v.isActive ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{v._count?.reservations ?? 0}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => openReservationsModal(v)}
+                        className="text-[#0f49bd] hover:text-blue-800 hover:underline font-medium transition-colors"
+                      >
+                        {v._count?.reservations ?? 0}
+                      </button>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
                         <button
@@ -416,6 +449,100 @@ const VendorsManager = () => {
                 className="flex-1 bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
               >
                 {deleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal reservas del vendedor */}
+      {reservationsModal.open && reservationsModal.vendor && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+            <div className="p-6 pb-4 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900">Reservas de {reservationsModal.vendor.nombre}</h3>
+                  <p className="text-sm text-gray-500">{vendorReservations.length} reserva{vendorReservations.length !== 1 ? 's' : ''} asignada{vendorReservations.length !== 1 ? 's' : ''}</p>
+                </div>
+                <button onClick={closeReservationsModal} className="text-gray-400 hover:text-gray-600 p-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-6 pt-4">
+              {loadingReservations ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />
+                  ))}
+                </div>
+              ) : vendorReservations.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <p className="font-medium">Sin reservas asignadas</p>
+                  <p className="text-sm mt-1">Este vendedor no tiene reservas.</p>
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 rounded-lg">
+                    <tr>
+                      {['Folio', 'Cliente', 'Producto', 'Detalles', 'Dirección', 'Fecha', 'Estado'].map((h) => (
+                        <th key={h} className="text-left px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {vendorReservations.map((r) => (
+                      <tr key={r.id} className="hover:bg-gray-50">
+                        <td className="px-3 py-2.5 font-mono text-xs text-gray-500">#{r.id.slice(0, 8).toUpperCase()}</td>
+                        <td className="px-3 py-2.5">
+                          <p className="font-medium text-gray-900 text-xs">{r.nombreCompleto}</p>
+                          <p className="text-gray-400 text-xs">{r.telefono}</p>
+                        </td>
+                        <td className="px-3 py-2.5 text-xs text-gray-600">
+                          {r.items && r.items.length > 0
+                            ? r.items.map((i) => i.product?.nombre).filter(Boolean).join(', ')
+                            : 'Sin productos'}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          {r.items && r.items.length > 0 ? (
+                            <div className="space-y-1">
+                              {r.items.map((i) => {
+                                const variantes = [i.color, i.memoria].filter(Boolean).join(', ');
+                                return (
+                                  <div key={i.id} className="text-xs text-gray-600">
+                                    {variantes || <span className="text-gray-400">—</span>}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : <span className="text-xs text-gray-400">—</span>}
+                        </td>
+                        <td className="px-3 py-2.5 text-xs text-gray-600 max-w-[160px]">
+                          <span className="line-clamp-2" title={r.direccion}>{r.direccion}</span>
+                        </td>
+                        <td className="px-3 py-2.5 text-xs text-gray-600 whitespace-nowrap">
+                          {new Date(r.fechaPreferida).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })} {r.horarioPreferido}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <StatusBadge type="reserva" estado={r.estado} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-gray-100">
+              <button onClick={closeReservationsModal} className="w-full border border-gray-300 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50">
+                Cerrar
               </button>
             </div>
           </div>

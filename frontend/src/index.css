@@ -76,3 +76,25 @@
     animation: float 8s ease-in-out infinite;
   }
 }
+
+/* ══════════════════════════════════════════════════════════
+   ANIMACIONES PARA TOAST NOTIFICATIONS
+   ══════════════════════════════════════════════════════════ */
+
+@keyframes toast-enter {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-leave {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(100%); }
+}
+
+.animate-enter {
+  animation: toast-enter 0.3s ease-out;
+}
+
+.animate-leave {
+  animation: toast-leave 0.2s ease-in forwards;
+}

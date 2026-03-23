@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { showError, showSuccess } from '../../utils/notifications';
 import api from '../../services/api';
 import { toImageUrl } from '../../services/config';
 
@@ -132,10 +132,10 @@ const MiReserva = () => {
       setShowConfirmReserva(false);
       setCancelada(true);
       setReserva(null);
-      toast.success('Reserva cancelada exitosamente');
+      showSuccess('Reserva cancelada exitosamente');
     } catch (err: any) {
       setShowConfirmReserva(false);
-      toast.error(err.response?.data?.message || 'Error al cancelar la reserva');
+      showError(err.response?.data?.message || 'Error al cancelar la reserva');
     } finally {
       setCancelando(null);
     }
@@ -150,14 +150,14 @@ const MiReserva = () => {
         itemId 
       });
       setShowConfirmItem(null);
-      toast.success('Producto cancelado exitosamente');
+      showSuccess('Producto cancelado exitosamente');
       
       // Refrescar la reserva
       const res = await api.post('/reservations/consulta', { busqueda: busqueda.trim() });
       setReserva(res.data.data);
     } catch (err: any) {
       setShowConfirmItem(null);
-      toast.error(err.response?.data?.message || 'Error al cancelar el producto');
+      showError(err.response?.data?.message || 'Error al cancelar el producto');
     } finally {
       setCancelando(null);
     }

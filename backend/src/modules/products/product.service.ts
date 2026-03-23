@@ -79,7 +79,8 @@ export class ProductService {
     memorias?: string[];
     badge?: string;
     disponibleCredito?: boolean;
-    pagosSemanales?: string;
+    enganche?: string;
+    pagoSemanal?: string;
     especificaciones?: Record<string, unknown>;
   }) {
     const createData: Prisma.ProductCreateInput = {
@@ -96,7 +97,8 @@ export class ProductService {
       memorias: data.memorias ?? [],
       badge: data.badge,
       disponibleCredito: data.disponibleCredito ?? true,
-      pagosSemanales: data.pagosSemanales,
+      enganche: data.enganche,
+      pagoSemanal: data.pagoSemanal,
       especificaciones: data.especificaciones as Prisma.InputJsonValue,
     };
     
@@ -121,7 +123,8 @@ export class ProductService {
     memorias: string[];
     badge: string;
     disponibleCredito: boolean;
-    pagosSemanales: string;
+    enganche: string;
+    pagoSemanal: string;
     especificaciones: Record<string, unknown>;
     isActive: boolean;
   }>) {

@@ -19,7 +19,8 @@ const productSchema = z.object({
   stockMinimo: z.number().int().min(0).optional(),
   badge: z.string().optional(),
   disponibleCredito: z.boolean().optional(),
-  pagosSemanales: z.string().optional(),
+  enganche: z.string().optional(),
+  pagoSemanal: z.string().optional(),
 });
 type ProductForm = z.infer<typeof productSchema>;
 
@@ -125,7 +126,7 @@ const InventoryManager = () => {
       const res = await api.get('/products/admin/list', { params });
       const rows: Product[] = res.data.data;
 
-      const headers = ['SKU', 'Nombre', 'Marca', 'Precio', 'Precio Anterior', 'Stock', 'Stock Mínimo', 'Estado', 'Crédito', 'Pagos Semanales', 'Badge', 'Colores', 'Memorias', 'Fecha Creación'];
+      const headers = ['SKU', 'Nombre', 'Marca', 'Precio', 'Precio Anterior', 'Stock', 'Stock Mínimo', 'Estado', 'Crédito', 'Enganche', 'Pago Semanal', 'Badge', 'Colores', 'Memorias', 'Fecha Creación'];
       const data = rows.map((p) => [
         p.sku,
         p.nombre,
@@ -136,7 +137,8 @@ const InventoryManager = () => {
         p.stockMinimo,
         p.isActive ? 'Activo' : 'Inactivo',
         p.disponibleCredito ? 'Sí' : 'No',
-        p.pagosSemanales ?? '',
+        p.enganche ?? '',
+        p.pagoSemanal ?? '',
         p.badge ?? '',
         p.colores?.join('; ') ?? '',
         p.memorias?.join('; ') ?? '',
@@ -184,7 +186,8 @@ const InventoryManager = () => {
     setValue('stockMinimo', product.stockMinimo);
     setValue('badge', product.badge ?? '');
     setValue('disponibleCredito', product.disponibleCredito);
-    setValue('pagosSemanales', product.pagosSemanales ? String(product.pagosSemanales) : '');
+    setValue('enganche', product.enganche ?? '');
+    setValue('pagoSemanal', product.pagoSemanal ?? '');
     setShowForm(true);
   };
 
@@ -206,7 +209,8 @@ const InventoryManager = () => {
       stockMinimo: 5,
       badge: '',
       disponibleCredito: true,
-      pagosSemanales: '',
+      enganche: '',
+      pagoSemanal: '',
     });
     setShowForm(true);
   };
@@ -225,7 +229,8 @@ const InventoryManager = () => {
       stockMinimo: 5,
       badge: '',
       disponibleCredito: true,
-      pagosSemanales: '',
+      enganche: '',
+      pagoSemanal: '',
     });
     setImageFiles([]);
     setExistingImageUrls([]);
@@ -240,7 +245,7 @@ const InventoryManager = () => {
       Object.entries(data).forEach(([key, value]) => {
         const isEmpty = value === undefined || value === null || (typeof value === 'number' && isNaN(value));
         // Campos opcionales que pueden estar vacíos (los enviamos siempre en edición)
-        if ((key === 'badge' || key === 'pagosSemanales' || key === 'descripcion') && isEditing) {
+        if ((key === 'badge' || key === 'enganche' || key === 'pagoSemanal' || key === 'descripcion') && isEditing) {
           formData.append(key, value === undefined || value === null ? '' : String(value));
         } else if (key === 'precioAnterior' && isEditing) {
           formData.append(key, isEmpty ? '' : String(value));
@@ -587,14 +592,26 @@ const InventoryManager = () => {
                 <p className="text-xs text-gray-500 mt-1">Etiqueta destacada que se mostrará en el producto</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-1 block">Información de pagos a crédito (opcional)</label>
-                <textarea 
-                  {...register('pagosSemanales')} 
-                  rows={2}
-                  placeholder="Ej: Desde $150/semana, A crédito desde $200/semana en 12 meses"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" 
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Enganche (opcional)</label>
+                <input 
+                  {...register('enganche')}
+                  type="text"
+                  placeholder="Ej: Enganche desde $300 a $800, Desde $350"
+                  autoComplete="off"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
                 />
-                <p className="text-xs text-gray-500 mt-1">Describe las opciones de pago a crédito disponibles</p>
+                <p className="text-xs text-gray-500 mt-1">Texto descriptivo del enganche que se mostrará en el producto</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Pago semanal (opcional)</label>
+                <input 
+                  {...register('pagoSemanal')}
+                  type="text"
+                  placeholder="Ej: Desde $150 a $240/semana, $120/semana"
+                  autoComplete="off"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                />
+                <p className="text-xs text-gray-500 mt-1">Texto descriptivo de los pagos semanales que se mostrará en el producto</p>
               </div>
 
               {/* Selector de Colores */}

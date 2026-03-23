@@ -261,6 +261,20 @@ export class ReservationService {
   }
 
   /**
+   * Eliminar físicamente una reserva y todos sus datos relacionados
+   * Si el cliente solo tiene esta reserva, también se elimina el cliente
+   */
+  async delete(id: string) {
+    await this.getById(id);
+    const resultado = await reservationRepository.delete(id);
+    if (resultado.clienteEliminado) {
+      logger.info(`Reserva eliminada: ${id} — Cliente "${resultado.clienteNombre}" también eliminado (sin más reservas)`);
+    } else {
+      logger.info(`Reserva eliminada: ${id} — Cliente "${resultado.clienteNombre}" conservado (tiene más reservas)`);
+    }
+  }
+
+  /**
    * Asignar o reasignar vendedor a una reserva
    */
   async assignVendor(id: string, vendorId: string) {

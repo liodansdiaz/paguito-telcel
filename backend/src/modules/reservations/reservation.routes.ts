@@ -62,6 +62,12 @@ router.patch('/admin/:id/assign', authenticate, requireRole('ADMIN'), reservatio
  */
 router.post('/admin/:id/cancel', authenticate, requireRole('ADMIN'), reservationController.cancelReservation.bind(reservationController));
 
+/**
+ * Eliminar físicamente una reserva
+ * DELETE /api/reservations/admin/:id
+ */
+router.delete('/admin/:id', authenticate, requireRole('ADMIN'), reservationController.delete.bind(reservationController));
+
 // =====================================================================
 // RUTAS DE ITEMS (ADMIN Y VENDEDOR)
 // =====================================================================

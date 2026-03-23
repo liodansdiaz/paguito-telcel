@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { showError, toast } from '../../utils/notifications';
 import api from '../../services/api';
 import { toImageUrl } from '../../services/config';
 import { useCarritoStore } from '../../store/carrito.store';
@@ -48,7 +48,7 @@ const ProductDetail = () => {
     
     // Validar: Solo 1 producto a crédito permitido
     if (tipoPago === 'CREDITO' && contarProductosCredito() > 0) {
-      toast.error('Solo puedes agregar un producto a crédito por reserva');
+      showError('Solo puedes agregar un producto a crédito por reserva');
       return;
     }
     
@@ -183,34 +183,21 @@ const ProductDetail = () => {
                 <span className="text-lg text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>
               )}
             </div>
-            {product.disponibleCredito && product.pagosSemanales && (
+            {product.disponibleCredito && (product.pagoSemanal || product.enganche) && (
               <div className="mt-3">
                 <p className="text-sm font-medium text-gray-700 mb-2">A crédito</p>
                 <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 inline-block">
                   <div className="text-sm text-[#0f49bd]">
-                    {(() => {
-                      const text = String(product.pagosSemanales);
-                      const engancheMatch = text.match(/Enganche:\s*([^P]+)/);
-                      const pagosMatch = text.match(/Pagos semanales:\s*(.+)/);
-                      
-                      return (
-                        <>
-                          {engancheMatch && (
-                            <p className="mb-1">
-                              <span className="font-bold">Enganche:</span> {engancheMatch[1].trim()}
-                            </p>
-                          )}
-                          {pagosMatch && (
-                            <p>
-                              <span className="font-bold">Pagos semanales:</span> {pagosMatch[1].trim()}
-                            </p>
-                          )}
-                          {!engancheMatch && !pagosMatch && (
-                            <p className="font-medium">{text}</p>
-                          )}
-                        </>
-                      );
-                    })()}
+                    {product.enganche && (
+                      <p className="mb-1">
+                        <span className="font-bold">💰</span> {product.enganche}
+                      </p>
+                    )}
+                    {product.pagoSemanal && (
+                      <p>
+                        <span className="font-bold">📅</span> {product.pagoSemanal}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -308,9 +295,9 @@ const ProductDetail = () => {
                   <div className="flex flex-col items-center gap-1">
                     <span className="text-lg">📊</span>
                     <span>A crédito</span>
-                    {product.pagosSemanales && (
+                    {product.pagoSemanal && (
                       <span className="text-xs opacity-90 whitespace-nowrap">
-                        {String(product.pagosSemanales).split('\n')[0]}
+                        {product.pagoSemanal}
                       </span>
                     )}
                   </div>

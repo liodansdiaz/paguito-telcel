@@ -546,6 +546,41 @@ export class ReservationRepository {
   }
 
   /**
+   * Eliminar físicamente una reserva y todos sus items
+   * Si el cliente solo tiene esta reserva, también se elimina el cliente
+   * Se ejecuta en transacción atómica
+   */
+  async delete(id: string) {
+    return prisma.$transaction(async (tx) => {
+      // Obtener la reserva para saber el customerId
+      const reservation = await tx.reservation.findUniqueOrThrow({
+        where: { id },
+        select: { customerId: true, customer: { select: { nombreCompleto: true } } },
+      });
+
+      // Eliminar notificaciones relacionadas
+      await tx.notification.deleteMany({ where: { reservationId: id } });
+      // Eliminar items de la reserva
+      await tx.reservationItem.deleteMany({ where: { reservationId: id } });
+      // Eliminar la reserva
+      await tx.reservation.delete({ where: { id } });
+
+      // Verificar si el cliente tiene más reservas
+      const remainingReservations = await tx.reservation.count({
+        where: { customerId: reservation.customerId },
+      });
+
+      // Si no tiene más reservas, eliminar el cliente
+      if (remainingReservations === 0) {
+        await tx.customer.delete({ where: { id: reservation.customerId } });
+        return { clienteEliminado: true, clienteNombre: reservation.customer.nombreCompleto };
+      }
+
+      return { clienteEliminado: false, clienteNombre: reservation.customer.nombreCompleto };
+    });
+  }
+
+  /**
    * Obtener un item específico por ID
    */
   async findItemById(itemId: string) {

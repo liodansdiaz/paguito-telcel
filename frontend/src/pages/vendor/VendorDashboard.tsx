@@ -314,7 +314,7 @@ const VendorDashboard = () => {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    {['Folio', 'Cliente', 'Celular', 'Dirección', 'Fecha', 'Estado', 'Acción'].map((h) => (
+                    {['Folio', 'Cliente', 'Producto', 'Tipo Pago', 'Dirección', 'Fecha', 'Estado', 'Acción'].map((h) => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -323,74 +323,124 @@ const VendorDashboard = () => {
                   {loadingList ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i}>
-                        {Array.from({ length: 7 }).map((__, j) => (
+                        {Array.from({ length: 8 }).map((__, j) => (
                           <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
                         ))}
                       </tr>
                     ))
                   ) : reservations.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-12">
+                      <td colSpan={8} className="text-center py-12">
                         <p className="text-gray-400 text-sm">Sin reservas{filterEstado ? ' con este estado' : ''}</p>
                       </td>
                     </tr>
-                  ) : reservations.map((r) => (
-                    <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                        #{r.id.slice(0, 8).toUpperCase()}
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-gray-900 whitespace-nowrap">{r.nombreCompleto}</p>
-                        <p className="text-gray-400 text-xs">{r.telefono}</p>
-                      </td>
-                      <td className="px-4 py-3 text-gray-700 text-xs whitespace-nowrap">
-                        {r.product?.nombre}
-                      </td>
-                      <td className="px-4 py-3 max-w-[180px]">
-                        <p className="text-gray-600 text-xs truncate" title={r.direccion}>{r.direccion}</p>
-                        {r.latitude != null && r.longitude != null && (
-                          <a
-                            href={`https://www.google.com/maps?q=${r.latitude},${r.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-500 hover:text-blue-700"
-                          >
-                            Ver Maps
-                          </a>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
-                        <p>{fmt(r.fechaPreferida)}</p>
-                        <p className="text-gray-400">{r.horarioPreferido}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge type="reserva" estado={r.estado} />
-                        {r.notas && (
-                          <p className="text-xs text-gray-400 mt-1 max-w-[140px] truncate" title={r.notas}>
-                            {r.notas}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {!['VENDIDA', 'CANCELADA', 'NO_CONCRETADA', 'SIN_STOCK'].includes(r.estado) && (
-                          <button
-                            onClick={() => setStatusModal(r)}
-                            className="text-xs bg-[#002f87] text-white px-3 py-1.5 rounded-lg hover:bg-blue-900 transition-colors whitespace-nowrap"
-                          >
-                            Actualizar
-                          </button>
-                        )}
-                        {['VENDIDA', 'NO_CONCRETADA'].includes(r.estado) && (
-                          <button
-                            onClick={() => setStatusModal(r)}
-                            className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap"
-                          >
-                            Editar nota
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  ) : reservations.flatMap((r) => {
+                    const items = r.items && r.items.length > 0 ? r.items : [null];
+                    return items.map((item, idx) => {
+                      const isFirst = idx === 0;
+                      return (
+                        <tr
+                          key={`${r.id}-${item?.id ?? 'empty'}`}
+                          className={`hover:bg-gray-50 transition-colors ${!isFirst ? 'bg-gray-50/50' : ''}`}
+                        >
+                          {/* Folio */}
+                          <td className={`px-4 py-3 font-mono text-xs text-gray-500 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                            {isFirst ? `#${r.id.slice(0, 8).toUpperCase()}` : (
+                              <span className="text-gray-300 pl-3">└</span>
+                            )}
+                          </td>
+                          {/* Cliente */}
+                          <td className={`px-4 py-3 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                            {isFirst && (
+                              <>
+                                <p className="font-medium text-gray-900 whitespace-nowrap">{r.nombreCompleto}</p>
+                                <p className="text-gray-400 text-xs">{r.telefono}</p>
+                              </>
+                            )}
+                          </td>
+                          {/* Producto */}
+                          <td className={`px-4 py-3 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                            {item ? (
+                              <span className="text-xs text-gray-900 font-medium">{item.product?.nombre}</span>
+                            ) : (
+                              <span className="text-xs text-gray-400">Sin productos</span>
+                            )}
+                          </td>
+                          {/* Tipo Pago */}
+                          <td className={`px-4 py-3 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                            {item ? (
+                              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${item.tipoPago === 'CREDITO' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+                                {item.tipoPago === 'CREDITO' ? 'Crédito' : 'Contado'}
+                              </span>
+                            ) : '—'}
+                          </td>
+                          {/* Dirección */}
+                          <td className={`px-4 py-3 max-w-[180px] ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                            {isFirst && (
+                              <>
+                                <p className="text-gray-600 text-xs truncate" title={r.direccion}>{r.direccion}</p>
+                                {r.latitude != null && r.longitude != null && (
+                                  <a
+                                    href={`https://www.google.com/maps?q=${r.latitude},${r.longitude}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-500 hover:text-blue-700"
+                                  >
+                                    Ver Maps
+                                  </a>
+                                )}
+                              </>
+                            )}
+                          </td>
+                          {/* Fecha */}
+                          <td className={`px-4 py-3 whitespace-nowrap text-xs text-gray-600 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                            {isFirst && (
+                              <>
+                                <p>{fmt(r.fechaPreferida)}</p>
+                                <p className="text-gray-400">{r.horarioPreferido}</p>
+                              </>
+                            )}
+                          </td>
+                          {/* Estado */}
+                          <td className={`px-4 py-3 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                            {isFirst && (
+                              <>
+                                <StatusBadge type="reserva" estado={r.estado} />
+                                {r.notas && (
+                                  <p className="text-xs text-gray-400 mt-1 max-w-[140px] truncate" title={r.notas}>
+                                    {r.notas}
+                                  </p>
+                                )}
+                              </>
+                            )}
+                          </td>
+                          {/* Acción */}
+                          <td className={`px-4 py-3 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                            {isFirst && (
+                              <>
+                                {!['VENDIDA', 'CANCELADA', 'NO_CONCRETADA', 'SIN_STOCK'].includes(r.estado) && (
+                                  <button
+                                    onClick={() => setStatusModal(r)}
+                                    className="text-xs bg-[#002f87] text-white px-3 py-1.5 rounded-lg hover:bg-blue-900 transition-colors whitespace-nowrap"
+                                  >
+                                    Actualizar
+                                  </button>
+                                )}
+                                {['VENDIDA', 'NO_CONCRETADA'].includes(r.estado) && (
+                                  <button
+                                    onClick={() => setStatusModal(r)}
+                                    className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap"
+                                  >
+                                    Editar nota
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })}
                 </tbody>
               </table>
             </div>

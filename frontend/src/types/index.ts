@@ -33,7 +33,9 @@ export interface Product {
   memorias: string[];
   badge?: string;
   disponibleCredito: boolean;
-  pagosSemanales?: number;
+  pagosSemanales?: string; // Deprecated
+  enganche?: string; // Ej: "Enganche desde $300 a $800"
+  pagoSemanal?: string; // Ej: "Desde $150 a $240/semana"
   especificaciones?: Record<string, string>;
   createdAt: string;
 }

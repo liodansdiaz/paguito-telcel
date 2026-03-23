@@ -1,12 +1,67 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { showError, showWarning } from '../../utils/notifications';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import '../../utils/leaflet';
 import { useCarritoStore } from '../../store/carrito.store';
+import { useGeolocation } from '../../hooks/useGeolocation';
 import { toImageUrl } from '../../services/config';
 import api from '../../services/api';
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(price);
+
+// ── Mapa helpers ─────────────────────────────────────────────────────────────
+const DEFAULT_CENTER: [number, number] = [14.9054, -92.2634];
+const DEFAULT_ZOOM = 13;
+const TAPACHULA_VIEWBOX = '-92.6,14.6,-91.8,15.2';
+const nominatimHeaders = { 'Accept-Language': 'es', 'User-Agent': 'AmigoPaguitosTelcel/1.0' };
+
+async function geocodeAddress(query: string): Promise<[number, number] | null> {
+  if (!query || query.trim().length < 8) return null;
+  try {
+    const params = new URLSearchParams({
+      q: `${query.trim()}, Tapachula, Chiapas, Mexico`,
+      format: 'json', limit: '1', countrycodes: 'mx',
+      viewbox: TAPACHULA_VIEWBOX, bounded: '1',
+    });
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, { headers: nominatimHeaders });
+    const data = await res.json();
+    if (data.length === 0) return null;
+    return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+  } catch { return null; }
+}
+
+async function reverseGeocode(lat: number, lon: number): Promise<string | null> {
+  try {
+    const params = new URLSearchParams({
+      lat: String(lat), lon: String(lon), format: 'json', addressdetails: '1',
+    });
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`, { headers: nominatimHeaders });
+    const data = await res.json();
+    if (!data.address) return data.display_name || null;
+    const a = data.address;
+    const parts = [
+      a.road, a.house_number,
+      a.neighbourhood || a.suburb || a.quarter,
+      a.city || a.town || a.village || a.municipality,
+      a.state,
+    ].filter(Boolean);
+    return parts.length >= 2 ? parts.join(', ') : (data.display_name || null);
+  } catch { return null; }
+}
+
+const MapClickHandler = ({ onSelect }: { onSelect: (lat: number, lng: number) => void }) => {
+  useMapEvents({ click(e) { onSelect(e.latlng.lat, e.latlng.lng); } });
+  return null;
+};
+
+const MapPanner = ({ center, zoom }: { center: [number, number]; zoom: number }) => {
+  const map = useMap();
+  useEffect(() => { map.flyTo(center, zoom, { duration: 0.8 }); }, [center, zoom, map]);
+  return null;
+};
 
 const CartCheckout = () => {
   const navigate = useNavigate();
@@ -34,13 +89,23 @@ const CartCheckout = () => {
     notas: '',
   });
 
+  // Estado del mapa
+  const [showMap, setShowMap] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_CENTER);
+  const [mapZoom, setMapZoom] = useState(DEFAULT_ZOOM);
+  const [geocoding, setGeocoding] = useState(false);
+  const [pinConfirmed, setPinConfirmed] = useState(false);
+  const [reverseAddr, setReverseAddr] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const geo = useGeolocation();
+
   const totalPrecio = getTotalPrecio();
   const productosCredito = contarProductosCredito();
 
   const handleEliminar = (tempId: string) => {
     eliminarDelCarrito(tempId);
     if (items.length === 1) {
-      toast.error('Carrito vacío');
+      showError('Carrito vacío');
       navigate('/catalogo');
     }
   };
@@ -50,7 +115,7 @@ const CartCheckout = () => {
     if (nuevoTipoPago === 'CREDITO' && productosCredito > 0) {
       const itemActual = items.find(i => i.tempId === tempId);
       if (itemActual?.tipoPago !== 'CREDITO') {
-        toast.error('Solo puedes tener un producto a crédito en tu reserva');
+        showError('Solo puedes tener un producto a crédito en tu reserva');
         return;
       }
     }
@@ -59,18 +124,116 @@ const CartCheckout = () => {
 
   const handleContinuar = () => {
     if (items.length === 0) {
-      toast.error('Tu carrito está vacío');
+      showError('Tu carrito está vacío');
       navigate('/catalogo');
       return;
     }
     setStep('form');
   };
 
+  // ── Handlers del mapa ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (geo.obtained && geo.latitude !== null && geo.longitude !== null && !pinConfirmed) {
+      setMapCenter([geo.latitude, geo.longitude]);
+      setMapZoom(16);
+      // Cancelar debounce de geocodificación de dirección si está corriendo
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      setGeocoding(false);
+      // Geocodificación inversa para sugerir la dirección desde GPS
+      if (showMap) {
+        reverseGeocode(geo.latitude, geo.longitude).then((addr) => {
+          if (addr) setReverseAddr(addr);
+        });
+      }
+    }
+  }, [geo.obtained, geo.latitude, geo.longitude, pinConfirmed, showMap]);
+
+  const handleDireccionChange = useCallback((value: string) => {
+    if (!showMap || pinConfirmed) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setGeocoding(true);
+      const coords = await geocodeAddress(value);
+      setGeocoding(false);
+      if (coords) {
+        geo.setManual(coords[0], coords[1]);
+        setMapCenter(coords);
+        setMapZoom(16);
+      }
+    }, 800);
+  }, [showMap, pinConfirmed, geo]);
+
+  useEffect(() => { handleDireccionChange(formData.direccion); }, [formData.direccion, handleDireccionChange]);
+
+  const handleOpenMap = useCallback(async () => {
+    setShowMap(true);
+    setReverseAddr(null);
+    if (!pinConfirmed && formData.direccion.trim().length >= 8) {
+      setGeocoding(true);
+      const coords = await geocodeAddress(formData.direccion);
+      setGeocoding(false);
+      if (coords) {
+        geo.setManual(coords[0], coords[1]);
+        setMapCenter(coords);
+        setMapZoom(16);
+      }
+    }
+  }, [pinConfirmed, formData.direccion, geo]);
+
+  const handleMapClick = useCallback(async (lat: number, lng: number) => {
+    geo.setManual(lat, lng);
+    setMapCenter([lat, lng]);
+    setMapZoom(16);
+    setPinConfirmed(true);
+    setReverseAddr(null);
+    const addr = await reverseGeocode(lat, lng);
+    if (addr) setReverseAddr(addr);
+  }, [geo]);
+
+  const handleAcceptReverseAddr = () => {
+    if (reverseAddr) setFormData(prev => ({ ...prev, direccion: reverseAddr }));
+    setReverseAddr(null);
+  };
+
+  const handleResetPin = () => {
+    geo.reset();
+    setPinConfirmed(false);
+    setReverseAddr(null);
+    setMapCenter(DEFAULT_CENTER);
+    setMapZoom(DEFAULT_ZOOM);
+    setShowMap(false);
+  };
+
+  const markerPosition: [number, number] | null =
+    geo.obtained && geo.latitude !== null && geo.longitude !== null
+      ? [geo.latitude, geo.longitude]
+      : null;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (items.length === 0) {
-      toast.error('Tu carrito está vacío');
+      showError('Tu carrito está vacío');
+      return;
+    }
+
+    // Validación de campos vacíos
+    const vacios: string[] = [];
+    if (!formData.nombreCompleto.trim()) vacios.push('Nombre completo');
+    if (!formData.telefono.trim()) vacios.push('Teléfono');
+    if (!formData.curp.trim()) vacios.push('CURP');
+    if (!formData.direccion.trim()) vacios.push('Dirección');
+    if (!formData.fechaPreferida) vacios.push('Fecha preferida');
+    if (!formData.horarioPreferido) vacios.push('Horario preferido');
+
+    if (vacios.length > 0) {
+      const msg = vacios.length === 1
+        ? `Falta: ${vacios[0]}`
+        : `Faltan ${vacios.length} campos: ${vacios.join(', ')}`;
+      showWarning(msg);
       return;
     }
 
@@ -92,6 +255,8 @@ const CartCheckout = () => {
         fechaPreferida: new Date(formData.fechaPreferida).toISOString(),
         horarioPreferido: formData.horarioPreferido,
         notas: formData.notas || undefined,
+        latitude: geo.obtained ? geo.latitude : null,
+        longitude: geo.obtained ? geo.longitude : null,
       };
 
       const { data } = await api.post('/reservations', reservationData);
@@ -127,8 +292,14 @@ const CartCheckout = () => {
       // Redirigir a página de éxito
       navigate('/reserva/exitosa', { state: { reserva } });
     } catch (error: any) {
-      const errorMsg = error.response?.data?.message || 'Error al crear la reserva';
-      toast.error(errorMsg);
+      const resData = error.response?.data;
+      if (resData?.errors && Array.isArray(resData.errors)) {
+        resData.errors.forEach((e: { field: string; message: string }) => {
+          showError(`${e.field}: ${e.message}`);
+        });
+      } else {
+        showError(resData?.message || 'Error al crear la reserva');
+      }
     } finally {
       setLoading(false);
     }
@@ -291,7 +462,6 @@ const CartCheckout = () => {
                   </label>
                   <input
                     type="text"
-                    required
                     value={formData.nombreCompleto}
                     onChange={(e) => setFormData({ ...formData, nombreCompleto: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -305,7 +475,6 @@ const CartCheckout = () => {
                   </label>
                   <input
                     type="tel"
-                    required
                     value={formData.telefono}
                     onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -319,7 +488,6 @@ const CartCheckout = () => {
                   </label>
                   <input
                     type="text"
-                    required
                     maxLength={18}
                     value={formData.curp}
                     onChange={(e) => setFormData({ ...formData, curp: e.target.value.toUpperCase() })}
@@ -333,7 +501,6 @@ const CartCheckout = () => {
                     Dirección completa <span className="text-red-500">*</span>
                   </label>
                   <textarea
-                    required
                     rows={2}
                     value={formData.direccion}
                     onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
@@ -348,7 +515,6 @@ const CartCheckout = () => {
                   </label>
                   <input
                     type="date"
-                    required
                     value={formData.fechaPreferida}
                     onChange={(e) => setFormData({ ...formData, fechaPreferida: e.target.value })}
                     min={new Date().toISOString().split('T')[0]}
@@ -361,7 +527,6 @@ const CartCheckout = () => {
                     Horario preferido <span className="text-red-500">*</span>
                   </label>
                   <select
-                    required
                     value={formData.horarioPreferido}
                     onChange={(e) => setFormData({ ...formData, horarioPreferido: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -388,6 +553,115 @@ const CartCheckout = () => {
                     placeholder="Alguna indicación especial para la visita..."
                   />
                 </div>
+              </div>
+
+              {/* ── Sección mapa ─────────────────────────────────────────── */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Ubicación en el mapa
+                    <span className="ml-2 text-xs font-normal text-gray-400">(opcional)</span>
+                  </label>
+                  {(geo.obtained || showMap) && (
+                    <button type="button" onClick={handleResetPin} className="text-xs text-gray-400 hover:text-gray-600 underline">
+                      Quitar ubicación
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mb-3">
+                  Marca en el mapa el lugar exacto donde quieres que el vendedor te visite.
+                  Al escribir tu dirección intentamos ubicarte automáticamente.
+                </p>
+
+                {!showMap && (
+                  <button
+                    type="button"
+                    onClick={handleOpenMap}
+                    className="w-full border-2 border-dashed border-[#0f49bd] text-[#0f49bd] hover:bg-blue-50 rounded-xl py-4 text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+                  >
+                    {geocoding ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-[#0f49bd] border-t-transparent rounded-full animate-spin" />
+                        Buscando tu dirección...
+                      </span>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Elegir ubicación en el mapa
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {showMap && (
+                  <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+                    <div className="bg-blue-50 px-3 py-2 border-b border-blue-100 flex items-center justify-between">
+                      <span className="text-xs text-blue-700 flex items-center gap-1.5">
+                        {geocoding ? (
+                          <><span className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />Buscando tu dirección en el mapa...</>
+                        ) : pinConfirmed ? (
+                          <><svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg><span className="text-green-700">Punto confirmado — haz clic para moverlo</span></>
+                        ) : geo.obtained ? (
+                          <><svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Ubicación sugerida — haz clic para confirmar</>
+                        ) : (
+                          <><svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" /></svg>Haz clic en el mapa para marcar tu punto</>
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="h-64 w-full">
+                      <MapContainer center={mapCenter} zoom={mapZoom} className="h-full w-full z-10">
+                        <TileLayer
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        <MapClickHandler onSelect={handleMapClick} />
+                        <MapPanner center={mapCenter} zoom={mapZoom} />
+                        {markerPosition && <Marker position={markerPosition} />}
+                      </MapContainer>
+                    </div>
+
+                    {reverseAddr && (
+                      <div className="bg-amber-50 border-t border-amber-200 px-4 py-3 flex items-start gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
+                        </svg>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-amber-800 font-medium">¿Actualizar la dirección a esta?</p>
+                          <p className="text-xs text-amber-700 mt-0.5 truncate">{reverseAddr}</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button type="button" onClick={handleAcceptReverseAddr} className="text-xs bg-amber-500 text-white px-2.5 py-1 rounded-lg hover:bg-amber-600 font-medium transition-colors">Sí</button>
+                          <button type="button" onClick={() => setReverseAddr(null)} className="text-xs text-amber-600 hover:text-amber-800 px-1 transition-colors">No</button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="bg-gray-50 px-3 py-2 border-t border-gray-100 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => geo.requestLocation()}
+                        disabled={geo.loading}
+                        className="text-xs text-gray-500 hover:text-[#0f49bd] transition-colors flex items-center gap-1"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                        </svg>
+                        {geo.loading ? 'Obteniendo ubicación...' : 'Usar mi ubicación actual'}
+                      </button>
+                      {markerPosition && (
+                        <span className="text-xs text-gray-400">{geo.latitude?.toFixed(5)}, {geo.longitude?.toFixed(5)}</span>
+                      )}
+                    </div>
+
+                    {geo.error && (
+                      <div className="bg-red-50 border-t border-red-200 px-3 py-2 text-xs text-red-700">⚠️ {geo.error}</div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4">

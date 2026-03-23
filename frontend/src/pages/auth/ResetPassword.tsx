@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { showError, showSuccess } from '../../utils/notifications';
 import api from '../../services/api';
 
 const ResetPassword = () => {
@@ -17,19 +17,19 @@ const ResetPassword = () => {
 
   useEffect(() => {
     if (!token) {
-      toast.error('Token de recuperación no válido');
+      showError('Token de recuperación no válido');
       navigate('/login');
     }
   }, [token, navigate]);
 
   const validatePassword = () => {
     if (password.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres');
+      showError('La contraseña debe tener al menos 6 caracteres');
       return false;
     }
 
     if (password !== confirmPassword) {
-      toast.error('Las contraseñas no coinciden');
+      showError('Las contraseñas no coinciden');
       return false;
     }
 
@@ -49,7 +49,7 @@ const ResetPassword = () => {
         password,
       });
 
-      toast.success(data.data.message || 'Contraseña actualizada correctamente');
+      showSuccess(data.data.message || 'Contraseña actualizada correctamente');
 
       // Esperar 2 segundos y redirigir al login
       setTimeout(() => {
@@ -57,7 +57,7 @@ const ResetPassword = () => {
       }, 2000);
     } catch (error: any) {
       const message = error.response?.data?.message || 'Error al restablecer la contraseña';
-      toast.error(message);
+      showError(message);
 
       // Si el token es inválido, redirigir después de 3 segundos
       if (message.includes('inválido') || message.includes('expirado') || message.includes('utilizado')) {

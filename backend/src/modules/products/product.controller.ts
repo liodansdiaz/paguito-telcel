@@ -18,7 +18,8 @@ const createProductSchema = z.object({
   stockMinimo: z.number().int().min(0).optional(),
   badge: z.string().optional(),
   disponibleCredito: z.boolean().optional(),
-  pagosSemanales: z.string().optional(),
+  enganche: z.string().optional(),
+  pagoSemanal: z.string().optional(),
   especificaciones: z.record(z.string(), z.unknown()).optional(),
 });
 

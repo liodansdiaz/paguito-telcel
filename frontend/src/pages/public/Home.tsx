@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { showError, toast } from '../../utils/notifications';
 import api from '../../services/api';
 import { toImageUrl } from '../../services/config';
 import { useCarritoStore } from '../../store/carrito.store';
@@ -89,7 +89,7 @@ const ProductCard = ({ product, variant = 'original' }: { product: Product; vari
         { duration: 4000 }
       );
     } catch (error: any) {
-      toast.error(error.message || 'Error al agregar al carrito');
+      showError(error.message || 'Error al agregar al carrito');
     }
   };
 
@@ -220,24 +220,18 @@ const ProductCard = ({ product, variant = 'original' }: { product: Product; vari
           )}
 
           {/* Información de crédito mejorada */}
-          {product.disponibleCredito && product.pagosSemanales && (
+          {product.disponibleCredito && (product.pagoSemanal || product.enganche) && (
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 mb-2">
-              {(() => {
-                const text = String(product.pagosSemanales);
-                const engancheMatch = text.match(/Enganche:\s*\$?(\d+)/);
-                const pagosMatch = text.match(/Pagos semanales:\s*\$?(\d+)/);
-                
-                return (
-                  <>
-                    <p className="text-[11px] text-blue-700 font-bold leading-tight">
-                      💳 Desde ${pagosMatch?.[1] || '120'}/semana
-                    </p>
-                    <p className="text-[9px] text-blue-600 leading-tight mt-0.5">
-                      Enganche desde ${engancheMatch?.[1] || '350'}
-                    </p>
-                  </>
-                );
-              })()}
+              {product.pagoSemanal && (
+                <p className="text-[11px] text-blue-700 font-bold leading-tight">
+                  💳 {product.pagoSemanal}
+                </p>
+              )}
+              {product.enganche && (
+                <p className="text-[9px] text-blue-600 leading-tight mt-0.5">
+                  {product.enganche}
+                </p>
+              )}
             </div>
           )}
 
