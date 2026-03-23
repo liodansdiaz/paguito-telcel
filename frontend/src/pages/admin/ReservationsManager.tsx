@@ -33,7 +33,7 @@ const exportCSV = async (filters: {
     const res = await api.get('/reservations/admin', { params });
     const rows: Reservation[] = res.data.data;
 
-    const headers = ['Folio', 'Nombre', 'Teléfono', 'CURP', 'Total Productos', 'Productos', 'Notas', 'Dirección', 'Fecha preferida', 'Horario', 'Vendedor', 'Estado', 'Fecha creación'];
+    const headers = ['Folio', 'Nombre', 'Teléfono', 'CURP', 'Total Productos', 'Productos', 'Variante', 'Notas', 'Dirección', 'Fecha preferida', 'Horario', 'Vendedor', 'Estado', 'Fecha creación'];
     const data = rows.map((r) => [
       r.id.slice(0, 8).toUpperCase(),
       r.nombreCompleto,
@@ -41,6 +41,7 @@ const exportCSV = async (filters: {
       r.curp,
       r.items?.length ?? 0,
       r.items?.map(i => `${i.product?.nombre} (${i.tipoPago})`).join('; ') ?? '',
+      r.items?.map(i => [i.color, i.memoria].filter(Boolean).join(', ') || '—').join('; ') ?? '',
       r.notas ?? '',
       r.direccion,
       new Date(r.fechaPreferida).toLocaleDateString('es-MX'),
@@ -91,6 +92,7 @@ const ReservationsManager = () => {
   // Modal estados
   const [assignModal, setAssignModal] = useState<{ open: boolean; reservation: Reservation | null }>({ open: false, reservation: null });
   const [statusModal, setStatusModal] = useState<{ open: boolean; reservation: Reservation | null }>({ open: false, reservation: null });
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; reservation: Reservation | null }>({ open: false, reservation: null });
   const [assignVendorId, setAssignVendorId] = useState('');
   const [newStatus, setNewStatus] = useState<EstadoReserva>('COMPLETADA');
   const [notas, setNotas] = useState('');
@@ -146,6 +148,20 @@ const ReservationsManager = () => {
       fetchReservations();
     } catch (err: any) { 
       showError(err.response?.data?.message || 'Error al cambiar estado');
+    }
+    finally { setActionLoading(false); }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteModal.reservation) return;
+    setActionLoading(true);
+    try {
+      await api.delete(`/reservations/admin/${deleteModal.reservation.id}`);
+      showSuccess('Reserva eliminada correctamente');
+      setDeleteModal({ open: false, reservation: null });
+      fetchReservations();
+    } catch (err: any) {
+      showError(err.response?.data?.message || 'Error al eliminar reserva');
     }
     finally { setActionLoading(false); }
   };
@@ -364,7 +380,7 @@ const ReservationsManager = () => {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {['ID', 'Cliente', 'Productos', 'Dirección', 'Notas', 'Fecha', 'Vendedor', 'Estado', 'Acciones'].map((h) => (
+                {['ID', 'Cliente', 'Producto', 'Variante', 'Tipo Pago', 'Dirección', 'Notas', 'F. Reserva', 'F. Entrega', 'Vendedor', 'Estado', 'Acciones'].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -373,96 +389,157 @@ const ReservationsManager = () => {
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: 9 }).map((__, j) => (
+                    {Array.from({ length: 12 }).map((__, j) => (
                       <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
                     ))}
                   </tr>
                 ))
               ) : reservations.length === 0 ? (
-                <tr><td colSpan={9} className="text-center py-12 text-gray-400">Sin reservas</td></tr>
+                <tr><td colSpan={12} className="text-center py-12 text-gray-400">Sin reservas</td></tr>
               ) : (
-                reservations.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500">#{r.id.slice(0, 8).toUpperCase()}</td>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900 whitespace-nowrap">{r.nombreCompleto}</p>
-                      <p className="text-gray-400 text-xs">{r.telefono}</p>
-                    </td>
-                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
-                          {r.items?.length ?? 0}
-                        </span>
-                        <div className="text-xs">
-                          {r.items && r.items.length > 0 ? (
+                reservations.flatMap((r) => {
+                  const items = r.items && r.items.length > 0 ? r.items : [null];
+                  return items.map((item, idx) => {
+                    const isFirst = idx === 0;
+                    return (
+                      <tr
+                        key={`${r.id}-${item?.id ?? 'empty'}`}
+                        className={`hover:bg-gray-50 transition-colors ${!isFirst ? 'bg-gray-50/50' : ''}`}
+                      >
+                        {/* ID */}
+                        <td className={`px-4 py-3 font-mono text-xs text-gray-500 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                          {isFirst ? `#${r.id.slice(0, 8).toUpperCase()}` : (
+                            <span className="text-gray-300 pl-3">└</span>
+                          )}
+                        </td>
+                        {/* Cliente */}
+                        <td className={`px-4 py-3 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                          {isFirst && (
                             <>
-                              <p className="text-gray-900 font-medium">{r.items[0].product?.nombre}</p>
-                              {r.items.length > 1 && (
-                                <p className="text-gray-400">+{r.items.length - 1} más</p>
+                              <p className="font-medium text-gray-900 whitespace-nowrap">{r.nombreCompleto}</p>
+                              <p className="text-gray-400 text-xs">{r.telefono}</p>
+                            </>
+                          )}
+                        </td>
+                        {/* Producto */}
+                        <td className={`px-4 py-3 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                          {item ? (
+                            <span className="text-xs text-gray-900 font-medium">{item.product?.nombre}</span>
+                          ) : (
+                            <span className="text-xs text-gray-400">Sin productos</span>
+                          )}
+                        </td>
+                        {/* Variante */}
+                        <td className={`px-4 py-3 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                          {item ? (
+                            <div className="flex flex-wrap gap-1">
+                              {item.color && (
+                                <span className="text-[10px] font-medium bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
+                                  {item.color}
+                                </span>
+                              )}
+                              {item.memoria && (
+                                <span className="text-[10px] font-medium bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
+                                  {item.memoria}
+                                </span>
+                              )}
+                              {!item.color && !item.memoria && <span className="text-xs text-gray-400">—</span>}
+                            </div>
+                          ) : '—'}
+                        </td>
+                        {/* Tipo Pago */}
+                        <td className={`px-4 py-3 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                          {item ? (
+                            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${item.tipoPago === 'CREDITO' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+                              {item.tipoPago === 'CREDITO' ? 'Crédito' : 'Contado'}
+                            </span>
+                          ) : '—'}
+                        </td>
+                        {/* Dirección */}
+                        <td className={`px-4 py-3 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                          {isFirst && (
+                            <>
+                              <p className="text-gray-700 text-xs">{r.direccion}</p>
+                              {r.latitude !== null && r.longitude !== null && (
+                                <a
+                                  href={`https://www.google.com/maps?q=${r.latitude},${r.longitude}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 transition-colors mt-0.5"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  </svg>
+                                  Ver mapa
+                                </a>
                               )}
                             </>
-                          ) : (
-                            <p className="text-gray-400">Sin productos</p>
                           )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 max-w-[200px]">
-                      <p className="text-gray-700 text-xs truncate" title={r.direccion}>{r.direccion}</p>
-                      {r.latitude !== null && r.longitude !== null && (
-                        <a
-                          href={`https://www.google.com/maps?q=${r.latitude},${r.longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 transition-colors mt-0.5"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          Ver mapa
-                        </a>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 max-w-[200px]">
-                      {r.notas ? (
-                        <div className="max-w-[200px]">
-                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded inline-block max-w-full truncate" title={r.notas}>
-                            {r.notas}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400">—</span>
-                      )}
-                    </td>
-
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">
-                      {new Date(r.fechaPreferida).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })} {r.horarioPreferido}
-                    </td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap text-xs">
-                      {r.vendor?.nombre ?? <span className="text-orange-500">Sin asignar</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge type="reserva" estado={r.estado} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => { setAssignModal({ open: true, reservation: r }); setAssignVendorId(r.vendorId || ''); }}
-                          className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 transition-colors whitespace-nowrap"
-                        >
-                          Asignar
-                        </button>
-                        <button
-                          onClick={() => { setStatusModal({ open: true, reservation: r }); setNewStatus(r.estado); setNotas(r.notas || ''); }}
-                          className="text-xs bg-gray-50 text-gray-600 px-2 py-1 rounded hover:bg-gray-100 transition-colors whitespace-nowrap"
-                        >
-                          Estado
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                        </td>
+                        {/* Notas */}
+                        <td className={`px-4 py-3 max-w-[140px] ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                          {isFirst && (
+                            r.notas ? (
+                              <div className="max-w-[140px]">
+                                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded inline-block max-w-full truncate" title={r.notas}>
+                                  {r.notas}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400">—</span>
+                            )
+                          )}
+                        </td>
+                        {/* F. Reserva */}
+                        <td className={`px-4 py-3 text-gray-500 whitespace-nowrap text-xs ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                          {isFirst && (
+                            new Date(r.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })
+                          )}
+                        </td>
+                        {/* F. Entrega */}
+                        <td className={`px-4 py-3 text-gray-600 whitespace-nowrap text-xs ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                          {isFirst && (
+                            <>{new Date(r.fechaPreferida).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })} {r.horarioPreferido}</>
+                          )}
+                        </td>
+                        {/* Vendedor */}
+                        <td className={`px-4 py-3 text-gray-700 whitespace-nowrap text-xs ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                          {isFirst && (r.vendor?.nombre ?? <span className="text-orange-500">Sin asignar</span>)}
+                        </td>
+                        {/* Estado */}
+                        <td className={`px-4 py-3 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                          {isFirst && <StatusBadge type="reserva" estado={r.estado} />}
+                        </td>
+                        {/* Acciones */}
+                        <td className={`px-4 py-3 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
+                          {isFirst && (
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => { setAssignModal({ open: true, reservation: r }); setAssignVendorId(r.vendorId || ''); }}
+                                className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 transition-colors whitespace-nowrap"
+                              >
+                                Asignar
+                              </button>
+                              <button
+                                onClick={() => { setStatusModal({ open: true, reservation: r }); setNewStatus(r.estado); setNotas(r.notas || ''); }}
+                                className="text-xs bg-gray-50 text-gray-600 px-2 py-1 rounded hover:bg-gray-100 transition-colors whitespace-nowrap"
+                              >
+                                Estado
+                              </button>
+                              <button
+                                onClick={() => setDeleteModal({ open: true, reservation: r })}
+                                className="text-xs bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100 transition-colors whitespace-nowrap"
+                              >
+                                Borrar
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  });
+                })
               )}
             </tbody>
           </table>
@@ -509,6 +586,34 @@ const ReservationsManager = () => {
             <div className="flex gap-3">
               <button onClick={() => setStatusModal({ open: false, reservation: null })} className="flex-1 border border-gray-300 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50">Cancelar</button>
               <button onClick={handleStatusChange} disabled={actionLoading} className="flex-1 bg-[#0f49bd] text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-blue-700">{actionLoading ? 'Guardando...' : 'Confirmar'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal confirmar eliminación */}
+      {deleteModal.open && deleteModal.reservation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-gray-900">Eliminar Reserva</h3>
+                <p className="text-sm text-gray-500">Esta acción no se puede deshacer</p>
+              </div>
+            </div>
+            <div className="bg-red-50 border border-red-100 rounded-lg p-3 mb-5">
+              <p className="text-sm text-red-800">
+                Se eliminará permanentemente la reserva <span className="font-semibold">#{deleteModal.reservation.id.slice(0, 8).toUpperCase()}</span> de <span className="font-semibold">{deleteModal.reservation.nombreCompleto}</span> junto con todos sus items y notificaciones.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteModal({ open: false, reservation: null })} className="flex-1 border border-gray-300 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50">Cancelar</button>
+              <button onClick={handleDelete} disabled={actionLoading} className="flex-1 bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-red-700">{actionLoading ? 'Eliminando...' : 'Eliminar'}</button>
             </div>
           </div>
         </div>
