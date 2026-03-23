@@ -165,7 +165,7 @@ const ENV_VARS: EnvVarConfig[] = [
   {
     name: 'REDIS_PASSWORD',
     required: false,
-    requiredInProduction: true, // En producción, Redis debe tener password
+    requiredInProduction: false, // Solo requerido si REDIS_ENABLED=true
     validator: (value) => {
       if (process.env.NODE_ENV === 'production') {
         return value.length >= 16;
