@@ -612,8 +612,8 @@ const CartCheckout = () => {
                       </span>
                     </div>
 
-                    <div className="h-64 w-full">
-                      <MapContainer center={mapCenter} zoom={mapZoom} className="h-full w-full z-10">
+                    <div className="h-64 w-full overflow-hidden relative">
+                      <MapContainer center={mapCenter} zoom={mapZoom} className="h-full w-full z-10" style={{ maxWidth: '100%' }}>
                         <TileLayer
                           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

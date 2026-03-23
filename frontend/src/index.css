@@ -16,6 +16,14 @@ html, body {
 /* Leaflet fix */
 .leaflet-container {
   z-index: 1;
+  max-width: 100%;
+}
+
+.leaflet-control-attribution {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ══════════════════════════════════════════════════════════
