@@ -49,7 +49,7 @@ const Carrito = () => {
 
       {/* Panel desplegable */}
       {open && (
-        <div className="absolute right-0 top-12 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+        <div className="absolute right-0 top-12 w-80 sm:w-96 max-w-[calc(100vw-1rem)] bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-[#002f87] to-[#0f49bd] px-5 py-4 flex items-center justify-between">
             <div>
