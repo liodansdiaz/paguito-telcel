@@ -333,7 +333,7 @@ const CartCheckout = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 overflow-hidden" style={{ maxWidth: '100%' }}>
+    <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-400 mb-6">
         <Link to="/" className="hover:text-blue-600">Inicio</Link>
@@ -465,7 +465,7 @@ const CartCheckout = () => {
             </div>
           ) : (
             /* PASO 2: Formulario de datos */
-            <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 space-y-5 overflow-hidden" style={{ maxWidth: '100%' }}>
+            <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 space-y-5">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -608,7 +608,7 @@ const CartCheckout = () => {
                 )}
 
                 {showMap && (
-                  <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm" style={{ maxWidth: '100%' }}>
+                  <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
                     <div className="bg-blue-50 px-3 py-2 border-b border-blue-100 flex items-center justify-between">
                       <span className="text-xs text-blue-700 flex items-center gap-1.5">
                         {geocoding ? (
@@ -636,13 +636,15 @@ const CartCheckout = () => {
                     </div>
 
                     {reverseAddr && (
-                      <div className="bg-amber-50 border-t border-amber-200 px-4 py-3 flex items-start gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
-                        </svg>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-amber-800 font-medium">¿Actualizar la dirección a esta?</p>
-                          <p className="text-xs text-amber-700 mt-0.5 truncate">{reverseAddr}</p>
+                      <div className="bg-amber-50 border-t border-amber-200 px-4 py-3 flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 overflow-hidden">
+                        <div className="flex items-start gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
+                          </svg>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-amber-800 font-medium">¿Actualizar la dirección a esta?</p>
+                            <p className="text-xs text-amber-700 mt-0.5 truncate">{reverseAddr}</p>
+                          </div>
                         </div>
                         <div className="flex gap-2 shrink-0">
                           <button type="button" onClick={handleAcceptReverseAddr} className="text-xs bg-amber-500 text-white px-2.5 py-1 rounded-lg hover:bg-amber-600 font-medium transition-colors">Sí</button>
@@ -664,7 +666,7 @@ const CartCheckout = () => {
                         {geo.loading ? 'Obteniendo ubicación...' : 'Usar mi ubicación actual'}
                       </button>
                       {markerPosition && (
-                        <span className="text-xs text-gray-400">{geo.latitude?.toFixed(5)}, {geo.longitude?.toFixed(5)}</span>
+                        <span className="hidden sm:inline text-xs text-gray-400">{geo.latitude?.toFixed(5)}, {geo.longitude?.toFixed(5)}</span>
                       )}
                     </div>
 
