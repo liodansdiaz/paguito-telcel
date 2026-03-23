@@ -69,7 +69,18 @@ Eres el asistente virtual de Amigos Paguito Telcel, una tienda de celulares con 
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+let groq: Groq | null = null;
+
+function getGroqClient(): Groq {
+  if (!groq) {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      throw new Error('El servicio de chat no está configurado. Falta GROQ_API_KEY.');
+    }
+    groq = new Groq({ apiKey });
+  }
+  return groq;
+}
 
 // Formato de un mensaje del historial
 interface ChatMessage {
@@ -153,7 +164,8 @@ export async function handleChat(req: Request, res: Response, next: NextFunction
     res.flushHeaders();
 
     // Llamar a Groq con streaming
-    const stream = await groq.chat.completions.create({
+    const client = getGroqClient();
+    const stream = await client.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: fullSystemPrompt },
