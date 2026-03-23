@@ -7,7 +7,7 @@
  * Si no se define, cae al default de desarrollo.
  */
 export const BACKEND_URL: string =
-  import.meta.env.VITE_BACKEND_URL || (import.meta.env.PROD ? 'https://paguito-telcel-api.onrender.com' : 'http://localhost:3000');
+  import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:3000';
 
 /**
  * Convierte una ruta de imagen relativa en URL absoluta hacia el backend.
