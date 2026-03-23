@@ -16,8 +16,26 @@ html, body {
 /* Leaflet fix */
 .leaflet-container {
   z-index: 1;
-  max-width: 100% !important;
-  overflow: hidden !important;
+  max-width: 100%;
+}
+
+/* Prevenir desbordamiento del mapa en movil */
+.leaflet-control-attribution {
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .leaflet-container {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .leaflet-control-zoom {
+    transform: scale(0.85);
+    transform-origin: top right;
+  }
 }
 
 .leaflet-control-attribution {
