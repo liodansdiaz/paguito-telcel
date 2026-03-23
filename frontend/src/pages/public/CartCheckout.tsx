@@ -326,7 +326,7 @@ const CartCheckout = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 overflow-hidden" style={{ maxWidth: '100%' }}>
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-400 mb-6">
         <Link to="/" className="hover:text-blue-600">Inicio</Link>
@@ -458,7 +458,7 @@ const CartCheckout = () => {
             </div>
           ) : (
             /* PASO 2: Formulario de datos */
-            <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+            <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 space-y-5 overflow-hidden" style={{ maxWidth: '100%' }}>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -601,7 +601,7 @@ const CartCheckout = () => {
                 )}
 
                 {showMap && (
-                  <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+                  <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm" style={{ maxWidth: '100%' }}>
                     <div className="bg-blue-50 px-3 py-2 border-b border-blue-100 flex items-center justify-between">
                       <span className="text-xs text-blue-700 flex items-center gap-1.5">
                         {geocoding ? (
