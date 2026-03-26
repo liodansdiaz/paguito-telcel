@@ -9,15 +9,16 @@ export class DashboardService {
   async getAdminMetrics(filters: DashboardFilters = {}) {
     const { fechaDesde, fechaHasta } = filters;
     
-    // Si hay fechas específicas, usarlas; si no, usar rangos predefinidos
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // Si hay fechas específicas, usarlas para todas las métricas
-    const whereFecha = fechaDesde || fechaHasta 
+    const hasDateFilter = fechaDesde || fechaHasta;
+    
+    // Construir filtro de fecha para consultas
+    const whereFecha = hasDateFilter 
       ? { 
           createdAt: { 
             ...(fechaDesde ? { gte: fechaDesde } : {}),
@@ -26,20 +27,21 @@ export class DashboardService {
         }
       : {};
 
+    // Nota: cuando hay filtro de fecha, reservasHoy/Semana/Mes retornan el total del rango.
+    // El campo reservasRango se incluye para mayor claridad cuando hay filtro activo.
     const [
       reservasHoy, reservasSemana, reservasMes,
       activas, completadas, canceladas, sinStock,
       vendedoresActivos, vendedoresInactivos,
       totalClientes,
     ] = await Promise.all([
-      // Métricas por fecha específica o por rangos predefinidos
-      fechaDesde || fechaHasta
+      hasDateFilter
         ? prisma.reservation.count({ where: whereFecha })
         : prisma.reservation.count({ where: { createdAt: { gte: startOfToday } } }),
-      fechaDesde || fechaHasta
+      hasDateFilter
         ? prisma.reservation.count({ where: whereFecha })
         : prisma.reservation.count({ where: { createdAt: { gte: startOfWeek } } }),
-      fechaDesde || fechaHasta
+      hasDateFilter
         ? prisma.reservation.count({ where: whereFecha })
         : prisma.reservation.count({ where: { createdAt: { gte: startOfMonth } } }),
       
