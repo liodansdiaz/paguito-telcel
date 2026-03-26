@@ -76,9 +76,18 @@ export class UserService {
   }
 
   async update(id: string, data: Partial<{
-    nombre: string; zona: string; telefono: string; password: string; rol: Rol;
+    nombre: string; email: string; zona: string; telefono: string; password: string; rol: Rol;
   }>) {
     await this.getById(id);
+
+    // Verificar email duplicado si se está cambiando
+    if (data.email) {
+      const existing = await prisma.user.findUnique({ where: { email: data.email } });
+      if (existing && existing.id !== id) {
+        throw new AppError('Ya existe un usuario con ese email.', 409);
+      }
+    }
+
     const updateData: any = { ...data };
     if (data.password) {
       updateData.password = await bcrypt.hash(data.password, 12);
@@ -94,7 +103,8 @@ export class UserService {
   }
 
   async toggleActive(id: string) {
-    const user = await prisma.user.findUniqueOrThrow({ where: { id } });
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) throw new AppError('Vendedor no encontrado.', 404);
     return prisma.user.update({
       where: { id },
       data: { isActive: !user.isActive },
