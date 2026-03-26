@@ -65,7 +65,10 @@ export class NotificationService {
       month: 'long',
       day: 'numeric',
     });
-    const mapsUrl = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
+    const hasCoords = data.latitude != null && data.longitude != null;
+    const mapsUrl = hasCoords 
+      ? `https://www.google.com/maps?q=${data.latitude},${data.longitude}`
+      : null;
 
     return `
 <!DOCTYPE html>
@@ -101,6 +104,7 @@ export class NotificationService {
     <div class="field"><strong>Fecha preferida:</strong> ${fecha}</div>
     <div class="field"><strong>Horario preferido:</strong> ${data.horarioPreferido}</div>
 
+    ${hasCoords ? `
     <div class="field">
       <strong>Ubicación GPS:</strong><br>
       Latitud: ${data.latitude}<br>
@@ -108,6 +112,11 @@ export class NotificationService {
     </div>
 
     <a href="${mapsUrl}" class="map-btn">Ver en Google Maps</a>
+    ` : `
+    <div class="field">
+      <strong>Ubicación GPS:</strong> No proporcionada
+    </div>
+    `}
 
     <div class="footer">
       <p>Amigos Paguito Telcel — Sistema de Reservas</p>
@@ -285,7 +294,10 @@ export class NotificationService {
   }
 
   private static async saveInternalNotification(data: ReservationNotificationData): Promise<void> {
-    const mapsUrl = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
+    const hasCoords = data.latitude != null && data.longitude != null;
+    const mapsUrl = hasCoords 
+      ? `https://www.google.com/maps?q=${data.latitude},${data.longitude}`
+      : 'No disponible';
     const mensaje = `Nueva reserva #${data.reservationId.slice(0, 8).toUpperCase()} — Cliente: ${data.clienteNombre} — Producto: ${data.productoNombre} — Maps: ${mapsUrl}`;
 
     await prisma.notification.create({
