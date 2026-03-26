@@ -22,4 +22,7 @@ const localStorageMock = {
   key: (index: number) => Object.keys(store)[index] ?? null,
 };
 
-vi.stubGlobal('localStorage', localStorageMock);
+// Only run in test environment
+if (typeof vi !== 'undefined') {
+  vi.stubGlobal('localStorage', localStorageMock);
+}

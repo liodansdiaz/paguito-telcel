@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { DayPicker } from 'react-day-picker';
+import { addDays, isSunday, isBefore, startOfDay } from 'date-fns';
+import 'react-day-picker/style.css';
 import { showError, showWarning } from '../../utils/notifications';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -524,13 +527,47 @@ const CartCheckout = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Fecha preferida <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="date"
-                    value={formData.fechaPreferida}
-                    onChange={(e) => setFormData({ ...formData, fechaPreferida: e.target.value })}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  
+                  {/* Calendario con restricciones */}
+                  <div className="border border-gray-300 rounded-lg p-3 bg-white">
+                    <DayPicker
+                      mode="single"
+                      selected={formData.fechaPreferida ? new Date(formData.fechaPreferida + 'T12:00:00Z') : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          const year = date.getUTCFullYear();
+                          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                          const day = String(date.getUTCDate()).padStart(2, '0');
+                          setFormData({ ...formData, fechaPreferida: `${year}-${month}-${day}` });
+                        }
+                      }}
+                      disabled={(date) => {
+                        const today = startOfDay(new Date());
+                        const minDate = addDays(today, 2);
+                        return isBefore(date, minDate) || isSunday(date);
+                      }}
+                      fromDate={addDays(startOfDay(new Date()), 2)}
+                      locale={undefined}
+                      className="mx-auto"
+                      style={{ '--rdp-accent-color': '#0f49bd' } as React.CSSProperties}
+                    />
+                  </div>
+                  
+                  {/* Mostrar fecha seleccionada */}
+                  {formData.fechaPreferida && (
+                    <p className="mt-2 text-sm text-green-600 font-medium">
+                      Seleccionada: {new Date(formData.fechaPreferida + 'T12:00:00Z').toLocaleDateString('es-MX', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </p>
+                  )}
+                  
+                  <p className="mt-1 text-xs text-gray-500">
+                    Disponible a partir de 2 días. No se atiende los domingos.
+                  </p>
                 </div>
 
                 <div>
