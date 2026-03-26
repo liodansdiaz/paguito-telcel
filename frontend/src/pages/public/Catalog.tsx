@@ -654,7 +654,7 @@ const Catalog = () => {
         {/* Grid de productos */}
         <div className="flex-1 min-w-0">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
               <Skeletons count={PAGE_SIZE} />
             </div>
           ) : products.length === 0 ? (
@@ -668,7 +668,7 @@ const Catalog = () => {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {products.map((product) => {
                   const unavailable = product.stock === 0;
                   return (
@@ -677,13 +677,13 @@ const Catalog = () => {
                       className={`bg-white rounded-2xl shadow-md hover:shadow-xl transition-all border border-gray-200 overflow-hidden ${unavailable ? 'opacity-70' : ''}`}
                     >
                       {/* Área de imagen con badge */}
-                      <div className="relative bg-white h-44 flex items-center justify-center group">
+                      <div className="relative bg-white h-32 sm:h-44 flex items-center justify-center group">
                         {product.precioAnterior ? (
-                          <span className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg z-10">
+                          <span className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-lg z-10">
                             Oferta
                           </span>
                         ) : product.badge ? (
-                          <span className={`absolute top-2 left-2 text-white text-[10px] font-bold px-2.5 py-1 rounded-full z-10 ${getBadgeStyle(product.badge)}`}>
+                          <span className={`absolute top-1.5 left-1.5 sm:top-2 sm:left-2 text-white text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full z-10 ${getBadgeStyle(product.badge)}`}>
                             {product.badge}
                           </span>
                         ) : null}
@@ -691,11 +691,11 @@ const Catalog = () => {
                           <img
                             src={toImageUrl(product.imagenes[0])}
                             alt={product.nombre}
-                            className="h-36 w-36 object-contain group-hover:scale-105 transition-transform"
+                            className="h-24 w-24 sm:h-36 sm:w-36 object-contain group-hover:scale-105 transition-transform"
                             loading="lazy"
                           />
                         ) : (
-                          <span className="text-5xl">📱</span>
+                          <span className="text-4xl sm:text-5xl">📱</span>
                         )}
                         {unavailable && (
                           <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
@@ -705,23 +705,23 @@ const Catalog = () => {
                       </div>
 
                       {/* Contenido de la tarjeta */}
-                      <div className="p-3 flex flex-col flex-1">
+                      <div className="p-2 sm:p-3 flex flex-col flex-1">
                         {/* Título del producto */}
-                        <h3 className="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 min-h-[2.5rem]">
+                        <h3 className="font-bold text-gray-900 text-xs sm:text-sm leading-tight mb-1 sm:mb-2 line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem]">
                           {product.nombre}
                         </h3>
 
                         {/* Precio */}
                         <div className="mb-1">
-                          <div className="flex items-baseline gap-1.5 flex-wrap">
-                            <span className="text-xl font-extrabold text-[#0f49bd]">{formatPrice(product.precio)}</span>
+                          <div className="flex items-baseline gap-1 sm:gap-1.5 flex-wrap">
+                            <span className="text-base sm:text-xl font-extrabold text-[#0f49bd]">{formatPrice(product.precio)}</span>
                             {product.precioAnterior && (
-                              <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>
+                              <span className="text-[10px] sm:text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>
                             )}
                           </div>
                           {/* Ahorro calculado */}
                           {product.precioAnterior && (
-                            <p className="text-[10px] text-green-600 font-semibold">
+                            <p className="text-[9px] sm:text-[10px] text-green-600 font-semibold">
                               Ahorra {formatPrice(product.precioAnterior - product.precio)}
                             </p>
                           )}
@@ -761,14 +761,14 @@ const Catalog = () => {
 
                         {/* Información de crédito mejorada */}
                         {product.disponibleCredito && (product.pagoSemanal || product.enganche) && (
-                          <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 mb-2">
+                          <div className="bg-blue-50 border border-blue-100 rounded-lg p-1.5 sm:p-2 mb-1 sm:mb-2">
                             {product.pagoSemanal && (
-                              <p className="text-[11px] text-blue-700 font-bold leading-tight">
+                              <p className="text-[10px] sm:text-[11px] text-blue-700 font-bold leading-tight">
                                 💳 {product.pagoSemanal}
                               </p>
                             )}
                             {product.enganche && (
-                              <p className="text-[9px] text-blue-600 leading-tight mt-0.5">
+                              <p className="text-[8px] sm:text-[9px] text-blue-600 leading-tight mt-0.5">
                                 {product.enganche}
                               </p>
                             )}
@@ -777,8 +777,8 @@ const Catalog = () => {
 
                         {/* Disponibilidad */}
                         {!unavailable && (
-                          <p className="text-[9px] text-green-600 font-semibold mb-2 flex items-center gap-1">
-                            <span>✓</span> Disponible - Entrega inmediata
+                          <p className="text-[8px] sm:text-[9px] text-green-600 font-semibold mb-1 sm:mb-2 flex items-center gap-1">
+                            <span>✓</span> Disponible
                           </p>
                         )}
 
@@ -787,7 +787,7 @@ const Catalog = () => {
                           {!unavailable ? (
                             <button
                               onClick={() => handleReservar(product)}
-                              className="w-full bg-[#0f49bd] hover:bg-[#002f87] text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 mb-1.5 transition-colors"
+                              className="w-full bg-[#0f49bd] hover:bg-[#002f87] text-white py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 mb-1 sm:mb-1.5 transition-colors"
                             >
                               <IconCart />
                               Reservar
@@ -795,16 +795,16 @@ const Catalog = () => {
                           ) : (
                             <button 
                               disabled 
-                              className="w-full bg-gray-200 text-gray-400 py-2.5 rounded-xl text-xs font-bold cursor-not-allowed mb-1.5"
+                              className="w-full bg-gray-200 text-gray-400 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold cursor-not-allowed mb-1 sm:mb-1.5"
                             >
                               Sin stock
                             </button>
                           )}
                           <Link
                             to={`/producto/${product.id}`}
-                            className="block text-center text-[#0f49bd] text-[10px] font-bold hover:underline"
+                            className="block text-center text-[#0f49bd] text-[9px] sm:text-[10px] font-bold hover:underline"
                           >
-                            Ver detalles completos
+                            Ver detalles
                           </Link>
                         </div>
                       </div>

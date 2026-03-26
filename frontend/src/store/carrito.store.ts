@@ -1,6 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+// Configuración de expiración
+const DIAS_EXPIRACION = 30;
+const EXPIRACION_MS = DIAS_EXPIRACION * 24 * 60 * 60 * 1000;
+
+/**
+ * Calcula la fecha de expiración (ahora + 30 días)
+ */
+const calcularExpiracion = (): number => Date.now() + EXPIRACION_MS;
+
 /**
  * Item del carrito ANTES de confirmar la reserva
  * Cada item representa un producto que el cliente quiere reservar
@@ -52,6 +61,12 @@ export interface ReservaConfirmada {
 }
 
 interface CarritoState {
+  // Identificador anónimo del usuario (persistido en localStorage)
+  anonymousId: string;
+  
+  // Timestamp de expiración del carrito (milisegundos)
+  expiresAt: number;
+  
   // Carrito de compras (productos NO confirmados)
   items: CarritoItem[];
   
@@ -59,6 +74,11 @@ interface CarritoState {
   reservasConfirmadas: ReservaConfirmada[];
   
   // ── Métodos del carrito ──────────────────────────────────────────────────
+  
+  /**
+   * Obtener el identificador anónimo del usuario
+   */
+  getAnonymousId: () => string;
   
   /**
    * Agregar producto al carrito
@@ -121,10 +141,16 @@ interface CarritoState {
 export const useCarritoStore = create<CarritoState>()(
   persist(
     (set, get) => ({
+      anonymousId: typeof crypto !== 'undefined' && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : `anon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      expiresAt: calcularExpiracion(),
       items: [],
       reservasConfirmadas: [],
       
       // ── Implementación de métodos del carrito ────────────────────────────
+      
+      getAnonymousId: () => get().anonymousId,
       
       agregarAlCarrito: (item) =>
         set((state) => {
@@ -137,12 +163,13 @@ export const useCarritoStore = create<CarritoState>()(
             addedAt: new Date().toISOString(),
           };
           
-          return { items: [...state.items, nuevoItem] };
+          return { items: [...state.items, nuevoItem], expiresAt: calcularExpiracion() };
         }),
       
       eliminarDelCarrito: (tempId) =>
         set((state) => ({
           items: state.items.filter((item) => item.tempId !== tempId),
+          expiresAt: calcularExpiracion(),
         })),
       
       cambiarTipoPago: (tempId, tipoPago) =>
@@ -150,9 +177,10 @@ export const useCarritoStore = create<CarritoState>()(
           items: state.items.map((item) =>
             item.tempId === tempId ? { ...item, tipoPago } : item
           ),
+          expiresAt: calcularExpiracion(),
         })),
       
-      vaciarCarrito: () => set({ items: [] }),
+      vaciarCarrito: () => set({ items: [], expiresAt: calcularExpiracion() }),
       
       getCantidadTotal: () => get().items.length,
       
@@ -200,8 +228,40 @@ export const useCarritoStore = create<CarritoState>()(
     }),
     {
       name: 'paguito-carrito',
-      // Solo persistir el carrito, no las reservas confirmadas (esas se consultan del backend)
-      partialize: (state) => ({ items: state.items }),
+      // Persistir anonymousId, expiresAt e items
+      partialize: (state) => ({ 
+        anonymousId: state.anonymousId, 
+        expiresAt: state.expiresAt,
+        items: state.items 
+      }),
+      // Verificar expiración al cargar el estado
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<CarritoState>;
+        
+        // Si no hay estado persistido, usar estado actual
+        if (!persisted || !persisted.expiresAt) {
+          return currentState;
+        }
+        
+        // Verificar si el carrito expiró
+        if (Date.now() > persisted.expiresAt) {
+          // Carrito expirado: mantener anonymousId pero limpiar items
+          return {
+            ...currentState,
+            anonymousId: persisted.anonymousId || currentState.anonymousId,
+            items: [],
+            expiresAt: calcularExpiracion(),
+          };
+        }
+        
+        // Carrito vigente: usar estado persistido
+        return {
+          ...currentState,
+          anonymousId: persisted.anonymousId || currentState.anonymousId,
+          expiresAt: persisted.expiresAt,
+          items: persisted.items || [],
+        };
+      },
     }
   )
 );
