@@ -292,7 +292,7 @@ describe('UserService', () => {
   // ── toggleActive ──────────────────────────────────────────────────────────────
   describe('toggleActive', () => {
     it('cambia estado de activo a inactivo', async () => {
-      vi.mocked(prisma.user.findUniqueOrThrow).mockResolvedValue({ ...mockUser, isActive: true } as any);
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({ ...mockUser, isActive: true } as any);
       vi.mocked(prisma.user.update).mockResolvedValue({
         id: 'user-uuid-001',
         nombre: 'Luis Martínez',
@@ -302,7 +302,7 @@ describe('UserService', () => {
       const result = await service.toggleActive('user-uuid-001');
 
       expect(result.isActive).toBe(false);
-      expect(prisma.user.findUniqueOrThrow).toHaveBeenCalledWith(
+      expect(prisma.user.findUnique).toHaveBeenCalledWith(
         expect.objectContaining({ where: { id: 'user-uuid-001' } })
       );
       expect(prisma.user.update).toHaveBeenCalledWith(
@@ -314,7 +314,7 @@ describe('UserService', () => {
     });
 
     it('cambia estado de inactivo a activo', async () => {
-      vi.mocked(prisma.user.findUniqueOrThrow).mockResolvedValue({ ...mockUser, isActive: false } as any);
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({ ...mockUser, isActive: false } as any);
       vi.mocked(prisma.user.update).mockResolvedValue({
         id: 'user-uuid-001',
         nombre: 'Luis Martínez',
