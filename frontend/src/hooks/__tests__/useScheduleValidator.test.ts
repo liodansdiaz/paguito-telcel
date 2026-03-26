@@ -59,8 +59,8 @@ describe('getMinTime', () => {
     expect(getMinTime('2026-03-30')).toBe('09:30');
   });
 
-  it('retorna 00:00 para domingo', () => {
-    expect(getMinTime('2026-03-29')).toBe('00:00');
+  it('retorna 09:30 para domingo', () => {
+    expect(getMinTime('2026-03-29')).toBe('09:30');
   });
 });
 

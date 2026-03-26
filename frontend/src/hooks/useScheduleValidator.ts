@@ -6,8 +6,9 @@ export interface ScheduleValidation {
 export const validateSchedule = (date: string, time: string): ScheduleValidation => {
   if (!date || !time) return { isValid: false, message: 'Selecciona fecha y horario.' };
 
-  const selectedDate = new Date(date + 'T00:00:00');
-  const dayOfWeek = selectedDate.getDay(); // 0=Dom, 1=Lun...6=Sáb
+  // Usar mediodía UTC para evitar problemas de zona horaria
+  const selectedDate = new Date(date + 'T12:00:00Z');
+  const dayOfWeek = selectedDate.getUTCDay(); // 0=Dom, 1=Lun...6=Sáb
 
   if (dayOfWeek === 0) {
     return { isValid: false, message: 'No hay servicio los domingos. Selecciona otro día.' };
@@ -37,13 +38,14 @@ export const validateSchedule = (date: string, time: string): ScheduleValidation
 
 export const getMinTime = (date: string): string => {
   if (!date) return '09:30';
-  const day = new Date(date + 'T00:00:00').getDay();
-  return day === 0 ? '00:00' : '09:30';
+  const day = new Date(date + 'T12:00:00Z').getUTCDay();
+  return day === 0 ? '09:30' : '09:30';
 };
 
 export const getMaxTime = (date: string): string => {
   if (!date) return '16:30';
-  const day = new Date(date + 'T00:00:00').getDay();
+  const day = new Date(date + 'T12:00:00Z').getUTCDay();
   if (day === 6) return '14:30';
+  if (day === 0) return '16:30';
   return '16:30';
 };
