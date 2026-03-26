@@ -98,13 +98,30 @@ const CartCheckout = () => {
 
   // Estado del mapa
   const [showMap, setShowMap] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_CENTER);
   const [mapZoom, setMapZoom] = useState(DEFAULT_ZOOM);
   const [geocoding, setGeocoding] = useState(false);
   const [pinConfirmed, setPinConfirmed] = useState(false);
   const [reverseAddr, setReverseAddr] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
   const geo = useGeolocation();
+
+  // Cerrar calendario al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+        setShowCalendar(false);
+      }
+    };
+    if (showCalendar) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCalendar]);
 
   const totalPrecio = getTotalPrecio();
   const productosCredito = contarProductosCredito();
@@ -523,51 +540,63 @@ const CartCheckout = () => {
                   />
                 </div>
 
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Fecha preferida <span className="text-red-500">*</span>
                   </label>
                   
-                  {/* Calendario con restricciones */}
-                  <div className="border border-gray-300 rounded-lg p-3 bg-white">
-                    <DayPicker
-                      mode="single"
-                      selected={formData.fechaPreferida ? new Date(formData.fechaPreferida + 'T12:00:00Z') : undefined}
-                      onSelect={(date) => {
-                        if (date) {
-                          const year = date.getUTCFullYear();
-                          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-                          const day = String(date.getUTCDate()).padStart(2, '0');
-                          setFormData({ ...formData, fechaPreferida: `${year}-${month}-${day}` });
-                        }
-                      }}
-                      disabled={(date) => {
-                        const today = startOfDay(new Date());
-                        const minDate = addDays(today, 2);
-                        return isBefore(date, minDate) || isSunday(date);
-                      }}
-                      fromDate={addDays(startOfDay(new Date()), 2)}
-                      locale={undefined}
-                      className="mx-auto"
-                      style={{ '--rdp-accent-color': '#0f49bd' } as React.CSSProperties}
-                    />
-                  </div>
+                  {/* Input que abre el calendario */}
+                  <button
+                    type="button"
+                    onClick={() => setShowCalendar(!showCalendar)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left bg-white flex items-center justify-between"
+                  >
+                    <span className={formData.fechaPreferida ? 'text-gray-900' : 'text-gray-400'}>
+                      {formData.fechaPreferida 
+                        ? new Date(formData.fechaPreferida + 'T12:00:00Z').toLocaleDateString('es-MX', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })
+                        : 'Selecciona una fecha'
+                      }
+                    </span>
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </button>
                   
-                  {/* Mostrar fecha seleccionada */}
-                  {formData.fechaPreferida && (
-                    <p className="mt-2 text-sm text-green-600 font-medium">
-                      Seleccionada: {new Date(formData.fechaPreferida + 'T12:00:00Z').toLocaleDateString('es-MX', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </p>
+                  {/* Calendario desplegable */}
+                  {showCalendar && (
+                    <div ref={calendarRef} className="absolute z-50 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-3">
+                      <DayPicker
+                        mode="single"
+                        selected={formData.fechaPreferida ? new Date(formData.fechaPreferida + 'T12:00:00Z') : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            const year = date.getUTCFullYear();
+                            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                            const day = String(date.getUTCDate()).padStart(2, '0');
+                            setFormData({ ...formData, fechaPreferida: `${year}-${month}-${day}` });
+                            setShowCalendar(false);
+                          }
+                        }}
+                        disabled={(date) => {
+                          const today = startOfDay(new Date());
+                          const minDate = addDays(today, 2);
+                          return isBefore(date, minDate) || isSunday(date);
+                        }}
+                        fromDate={addDays(startOfDay(new Date()), 2)}
+                        locale={undefined}
+                        className="mx-auto"
+                        style={{ '--rdp-accent-color': '#0f49bd' } as React.CSSProperties}
+                      />
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        No se atiende los domingos
+                      </p>
+                    </div>
                   )}
-                  
-                  <p className="mt-1 text-xs text-gray-500">
-                    Disponible a partir de 2 días. No se atiende los domingos.
-                  </p>
                 </div>
 
                 <div>
