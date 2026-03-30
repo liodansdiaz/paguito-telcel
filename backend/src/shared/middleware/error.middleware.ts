@@ -2,6 +2,18 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { logger } from '../utils/logger';
 
+// Campos sensibles que nunca deben loggearse
+const SENSITIVE_FIELDS = ['password', 'newPassword', 'oldPassword', 'token', 'refreshToken', 'apiKey', 'secret'];
+
+function sanitizeBody(body: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+  if (!body || typeof body !== 'object') return body;
+  const sanitized: Record<string, unknown> = { ...body };
+  for (const key of SENSITIVE_FIELDS) {
+    if (key in sanitized) sanitized[key] = '[REDACTED]';
+  }
+  return sanitized;
+}
+
 export class AppError extends Error {
   constructor(
     public message: string,
@@ -21,7 +33,7 @@ export const errorMiddleware = (
 ) => {
   logger.error(`${req.method} ${req.path} - ${err.message}`, {
     stack: err.stack,
-    body: req.body,
+    body: sanitizeBody(req.body),
   });
 
   if (err instanceof AppError) {

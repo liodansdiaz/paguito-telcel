@@ -396,25 +396,62 @@ export class ReservationRepository {
   }
 
   /**
-   * Marcar un item como VENDIDO y decrementar el stock del producto
-   * Se ejecuta en transacción atómica
+   * Marcar un item como VENDIDO y decrementar el stock del producto.
+   * Todo se ejecuta dentro de una transacción atómica para evitar
+   * que se decremente stock sin actualizar el estado (o viceversa).
    */
   async markItemAsSold(itemId: string, notas?: string) {
     return prisma.$transaction(async (tx) => {
-      // Obtener el item con su producto
+      // 1. Obtener el item con su producto y todos los items de la reserva
       const item = await tx.reservationItem.findUniqueOrThrow({
         where: { id: itemId },
-        include: { product: true },
+        include: {
+          product: true,
+          reservation: { include: { items: true } },
+        },
       });
 
-      // Decrementar stock del producto
+      // 2. Decrementar stock del producto
       await tx.product.update({
         where: { id: item.productId },
         data: { stock: { decrement: 1 } },
       });
 
-      // Actualizar estado del item a VENDIDO
-      return this.updateItemStatus(itemId, 'VENDIDO', notas);
+      // 3. Actualizar estado del item a VENDIDO
+      const updatedItem = await tx.reservationItem.update({
+        where: { id: itemId },
+        data: { estado: 'VENDIDO', ...(notas !== undefined && { notas }) },
+        include: { product: true },
+      });
+
+      // 4. Recalcular estadoDetalle usando items ya cargados (sin query extra)
+      const siblingItems = item.reservation.items.map(i =>
+        i.id === itemId ? { ...i, estado: 'VENDIDO' as EstadoReservaItem } : i
+      );
+
+      const estadoDetalle = {
+        total: siblingItems.length,
+        pendientes: siblingItems.filter(i => i.estado === 'PENDIENTE').length,
+        enProceso: siblingItems.filter(i => i.estado === 'EN_PROCESO').length,
+        vendidos: siblingItems.filter(i => i.estado === 'VENDIDO').length,
+        noConcretados: siblingItems.filter(i => i.estado === 'NO_CONCRETADO').length,
+        cancelados: siblingItems.filter(i => i.estado === 'CANCELADO').length,
+        sinStock: siblingItems.filter(i => i.estado === 'SIN_STOCK').length,
+      };
+
+      let nuevoEstadoReserva: EstadoReserva = item.reservation.estado;
+      if (estadoDetalle.cancelados === estadoDetalle.total) nuevoEstadoReserva = 'CANCELADA';
+      else if (estadoDetalle.sinStock === estadoDetalle.total) nuevoEstadoReserva = 'SIN_STOCK';
+      else if (estadoDetalle.vendidos + estadoDetalle.noConcretados === estadoDetalle.total) nuevoEstadoReserva = 'COMPLETADA';
+      else if (estadoDetalle.vendidos > 0 || estadoDetalle.noConcretados > 0 || estadoDetalle.cancelados > 0 || estadoDetalle.sinStock > 0) nuevoEstadoReserva = 'PARCIAL';
+
+      // 5. Actualizar reserva (todo dentro de la misma transacción)
+      await tx.reservation.update({
+        where: { id: item.reservationId },
+        data: { estadoDetalle, estado: nuevoEstadoReserva },
+      });
+
+      return updatedItem;
     });
   }
 

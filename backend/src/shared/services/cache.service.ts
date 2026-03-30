@@ -142,16 +142,23 @@ export class CacheService {
 
     try {
       const fullPattern = this.generateKey(pattern, options.prefix);
-      const keys = await redis.keys(fullPattern);
 
-      if (keys.length === 0) {
-        logger.debug(`🔍 Cache DELETE PATTERN: No keys found for ${fullPattern}`);
-        return 0;
+      // Usar SCAN en lugar de KEYS para no bloquear Redis
+      let cursor = '0';
+      let totalDeleted = 0;
+
+      do {
+        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', fullPattern, 'COUNT', 100);
+        cursor = nextCursor;
+        if (keys.length > 0) {
+          totalDeleted += await redis.del(...keys);
+        }
+      } while (cursor !== '0');
+
+      if (totalDeleted > 0) {
+        logger.debug(`🗑️ Cache DELETE PATTERN: ${totalDeleted} keys deleted for ${fullPattern}`);
       }
-
-      const result = await redis.del(...keys);
-      logger.debug(`🗑️ Cache DELETE PATTERN: ${result} keys deleted for ${fullPattern}`);
-      return result;
+      return totalDeleted;
     } catch (error) {
       logger.error('Error al eliminar patrón del caché', { pattern, error });
       return 0;

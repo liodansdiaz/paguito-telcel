@@ -7,6 +7,7 @@ const mockRedis = {
   setex: vi.fn(),
   del: vi.fn(),
   keys: vi.fn(),
+  scan: vi.fn(),
   flushdb: vi.fn(),
   exists: vi.fn(),
   ttl: vi.fn(),
@@ -123,16 +124,17 @@ describe('CacheService', () => {
   // ── deletePattern ─────────────────────────────────────────────────────────────
   describe('deletePattern', () => {
     it('elimina múltiples keys', async () => {
-      vi.mocked(mockRedis.keys).mockResolvedValue([
-        'paguito:products:list:1',
-        'paguito:products:list:2',
+      // SCAN retorna [cursor, keys] - '0' indica que es el último batch
+      vi.mocked(mockRedis.scan).mockResolvedValue([
+        '0',
+        ['paguito:products:list:1', 'paguito:products:list:2'],
       ]);
       vi.mocked(mockRedis.del).mockResolvedValue(2);
 
       const result = await CacheService.deletePattern('products:*');
 
       expect(result).toBe(2);
-      expect(mockRedis.keys).toHaveBeenCalledWith('paguito:products:*');
+      expect(mockRedis.scan).toHaveBeenCalledWith('0', 'MATCH', 'paguito:products:*', 'COUNT', 100);
       expect(mockRedis.del).toHaveBeenCalledWith(
         'paguito:products:list:1',
         'paguito:products:list:2'
@@ -140,7 +142,7 @@ describe('CacheService', () => {
     });
 
     it('devuelve 0 si no hay keys', async () => {
-      vi.mocked(mockRedis.keys).mockResolvedValue([]);
+      vi.mocked(mockRedis.scan).mockResolvedValue(['0', []]);
 
       const result = await CacheService.deletePattern('products:*');
 

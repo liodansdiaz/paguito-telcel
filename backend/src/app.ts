@@ -148,6 +148,27 @@ const startServer = async () => {
       logger.info(`Servidor corriendo en http://localhost:${PORT}`);
       logger.info(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
     });
+
+    // Graceful shutdown: cerrar conexiones limpiamente al recibir señales
+    const shutdown = async (signal: string) => {
+      logger.info(`${signal} recibido. Cerrando servidor...`);
+      try {
+        await prisma.$disconnect();
+        logger.info('Conexión a base de datos cerrada');
+        process.exit(0);
+      } catch (err) {
+        logger.error('Error durante shutdown:', err);
+        process.exit(1);
+      }
+      // Forzar cierre después de 10 segundos si algo se cuelga
+      setTimeout(() => {
+        logger.warn('Shutdown forzado después de timeout');
+        process.exit(1);
+      }, 10000).unref();
+    };
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
   } catch (error) {
     logger.error('Error al iniciar el servidor:', error);
     process.exit(1);
