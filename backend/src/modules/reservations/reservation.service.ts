@@ -110,7 +110,7 @@ export class ReservationService {
     const vendorId = await RoundRobinService.getNextVendor();
     const vendor = await prisma.user.findUniqueOrThrow({
       where: { id: vendorId },
-      select: { id: true, nombre: true, email: true },
+      select: { id: true, nombre: true, email: true, telefono: true },
     });
 
     // 7. Preparar items con precio capturado
@@ -165,6 +165,7 @@ export class ReservationService {
       reservationId: reservation.id,
       vendorEmail: vendor.email,
       vendorNombre: vendor.nombre,
+      vendorTelefono: vendor.telefono ?? undefined,
       clienteNombre: dto.nombreCompleto,
       clienteTelefono: dto.telefono,
       clienteCurp: curpUpper,

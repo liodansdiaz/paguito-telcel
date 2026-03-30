@@ -135,6 +135,25 @@ const ENV_VARS: EnvVarConfig[] = [
     errorMessage: 'NOTIFICATIONS_INTERNAL debe ser "true" o "false"',
   },
 
+  // Evolution API (WhatsApp)
+  {
+    name: 'EVOLUTION_API_URL',
+    required: false,
+    requiredInProduction: false,
+    validator: (value) => value.startsWith('http://') || value.startsWith('https://'),
+    errorMessage: 'EVOLUTION_API_URL debe ser una URL válida (http:// o https://)',
+  },
+  {
+    name: 'EVOLUTION_API_KEY',
+    required: false,
+    requiredInProduction: false,
+  },
+  {
+    name: 'EVOLUTION_INSTANCE_NAME',
+    required: false,
+    requiredInProduction: false,
+  },
+
   // Groq AI (opcional)
   {
     name: 'GROQ_API_KEY',
@@ -216,6 +235,16 @@ export const validateEnv = (): ValidationResult => {
     for (const varName of requiredEmailVars) {
       if (!process.env[varName]) {
         errors.push(`❌ ${varName} es requerido cuando NOTIFICATIONS_EMAIL está activado`);
+      }
+    }
+  }
+
+  // Si las notificaciones por WhatsApp están activadas, validar Evolution API
+  if (process.env.NOTIFICATIONS_WHATSAPP === 'true') {
+    const requiredWhatsAppVars = ['EVOLUTION_API_URL', 'EVOLUTION_API_KEY', 'EVOLUTION_INSTANCE_NAME'];
+    for (const varName of requiredWhatsAppVars) {
+      if (!process.env[varName]) {
+        errors.push(`❌ ${varName} es requerido cuando NOTIFICATIONS_WHATSAPP está activado`);
       }
     }
   }
@@ -318,6 +347,11 @@ export const getEnvSummary = () => {
     email: {
       enabled: process.env.NOTIFICATIONS_EMAIL === 'true',
       host: process.env.SMTP_HOST || '✗ No configurado',
+    },
+    whatsapp: {
+      enabled: process.env.NOTIFICATIONS_WHATSAPP === 'true',
+      apiUrl: process.env.EVOLUTION_API_URL || '✗ No configurado',
+      instanceName: process.env.EVOLUTION_INSTANCE_NAME || '✗ No configurado',
     },
     redis: {
       enabled: process.env.REDIS_ENABLED !== 'false',

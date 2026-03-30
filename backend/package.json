@@ -19,7 +19,8 @@
     "test:coverage": "vitest run --coverage",
     "generate-secrets": "ts-node scripts/generate-secrets.ts",
     "env:validate": "ts-node scripts/validate-env.ts",
-    "env:check": "npm run env:validate"
+    "env:check": "npm run env:validate",
+    "migrate:images": "ts-node scripts/migrate-to-cloudinary.ts"
   },
   "keywords": [],
   "author": "",
@@ -39,6 +40,7 @@
     "@types/pg": "^8.16.0",
     "@types/uuid": "^10.0.0",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.9.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",

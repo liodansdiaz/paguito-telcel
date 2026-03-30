@@ -42,7 +42,7 @@ const PROD_API = 'https://paguito-telcel-api.onrender.com/api';
 const api = axios.create({
   baseURL: import.meta.env.PROD ? PROD_API : '/api',
   headers: { 'Content-Type': 'application/json' },
-  timeout: 10000,
+  timeout: 30000,
   withCredentials: true,
 });
 

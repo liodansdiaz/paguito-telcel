@@ -4,8 +4,7 @@ import { productService } from './product.service';
 import { sendSuccess, sendPaginated } from '../../shared/utils/response.helper';
 import type { ProductSort } from './product.repository';
 import { uploadProductImages } from '../../shared/middleware/upload.middleware';
-import path from 'path';
-import fs from 'fs';
+import { uploadToCloudinary, deleteFromCloudinary } from '../../shared/services/cloudinary.service';
 
 const createProductSchema = z.object({
   sku: z.string().min(1, 'SKU requerido'),
@@ -156,9 +155,15 @@ export class ProductController {
 
       const data = createProductSchema.parse(body);
 
-      // Rutas de las imágenes subidas
+      // Subir imágenes a Cloudinary (o guardar local como fallback)
       const files = req.files as Express.Multer.File[] | undefined;
-      const imagenes = files ? files.map((f) => `/uploads/productos/${f.filename}`) : [];
+      const imagenes: string[] = [];
+      if (files) {
+        for (const file of files) {
+          const url = await uploadToCloudinary(file.path, 'productos');
+          imagenes.push(url);
+        }
+      }
 
       const product = await productService.createProduct({ ...data, imagenes, colores, memorias });
       sendSuccess(res, product, 'Producto creado exitosamente', 201);
@@ -222,19 +227,24 @@ export class ProductController {
         }
       }
 
-      // Nuevas imágenes subidas
-      const nuevasImagenes: string[] = files ? files.map((f) => `/uploads/productos/${f.filename}`) : [];
+      // Nuevas imágenes subidas a Cloudinary (o local como fallback)
+      const nuevasImagenes: string[] = [];
+      if (files) {
+        for (const file of files) {
+          const url = await uploadToCloudinary(file.path, 'productos');
+          nuevasImagenes.push(url);
+        }
+      }
 
       // Imágenes finales = existentes conservadas + nuevas
       const imagenes: string[] = [...imagenesExistentes, ...nuevasImagenes];
 
-      // Eliminar del disco las imágenes que el admin quitó (las que ya no están en imagenesExistentes)
+      // Eliminar las imágenes que el admin quitó (Cloudinary o disco local)
       const existing = await productService.getAdminProductById(req.params['id'] as string);
       if (existing.imagenes && Array.isArray(existing.imagenes)) {
         for (const imgPath of existing.imagenes as string[]) {
           if (!imagenesExistentes.includes(imgPath)) {
-            const fullPath = path.join(process.cwd(), imgPath);
-            if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+            await deleteFromCloudinary(imgPath);
           }
         }
       }

@@ -1,6 +1,7 @@
 import { prisma } from '../../config/database';
 import { NOTIFICATIONS_CONFIG } from '../../config/notifications';
 import { emailService } from './email.service';
+import { whatsappService } from './whatsapp.service';
 import { logger } from '../utils/logger';
 import { CanalNotificacion, EstadoNotificacion } from '@prisma/client';
 
@@ -16,6 +17,7 @@ interface ReservationNotificationData {
   reservationId: string;
   vendorEmail: string;
   vendorNombre: string;
+  vendorTelefono?: string;
   clienteNombre: string;
   clienteTelefono: string;
   clienteCurp: string;
@@ -165,18 +167,149 @@ export class NotificationService {
   }
 
   private static async sendWhatsAppNotification(data: ReservationNotificationData): Promise<void> {
-    // ESTRUCTURA PREPARADA — Canal desactivado en NOTIFICATIONS_CONFIG
-    // TODO: Integrar con Twilio / WhatsApp Business API
-    logger.info(`WhatsApp (pendiente): reserva ${data.reservationId} para ${data.vendorNombre}`);
-
-    await prisma.notification.create({
-      data: {
-        reservationId: data.reservationId,
-        canal: CanalNotificacion.WHATSAPP,
-        status: EstadoNotificacion.PENDING,
-        mensaje: 'Canal WhatsApp no configurado aún',
-      },
+    const fecha = new Date(data.fechaPreferida).toLocaleDateString('es-MX', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
+    const folio = data.reservationId.slice(0, 8).toUpperCase();
+    const hasCoords = data.latitude != null && data.longitude != null;
+    const mapsUrl = hasCoords
+      ? `https://www.google.com/maps?q=${data.latitude},${data.longitude}`
+      : null;
+
+    // --- Mensaje para el VENDEDOR ---
+    const mensajeVendedor = [
+      `🔔 *NUEVA RESERVA ASIGNADA*`,
+      ``,
+      `Hola ${data.vendorNombre}, se te ha asignado una nueva reserva.`,
+      ``,
+      `*Folio:* #${folio}`,
+      ``,
+      `📋 *DATOS DEL CLIENTE:*`,
+      `• *Nombre:* ${data.clienteNombre}`,
+      `• *Teléfono:* ${data.clienteTelefono}`,
+      `• *CURP:* ${data.clienteCurp}`,
+      `• *Dirección:* ${data.direccion}`,
+      ``,
+      `📦 *PRODUCTO(S):*`,
+      `• ${data.productoNombre}`,
+      `• *Tipo de pago:* ${data.tipoPago === 'CREDITO' ? 'Crédito' : 'Contado'}`,
+      ``,
+      `📅 *FECHA PREFERIDA:* ${fecha}`,
+      `🕐 *HORARIO:* ${data.horarioPreferido}`,
+      mapsUrl ? `\n🗺️ *UBICACIÓN GPS:* ${mapsUrl}` : '',
+      ``,
+      `Ingresa al sistema para ver más detalles.`,
+    ].filter(line => line !== null).join('\n');
+
+    // --- Mensaje para el CLIENTE ---
+    const mensajeCliente = [
+      `✅ *RESERVA CONFIRMADA*`,
+      ``,
+      `Hola ${data.clienteNombre}, tu reserva se realizó con éxito.`,
+      ``,
+      `*Folio:* #${folio}`,
+      ``,
+      `📦 *PRODUCTO(S) RESERVADO(S):*`,
+      `• ${data.productoNombre}`,
+      `• *Tipo de pago:* ${data.tipoPago === 'CREDITO' ? 'Crédito' : 'Contado'}`,
+      ``,
+      `📅 *FECHA PREFERIDA:* ${fecha}`,
+      `🕐 *HORARIO:* ${data.horarioPreferido}`,
+      ``,
+      `Un vendedor se pondrá en contacto contigo pronto para confirmar tu visita.`,
+      ``,
+      `Si necesitas cancelar, ingresa al sistema con tu folio o CURP.`,
+    ].join('\n');
+
+    // Enviar ambas notificaciones en paralelo
+    const tasks: Promise<void>[] = [];
+
+    // WhatsApp al vendedor
+    if (data.vendorTelefono) {
+      const taskVendedor = (async () => {
+        let logId: string | undefined;
+        try {
+          const log = await prisma.notification.create({
+            data: {
+              reservationId: data.reservationId,
+              canal: CanalNotificacion.WHATSAPP,
+              status: EstadoNotificacion.PENDING,
+              mensaje: `WhatsApp a vendedor ${data.vendorNombre} (${data.vendorTelefono})`,
+            },
+          });
+          logId = log.id;
+
+          await whatsappService.send({
+            numero: data.vendorTelefono!,
+            mensaje: mensajeVendedor,
+          });
+
+          await prisma.notification.update({
+            where: { id: logId },
+            data: { status: EstadoNotificacion.SENT, sentAt: new Date() },
+          });
+
+          logger.info(`WhatsApp enviado al vendedor ${data.vendorNombre} para reserva ${data.reservationId}`);
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          if (logId) {
+            await prisma.notification.update({
+              where: { id: logId },
+              data: { status: EstadoNotificacion.FAILED, error: errorMsg },
+            }).catch(() => {});
+          }
+          logger.error(`Error enviando WhatsApp al vendedor para reserva ${data.reservationId}:`, err);
+          throw err;
+        }
+      })();
+      tasks.push(taskVendedor);
+    } else {
+      logger.warn(`Vendedor ${data.vendorNombre} no tiene teléfono configurado — WhatsApp no enviado`);
+    }
+
+    // WhatsApp al cliente
+    const taskCliente = (async () => {
+      let logId: string | undefined;
+      try {
+        const log = await prisma.notification.create({
+          data: {
+            reservationId: data.reservationId,
+            canal: CanalNotificacion.WHATSAPP,
+            status: EstadoNotificacion.PENDING,
+            mensaje: `WhatsApp a cliente ${data.clienteNombre} (${data.clienteTelefono})`,
+          },
+        });
+        logId = log.id;
+
+        await whatsappService.send({
+          numero: data.clienteTelefono,
+          mensaje: mensajeCliente,
+        });
+
+        await prisma.notification.update({
+          where: { id: logId },
+          data: { status: EstadoNotificacion.SENT, sentAt: new Date() },
+        });
+
+        logger.info(`WhatsApp enviado al cliente ${data.clienteNombre} para reserva ${data.reservationId}`);
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        if (logId) {
+          await prisma.notification.update({
+            where: { id: logId },
+            data: { status: EstadoNotificacion.FAILED, error: errorMsg },
+          }).catch(() => {});
+        }
+        logger.error(`Error enviando WhatsApp al cliente para reserva ${data.reservationId}:`, err);
+        throw err;
+      }
+    })();
+    tasks.push(taskCliente);
+
+    await Promise.allSettled(tasks);
   }
 
   /**
