@@ -45,11 +45,11 @@ export class DashboardService {
         ? prisma.reservation.count({ where: whereFecha })
         : prisma.reservation.count({ where: { createdAt: { gte: startOfMonth } } }),
       
-      // Métricas de estado (sin filtro de fecha, siempre son totales)
-      prisma.reservation.count({ where: { estado: { in: ['NUEVA', 'ASIGNADA', 'EN_VISITA', 'PARCIAL'] } } }),
-      prisma.reservation.count({ where: { estado: 'COMPLETADA' } }),
-      prisma.reservation.count({ where: { estado: 'CANCELADA' } }),
-      prisma.reservation.count({ where: { estado: 'SIN_STOCK' } }),
+      // Métricas de estado (aplican filtro de fecha cuando está presente)
+      prisma.reservation.count({ where: { ...whereFecha, estado: { in: ['NUEVA', 'ASIGNADA', 'EN_VISITA', 'PARCIAL'] } } }),
+      prisma.reservation.count({ where: { ...whereFecha, estado: 'COMPLETADA' } }),
+      prisma.reservation.count({ where: { ...whereFecha, estado: 'CANCELADA' } }),
+      prisma.reservation.count({ where: { ...whereFecha, estado: 'SIN_STOCK' } }),
       
       // Vendedores y clientes (totales)
       prisma.user.count({ where: { isActive: true, rol: 'VENDEDOR' } }),

@@ -98,6 +98,21 @@ export class ProductRepository {
     };
   }
 
+  /**
+   * Buscar múltiples productos por IDs en una sola query (batch).
+   * Evita el patrón N+1 donde se consulta uno por uno en un loop.
+   */
+  async findByIds(ids: string[]) {
+    const products = await prisma.product.findMany({
+      where: { id: { in: ids } },
+    });
+    return products.map(p => ({
+      ...p,
+      precio: Number(p.precio),
+      precioAnterior: p.precioAnterior ? Number(p.precioAnterior) : null,
+    }));
+  }
+
   async create(data: Prisma.ProductCreateInput) {
     const product = await prisma.product.create({ data });
     return {
@@ -144,52 +159,45 @@ export class ProductRepository {
   }
 
   async getColores(): Promise<string[]> {
-    const result = await prisma.product.findMany({
-      where: { isActive: true },
-      select: { colores: true },
-    });
-    const all = result.flatMap((r) => r.colores);
-    return [...new Set(all)].sort();
+    const result = await prisma.$queryRaw<{ color: string }[]>`
+      SELECT DISTINCT UNNEST(colores) AS color
+      FROM products
+      WHERE "isActive" = true
+      ORDER BY color
+    `;
+    return result.map((r) => r.color);
   }
 
   async getMemorias(): Promise<string[]> {
-    const result = await prisma.product.findMany({
-      where: { isActive: true },
-      select: { memorias: true },
-    });
-    const all = result.flatMap((r) => r.memorias);
-    const unique = [...new Set(all)];
-    // Ordenar: primero por valor numérico, luego alfabético
-    return unique.sort((a, b) => {
-      const numA = parseInt(a) || 0;
-      const numB = parseInt(b) || 0;
-      return numA !== numB ? numA - numB : a.localeCompare(b);
-    });
+    const result = await prisma.$queryRaw<{ memoria: string }[]>`
+      SELECT DISTINCT UNNEST(memorias) AS memoria
+      FROM products
+      WHERE "isActive" = true
+      ORDER BY LENGTH(memoria), memoria
+    `;
+    return result.map((r) => r.memoria);
   }
 
   // Productos con más items vendidos, para la sección "Más populares"
+  // Optimizado: usa JOIN + GROUP BY + LIMIT en la DB en lugar de cargar todo y ordenar en JS
   async findPopulares(limit = 6) {
-    const result = await prisma.product.findMany({
-      where: { isActive: true },
-      include: {
-        _count: {
-          select: { reservationItems: { where: { estado: 'VENDIDO' } } },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const result = await prisma.$queryRawUnsafe(`
+      SELECT
+        p.id, p.sku, p.nombre, p.marca, p.descripcion,
+        p.precio, p."precioAnterior", p.stock, p."stockMinimo",
+        p.colores, p.memorias, p."pagosSemanales",
+        p."disponibleCredito", p.badge, p.imagenes,
+        p."isActive", p."createdAt",
+        COUNT(ri.id)::int AS "salesCount"
+      FROM products p
+      LEFT JOIN reservation_items ri ON ri."productId" = p.id AND ri.estado = 'VENDIDO'
+      WHERE p."isActive" = true
+      GROUP BY p.id
+      ORDER BY "salesCount" DESC, p.badge ASC NULLS LAST, p."createdAt" DESC
+      LIMIT $1
+    `, limit);
 
-    // Ordenar por ventas completadas desc; si empatan, priorizar los con badge
-    const sorted = result
-      .sort((a, b) => {
-        const diff = b._count.reservationItems - a._count.reservationItems;
-        if (diff !== 0) return diff;
-        return a.badge ? -1 : 1;
-      })
-      .slice(0, limit);
-
-    // Convertir Decimal a number para serialización JSON
-    return sorted.map(product => ({
+    return (result as any[]).map((product) => ({
       ...product,
       precio: Number(product.precio),
       precioAnterior: product.precioAnterior ? Number(product.precioAnterior) : null,

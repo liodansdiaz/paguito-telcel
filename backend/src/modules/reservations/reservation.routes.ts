@@ -28,6 +28,13 @@ router.post('/consulta', consultaLimiter, reservationController.consulta.bind(re
  */
 router.post('/cancelar', cancelarLimiter, reservationController.cancelarPorCliente.bind(reservationController));
 
+/**
+ * Modificar reserva (fecha, horario, dirección)
+ * PUT /api/reservations/modificar
+ * Body: { busqueda: string, fechaPreferida?, horarioPreferido?, direccion?, latitude?, longitude? }
+ */
+router.put('/modificar', cancelarLimiter, reservationController.modificar.bind(reservationController));
+
 // =====================================================================
 // RUTAS DE ADMIN
 // =====================================================================

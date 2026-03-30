@@ -232,6 +232,8 @@ export class ReservationRepository {
         nombreCompleto: true,
         telefono: true,
         direccion: true,
+        latitude: true,
+        longitude: true,
         fechaPreferida: true,
         horarioPreferido: true,
         estado: true,
@@ -348,20 +350,20 @@ export class ReservationRepository {
       }
     });
 
-    // Recalcular estadoDetalle de la reserva
-    const allItems = await prisma.reservationItem.findMany({
-      where: { reservationId: item.reservationId },
-      select: { estado: true },
-    });
+    // Recalcular estadoDetalle usando items ya cargados (sin query extra)
+    // Actualizar el estado del item en el array local
+    const siblingItems = item.reservation.items.map(i =>
+      i.id === itemId ? { ...i, estado } : i
+    );
 
     const estadoDetalle = {
-      total: allItems.length,
-      pendientes: allItems.filter(i => i.estado === 'PENDIENTE').length,
-      enProceso: allItems.filter(i => i.estado === 'EN_PROCESO').length,
-      vendidos: allItems.filter(i => i.estado === 'VENDIDO').length,
-      noConcretados: allItems.filter(i => i.estado === 'NO_CONCRETADO').length,
-      cancelados: allItems.filter(i => i.estado === 'CANCELADO').length,
-      sinStock: allItems.filter(i => i.estado === 'SIN_STOCK').length,
+      total: siblingItems.length,
+      pendientes: siblingItems.filter(i => i.estado === 'PENDIENTE').length,
+      enProceso: siblingItems.filter(i => i.estado === 'EN_PROCESO').length,
+      vendidos: siblingItems.filter(i => i.estado === 'VENDIDO').length,
+      noConcretados: siblingItems.filter(i => i.estado === 'NO_CONCRETADO').length,
+      cancelados: siblingItems.filter(i => i.estado === 'CANCELADO').length,
+      sinStock: siblingItems.filter(i => i.estado === 'SIN_STOCK').length,
     };
 
     // Determinar nuevo estado de la reserva
@@ -482,6 +484,26 @@ export class ReservationRepository {
       data: { 
         vendorId, 
         estado: 'ASIGNADA' 
+      },
+      include: reservationInclude,
+    });
+  }
+
+  /**
+   * Actualizar campos que el cliente puede modificar (fecha, horario, dirección, coords)
+   */
+  async updateClientFields(id: string, data: {
+    fechaPreferida?: Date;
+    horarioPreferido?: string;
+    direccion?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+  }) {
+    return prisma.reservation.update({
+      where: { id },
+      data: {
+        ...data,
+        updatedAt: new Date(),
       },
       include: reservationInclude,
     });

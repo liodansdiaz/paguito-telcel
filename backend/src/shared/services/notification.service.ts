@@ -30,6 +30,33 @@ interface ReservationNotificationData {
   longitude?: number;
 }
 
+interface ReservationCancellationData {
+  reservationId: string;
+  vendorNombre: string;
+  vendorTelefono?: string;
+  clienteNombre: string;
+  clienteTelefono: string;
+  productoNombre: string;
+  motivo?: string;
+}
+
+interface ReservationModificationData {
+  reservationId: string;
+  vendorNombre: string;
+  vendorTelefono?: string;
+  clienteNombre: string;
+  clienteTelefono: string;
+  productoNombre: string;
+  fechaAnterior: Date;
+  fechaNueva: Date;
+  horarioAnterior: string;
+  horarioNuevo: string;
+  direccionAnterior: string;
+  direccionNueva: string;
+  latitude?: number;
+  longitude?: number;
+}
+
 export class NotificationService {
   /**
    * Ejecuta todas las notificaciones configuradas para una nueva reserva.
@@ -58,6 +85,180 @@ export class NotificationService {
         logger.error(`Notificación ${index} falló para reserva ${data.reservationId}:`, result.reason);
       }
     });
+  }
+
+  /**
+   * Notifica al vendedor y al cliente que una reserva fue cancelada.
+   */
+  static async sendCancellationNotification(data: ReservationCancellationData): Promise<void> {
+    if (!NOTIFICATIONS_CONFIG.whatsapp) return;
+
+    const folio = data.reservationId.slice(0, 8).toUpperCase();
+
+    const mensajeVendedor = [
+      `🚫 *RESERVA CANCELADA*`,
+      ``,
+      `Hola ${data.vendorNombre}, se canceló una reserva asignada a ti.`,
+      ``,
+      `*Folio:* #${folio}`,
+      ``,
+      `📋 *DATOS:*`,
+      `• *Cliente:* ${data.clienteNombre}`,
+      `• *Producto(s):* ${data.productoNombre}`,
+      data.motivo ? `• *Motivo:* ${data.motivo}` : '',
+      ``,
+      `No es necesario realizar la visita.`,
+    ].filter(l => l !== '').join('\n');
+
+    const mensajeCliente = [
+      `✅ *RESERVA CANCELADA*`,
+      ``,
+      `Hola ${data.clienteNombre}, tu reserva ha sido cancelada exitosamente.`,
+      ``,
+      `*Folio:* #${folio}`,
+      `*Producto(s):* ${data.productoNombre}`,
+      ``,
+      `Si fue un error, puedes hacer una nueva reserva en cualquier momento.`,
+    ].join('\n');
+
+    const tasks: Promise<void>[] = [];
+
+    if (data.vendorTelefono) {
+      tasks.push(this.sendAndLogWhatsApp({
+        reservationId: data.reservationId,
+        numero: data.vendorTelefono,
+        mensaje: mensajeVendedor,
+        logMensaje: `WhatsApp cancelación a vendedor ${data.vendorNombre} (${data.vendorTelefono})`,
+      }));
+    }
+
+    tasks.push(this.sendAndLogWhatsApp({
+      reservationId: data.reservationId,
+      numero: data.clienteTelefono,
+      mensaje: mensajeCliente,
+      logMensaje: `WhatsApp cancelación a cliente ${data.clienteNombre} (${data.clienteTelefono})`,
+    }));
+
+    await Promise.allSettled(tasks);
+  }
+
+  /**
+   * Notifica al vendedor y al cliente que una reserva fue modificada.
+   */
+  static async sendModificationNotification(data: ReservationModificationData): Promise<void> {
+    if (!NOTIFICATIONS_CONFIG.whatsapp) return;
+
+    const folio = data.reservationId.slice(0, 8).toUpperCase();
+    const fmtFecha = (d: Date) => new Date(d).toLocaleDateString('es-MX', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    });
+
+    // Detectar qué cambió
+    const cambios: string[] = [];
+    if (new Date(data.fechaAnterior).getTime() !== new Date(data.fechaNueva).getTime()) {
+      cambios.push(`📅 Fecha: ${fmtFecha(data.fechaAnterior)} → ${fmtFecha(data.fechaNueva)}`);
+    }
+    if (data.horarioAnterior !== data.horarioNuevo) {
+      cambios.push(`🕐 Horario: ${data.horarioAnterior} → ${data.horarioNuevo}`);
+    }
+    if (data.direccionAnterior !== data.direccionNueva) {
+      cambios.push(`📍 Dirección: ${data.direccionNueva}`);
+    }
+
+    const cambiosTexto = cambios.join('\n');
+
+    const hasCoords = data.latitude != null && data.longitude != null;
+    const mapsUrl = hasCoords ? `https://www.google.com/maps?q=${data.latitude},${data.longitude}` : null;
+
+    const mensajeVendedor = [
+      `📝 *RESERVA MODIFICADA*`,
+      ``,
+      `Hola ${data.vendorNombre}, el cliente modificó una reserva asignada a ti.`,
+      ``,
+      `*Folio:* #${folio}`,
+      `*Cliente:* ${data.clienteNombre}`,
+      `*Producto(s):* ${data.productoNombre}`,
+      ``,
+      `*CAMBIOS REALIZADOS:*`,
+      cambiosTexto,
+      mapsUrl ? `\n🗺️ *NUEVA UBICACIÓN:* ${mapsUrl}` : '',
+    ].filter(l => l !== '').join('\n');
+
+    const mensajeCliente = [
+      `✅ *RESERVA MODIFICADA*`,
+      ``,
+      `Hola ${data.clienteNombre}, tu reserva ha sido actualizada.`,
+      ``,
+      `*Folio:* #${folio}`,
+      `*Producto(s):* ${data.productoNombre}`,
+      ``,
+      `*CAMBIOS:*`,
+      cambiosTexto,
+      ``,
+      `El vendedor recibirá la notificación de los cambios.`,
+    ].join('\n');
+
+    const tasks: Promise<void>[] = [];
+
+    if (data.vendorTelefono) {
+      tasks.push(this.sendAndLogWhatsApp({
+        reservationId: data.reservationId,
+        numero: data.vendorTelefono,
+        mensaje: mensajeVendedor,
+        logMensaje: `WhatsApp modificación a vendedor ${data.vendorNombre} (${data.vendorTelefono})`,
+      }));
+    }
+
+    tasks.push(this.sendAndLogWhatsApp({
+      reservationId: data.reservationId,
+      numero: data.clienteTelefono,
+      mensaje: mensajeCliente,
+      logMensaje: `WhatsApp modificación a cliente ${data.clienteNombre} (${data.clienteTelefono})`,
+    }));
+
+    await Promise.allSettled(tasks);
+  }
+
+  /**
+   * Helper: envía un WhatsApp y guarda el log en BD (PENDING → SENT/FAILED).
+   */
+  private static async sendAndLogWhatsApp(opts: {
+    reservationId: string;
+    numero: string;
+    mensaje: string;
+    logMensaje: string;
+  }): Promise<void> {
+    let logId: string | undefined;
+    try {
+      const log = await prisma.notification.create({
+        data: {
+          reservationId: opts.reservationId,
+          canal: CanalNotificacion.WHATSAPP,
+          status: EstadoNotificacion.PENDING,
+          mensaje: opts.logMensaje,
+        },
+      });
+      logId = log.id;
+
+      await whatsappService.send({ numero: opts.numero, mensaje: opts.mensaje });
+
+      await prisma.notification.update({
+        where: { id: logId },
+        data: { status: EstadoNotificacion.SENT, sentAt: new Date() },
+      });
+
+      logger.info(opts.logMensaje);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      if (logId) {
+        await prisma.notification.update({
+          where: { id: logId },
+          data: { status: EstadoNotificacion.FAILED, error: errorMsg },
+        }).catch(() => {});
+      }
+      logger.error(`Error en ${opts.logMensaje}:`, err);
+      throw err;
+    }
   }
 
   private static buildEmailHtml(data: ReservationNotificationData): string {

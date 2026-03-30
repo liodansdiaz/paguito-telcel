@@ -68,6 +68,18 @@ const cancelarPorClienteSchema = z.object({
   itemId: z.string().uuid().optional(), // Si se proporciona, cancela solo ese item
 });
 
+/**
+ * Schema para modificar reserva desde página pública
+ */
+const modificarReservaSchema = z.object({
+  busqueda: z.string().min(8, 'Folio o CURP requerido'),
+  fechaPreferida: z.string().transform((val) => new Date(val)).optional(),
+  horarioPreferido: z.string().regex(/^\d{1,2}:\d{2}$/, 'Formato de horario inválido (HH:MM)').optional(),
+  direccion: z.string().min(10, 'Dirección completa requerida').optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
+});
+
 export class ReservationController {
   /**
    * Crear reserva con carrito multi-producto — ruta pública
@@ -293,6 +305,20 @@ export class ReservationController {
         : 'Tu reserva fue cancelada exitosamente.';
       
       sendSuccess(res, null, mensaje);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Público: modificar reserva (fecha, horario, dirección)
+   * PUT /api/reservations/modificar
+   */
+  async modificar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { busqueda, ...campos } = modificarReservaSchema.parse(req.body);
+      const reservation = await reservationService.modifyReservation(busqueda, campos);
+      sendSuccess(res, reservation, 'Reserva modificada exitosamente');
     } catch (err) {
       next(err);
     }

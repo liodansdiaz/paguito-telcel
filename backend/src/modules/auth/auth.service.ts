@@ -49,11 +49,6 @@ export class AuthService {
       data: { token: refreshToken, userId: user.id, expiresAt },
     });
 
-    // Limpiar tokens expirados del usuario para no acumular registros
-    await prisma.refreshToken.deleteMany({
-      where: { userId: user.id, expiresAt: { lt: new Date() } },
-    });
-
     return {
       accessToken,
       user: {

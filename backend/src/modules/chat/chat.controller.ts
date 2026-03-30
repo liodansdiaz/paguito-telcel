@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Groq from 'groq-sdk';
 import { prisma } from '../../config/database';
+import { CacheService } from '../../shared/services/cache.service';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SYSTEM PROMPT — Aquí defines todo lo que el asistente sabe del negocio.
@@ -91,44 +92,50 @@ interface ChatMessage {
 // Consulta todos los productos activos (incluyendo sin stock) para inyectarlos al prompt
 // Se permiten reservas de productos sin stock — el negocio puede conseguirlos
 async function getProductContext(): Promise<string> {
-  const products = await prisma.product.findMany({
-    where: { isActive: true },
-    select: {
-      nombre: true,
-      marca: true,
-      precio: true,
-      precioAnterior: true,
-      pagosSemanales: true,
-      stock: true,
-      badge: true,
-      disponibleCredito: true,
-      descripcion: true,
+  return CacheService.getOrSet<string>(
+    'chat:productContext',
+    async () => {
+      const products = await prisma.product.findMany({
+        where: { isActive: true },
+        select: {
+          nombre: true,
+          marca: true,
+          precio: true,
+          precioAnterior: true,
+          pagosSemanales: true,
+          stock: true,
+          badge: true,
+          disponibleCredito: true,
+          descripcion: true,
+        },
+        orderBy: { nombre: 'asc' },
+      });
+
+      if (products.length === 0) {
+        return 'CATÁLOGO: No hay productos dados de alta en el sistema.';
+      }
+
+      const lines = products.map((p) => {
+        const precio = `$${Number(p.precio).toLocaleString('es-MX')}`;
+        const precioAnterior = p.precioAnterior
+          ? ` (antes ${`$${Number(p.precioAnterior).toLocaleString('es-MX')}`})`
+          : '';
+        const stockInfo = p.stock === 0 ? ' (SIN STOCK - se puede reservar)' : ` (${p.stock} unidades)`;
+        const credito = p.disponibleCredito && p.pagosSemanales
+          ? ` | Pago semanal: $${Number(p.pagosSemanales).toLocaleString('es-MX')}`
+          : p.disponibleCredito
+          ? ' | Disponible a crédito'
+          : ' | Solo contado';
+        const badge = p.badge ? ` [${p.badge}]` : '';
+        const desc = p.descripcion ? ` — ${p.descripcion}` : '';
+
+        return `• ${p.marca} ${p.nombre}${badge} | Precio contado: ${precio}${precioAnterior}${credito}${stockInfo}${desc}`;
+      });
+
+      return `CATÁLOGO DE PRODUCTOS DISPONIBLES (actualizado en tiempo real):\n${lines.join('\n')}`;
     },
-    orderBy: { nombre: 'asc' },
-  });
-
-  if (products.length === 0) {
-    return 'CATÁLOGO: No hay productos dados de alta en el sistema.';
-  }
-
-  const lines = products.map((p) => {
-    const precio = `$${Number(p.precio).toLocaleString('es-MX')}`;
-    const precioAnterior = p.precioAnterior
-      ? ` (antes ${`$${Number(p.precioAnterior).toLocaleString('es-MX')}`})`
-      : '';
-    const stockInfo = p.stock === 0 ? ' (SIN STOCK - se puede reservar)' : ` (${p.stock} unidades)`;
-    const credito = p.disponibleCredito && p.pagosSemanales
-      ? ` | Pago semanal: $${Number(p.pagosSemanales).toLocaleString('es-MX')}`
-      : p.disponibleCredito
-      ? ' | Disponible a crédito'
-      : ' | Solo contado';
-    const badge = p.badge ? ` [${p.badge}]` : '';
-    const desc = p.descripcion ? ` — ${p.descripcion}` : '';
-
-    return `• ${p.marca} ${p.nombre}${badge} | Precio contado: ${precio}${precioAnterior}${credito}${stockInfo}${desc}`;
-  });
-
-  return `CATÁLOGO DE PRODUCTOS DISPONIBLES (actualizado en tiempo real):\n${lines.join('\n')}`;
+    { ttl: 300, prefix: 'chat' } // Cache 5 minutos
+  );
 }
 
 export async function handleChat(req: Request, res: Response, next: NextFunction) {

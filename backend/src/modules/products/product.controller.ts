@@ -155,14 +155,13 @@ export class ProductController {
 
       const data = createProductSchema.parse(body);
 
-      // Subir imágenes a Cloudinary (o guardar local como fallback)
+      // Subir imágenes a Cloudinary en paralelo (o guardar local como fallback)
       const files = req.files as Express.Multer.File[] | undefined;
-      const imagenes: string[] = [];
-      if (files) {
-        for (const file of files) {
-          const url = await uploadToCloudinary(file.path, 'productos');
-          imagenes.push(url);
-        }
+      let imagenes: string[] = [];
+      if (files && files.length > 0) {
+        imagenes = await Promise.all(
+          files.map(file => uploadToCloudinary(file.path, 'productos'))
+        );
       }
 
       const product = await productService.createProduct({ ...data, imagenes, colores, memorias });
@@ -227,25 +226,25 @@ export class ProductController {
         }
       }
 
-      // Nuevas imágenes subidas a Cloudinary (o local como fallback)
-      const nuevasImagenes: string[] = [];
-      if (files) {
-        for (const file of files) {
-          const url = await uploadToCloudinary(file.path, 'productos');
-          nuevasImagenes.push(url);
-        }
+      // Nuevas imágenes subidas a Cloudinary en paralelo (o local como fallback)
+      let nuevasImagenes: string[] = [];
+      if (files && files.length > 0) {
+        nuevasImagenes = await Promise.all(
+          files.map(file => uploadToCloudinary(file.path, 'productos'))
+        );
       }
 
       // Imágenes finales = existentes conservadas + nuevas
       const imagenes: string[] = [...imagenesExistentes, ...nuevasImagenes];
 
-      // Eliminar las imágenes que el admin quitó (Cloudinary o disco local)
+      // Eliminar las imágenes que el admin quitó en paralelo
       const existing = await productService.getAdminProductById(req.params['id'] as string);
       if (existing.imagenes && Array.isArray(existing.imagenes)) {
-        for (const imgPath of existing.imagenes as string[]) {
-          if (!imagenesExistentes.includes(imgPath)) {
-            await deleteFromCloudinary(imgPath);
-          }
+        const toDelete = (existing.imagenes as string[]).filter(
+          imgPath => !imagenesExistentes.includes(imgPath)
+        );
+        if (toDelete.length > 0) {
+          await Promise.all(toDelete.map(imgPath => deleteFromCloudinary(imgPath)));
         }
       }
 

@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../modules/products/product.repository', () => ({
   productRepository: {
     findById: vi.fn(),
+    findByIds: vi.fn(),
   },
 }));
 
@@ -44,6 +45,8 @@ vi.mock('../shared/services/notification.service', () => ({
   NotificationService: {
     sendReservationNotification: vi.fn().mockResolvedValue(undefined),
     sendStockAgotadoAlert: vi.fn().mockResolvedValue(undefined),
+    sendCancellationNotification: vi.fn().mockResolvedValue(undefined),
+    sendModificationNotification: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -174,7 +177,7 @@ describe('ReservationService', () => {
     service = new ReservationService();
 
     // Defaults felices — cada test puede sobrescribir los que necesite
-    vi.mocked(productRepository.findById).mockResolvedValue(mockProduct as any);
+    vi.mocked(productRepository.findByIds).mockResolvedValue([mockProduct] as any);
     vi.mocked(customerRepository.upsertByCurp).mockResolvedValue(mockCustomer as any);
     vi.mocked(reservationRepository.findActiveCreditItemByCustomer).mockResolvedValue(null);
     vi.mocked(reservationRepository.create).mockResolvedValue(mockReservation as any);
@@ -189,7 +192,7 @@ describe('ReservationService', () => {
       const result = await service.createReservation(makeDTO());
 
       expect(result).toEqual(mockReservation);
-      expect(productRepository.findById).toHaveBeenCalledWith('prod-uuid-001');
+      expect(productRepository.findByIds).toHaveBeenCalledWith(['prod-uuid-001']);
       expect(RoundRobinService.getNextVendor).toHaveBeenCalledOnce();
       expect(reservationRepository.create).toHaveBeenCalledOnce();
       expect(reservationRepository.assignVendor).toHaveBeenCalledWith('resv-uuid-001', 'vendor-uuid-001');
@@ -197,9 +200,8 @@ describe('ReservationService', () => {
 
     it('crea una reserva con múltiples productos', async () => {
       const mockProduct2 = { ...mockProduct, id: 'prod-uuid-002', nombre: 'Samsung Galaxy S23' };
-      vi.mocked(productRepository.findById)
-        .mockResolvedValueOnce(mockProduct as any)
-        .mockResolvedValueOnce(mockProduct2 as any);
+      vi.mocked(productRepository.findByIds)
+        .mockResolvedValue([mockProduct, mockProduct2] as any);
 
       const dto = makeDTO({
         items: [
@@ -210,7 +212,7 @@ describe('ReservationService', () => {
 
       await service.createReservation(dto);
 
-      expect(productRepository.findById).toHaveBeenCalledTimes(2);
+      expect(productRepository.findByIds).toHaveBeenCalledWith(['prod-uuid-001', 'prod-uuid-002']);
       expect(reservationRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           items: expect.arrayContaining([
@@ -235,25 +237,25 @@ describe('ReservationService', () => {
     });
 
     it('lanza 404 si algún producto no existe', async () => {
-      vi.mocked(productRepository.findById).mockResolvedValue(null);
+      vi.mocked(productRepository.findByIds).mockResolvedValue([]);
 
       await expect(service.createReservation(makeDTO()))
         .rejects.toMatchObject({ statusCode: 404 });
     });
 
     it('lanza 404 si algún producto está inactivo', async () => {
-      vi.mocked(productRepository.findById).mockResolvedValue({
+      vi.mocked(productRepository.findByIds).mockResolvedValue([{
         ...mockProduct, isActive: false,
-      } as any);
+      }] as any);
 
       await expect(service.createReservation(makeDTO()))
         .rejects.toMatchObject({ statusCode: 404 });
     });
 
     it('permite crear reserva con producto sin stock (notifica admin)', async () => {
-      vi.mocked(productRepository.findById).mockResolvedValue({
+      vi.mocked(productRepository.findByIds).mockResolvedValue([{
         ...mockProduct, stock: 0,
-      } as any);
+      }] as any);
 
       const result = await service.createReservation(makeDTO());
 
@@ -308,10 +310,8 @@ describe('ReservationService', () => {
       const mockProduct2 = { ...mockProduct, id: 'prod-uuid-002' };
       const mockProduct3 = { ...mockProduct, id: 'prod-uuid-003' };
       
-      vi.mocked(productRepository.findById)
-        .mockResolvedValueOnce(mockProduct as any)
-        .mockResolvedValueOnce(mockProduct2 as any)
-        .mockResolvedValueOnce(mockProduct3 as any);
+      vi.mocked(productRepository.findByIds)
+        .mockResolvedValue([mockProduct, mockProduct2, mockProduct3] as any);
 
       const dto = makeDTO({
         items: [
@@ -330,9 +330,8 @@ describe('ReservationService', () => {
     it('permite 1 producto a crédito + varios de contado', async () => {
       const mockProduct2 = { ...mockProduct, id: 'prod-uuid-002' };
       
-      vi.mocked(productRepository.findById)
-        .mockResolvedValueOnce(mockProduct as any)
-        .mockResolvedValueOnce(mockProduct2 as any);
+      vi.mocked(productRepository.findByIds)
+        .mockResolvedValue([mockProduct, mockProduct2] as any);
 
       const dto = makeDTO({
         items: [
@@ -549,7 +548,7 @@ describe('ReservationService', () => {
     it('lanza 404 si el item no pertenece a la reserva', async () => {
       vi.mocked(reservationRepository.findActiveByCurpOrId).mockResolvedValue({
         ...mockReservation,
-        items: [{ id: 'otro-item-uuid', estado: 'PENDIENTE' }],
+        items: [{ id: 'otro-item-uuid', estado: 'PENDIENTE', product: { nombre: 'Otro producto' } }],
       } as any);
 
       await expect(service.cancelarPorCliente('PEGJ900101HCHRRS01', 'item-uuid-001'))

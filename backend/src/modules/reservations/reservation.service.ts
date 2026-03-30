@@ -79,18 +79,18 @@ export class ReservationService {
       }
     }
 
-    // 4. Validar que todos los productos existen y están activos
-    const productsMap = new Map<string, any>();
+    // 4. Validar que todos los productos existen y están activos (batch query)
+    const productIds = dto.items.map(item => item.productId);
+    const productsFound = await productRepository.findByIds(productIds);
+    const productsMap = new Map(productsFound.map(p => [p.id, p]));
     const productosAgotados: string[] = [];
 
     for (const item of dto.items) {
-      const product = await productRepository.findById(item.productId);
-      
+      const product = productsMap.get(item.productId);
+
       if (!product || !product.isActive) {
         throw new AppError(`El producto ${item.productId} no está disponible.`, 404);
       }
-
-      productsMap.set(item.productId, product);
 
       // Detectar stock agotado (se permite de todas formas)
       if (product.stock <= 0) {
@@ -332,6 +332,8 @@ export class ReservationService {
       throw new AppError('No encontramos ninguna reserva activa con ese dato.', 404);
     }
 
+    const productoNombre = reservation.items.map(i => i.product.nombre).join(', ');
+
     // Cancelar item individual
     if (itemId) {
       const item = reservation.items.find(i => i.id === itemId);
@@ -343,7 +345,22 @@ export class ReservationService {
         throw new AppError('Este producto no puede cancelarse porque ya está en proceso.', 400);
       }
 
-      return this.cancelItem(itemId, 'Cancelado por el cliente desde la web.');
+      await this.cancelItem(itemId, 'Cancelado por el cliente desde la web.');
+
+      // Notificar cancelación de item
+      NotificationService.sendCancellationNotification({
+        reservationId: reservation.id,
+        vendorNombre: reservation.vendor?.nombre ?? 'Sin asignar',
+        vendorTelefono: reservation.vendor?.telefono ?? undefined,
+        clienteNombre: reservation.nombreCompleto,
+        clienteTelefono: reservation.telefono,
+        productoNombre: item.product.nombre,
+        motivo: 'Cancelación de producto individual por el cliente',
+      }).catch((err) => {
+        logger.error(`Notificación de cancelación de item falló para reserva ${reservation.id}:`, err);
+      });
+
+      return;
     }
 
     // Cancelar reserva completa
@@ -351,7 +368,92 @@ export class ReservationService {
       throw new AppError('Esta reserva no puede cancelarse porque ya está en proceso de visita.', 409);
     }
 
-    return this.cancelReservation(reservation.id, 'Cancelada por el cliente desde la web.');
+    await this.cancelReservation(reservation.id, 'Cancelada por el cliente desde la web.');
+
+    // Notificar cancelación de reserva completa
+    NotificationService.sendCancellationNotification({
+      reservationId: reservation.id,
+      vendorNombre: reservation.vendor?.nombre ?? 'Sin asignar',
+      vendorTelefono: reservation.vendor?.telefono ?? undefined,
+      clienteNombre: reservation.nombreCompleto,
+      clienteTelefono: reservation.telefono,
+      productoNombre,
+      motivo: 'Cancelación total por el cliente',
+    }).catch((err) => {
+      logger.error(`Notificación de cancelación falló para reserva ${reservation.id}:`, err);
+    });
+  }
+
+  /**
+   * Modificar datos de una reserva desde la página pública.
+   * Solo permite modificar: fecha, horario, dirección y coordenadas.
+   * Solo si la reserva está en estado NUEVA o ASIGNADA.
+   */
+  async modifyReservation(busqueda: string, dto: {
+    fechaPreferida?: Date;
+    horarioPreferido?: string;
+    direccion?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+  }) {
+    if (!busqueda || busqueda.trim().length < 8) {
+      throw new AppError('Ingresa tu número de folio o CURP.', 400);
+    }
+
+    // Verificar que al menos un campo fue enviado
+    if (!dto.fechaPreferida && !dto.horarioPreferido && !dto.direccion && dto.latitude === undefined && dto.longitude === undefined) {
+      throw new AppError('Debes enviar al menos un campo para modificar.', 400);
+    }
+
+    const reservation = await reservationRepository.findActiveByCurpOrId(busqueda);
+    if (!reservation) {
+      throw new AppError('No encontramos ninguna reserva activa con ese dato.', 404);
+    }
+
+    if (!['NUEVA', 'ASIGNADA'].includes(reservation.estado)) {
+      throw new AppError('Esta reserva no puede modificarse porque ya está en proceso de visita.', 409);
+    }
+
+    // Si se cambia la fecha u horario, validar horario de atención
+    if (dto.fechaPreferida || dto.horarioPreferido) {
+      const fecha = dto.fechaPreferida ?? reservation.fechaPreferida;
+      const horario = dto.horarioPreferido ?? reservation.horarioPreferido;
+      ScheduleValidatorService.validateOrThrow(fecha, horario);
+    }
+
+    // Guardar valores anteriores para la notificación
+    const fechaAnterior = reservation.fechaPreferida;
+    const horarioAnterior = reservation.horarioPreferido;
+    const direccionAnterior = reservation.direccion;
+
+    // Actualizar
+    const updated = await reservationRepository.updateClientFields(reservation.id, dto);
+
+    logger.info(`Reserva modificada: ${reservation.id} — Cliente: ${reservation.nombreCompleto}`);
+
+    // Notificar cambios
+    const productoNombre = reservation.items.map(i => i.product.nombre).join(', ');
+
+    NotificationService.sendModificationNotification({
+      reservationId: reservation.id,
+      vendorNombre: reservation.vendor?.nombre ?? 'Sin asignar',
+      vendorTelefono: reservation.vendor?.telefono ?? undefined,
+      clienteNombre: reservation.nombreCompleto,
+      clienteTelefono: reservation.telefono,
+      productoNombre,
+      fechaAnterior,
+      fechaNueva: dto.fechaPreferida ?? fechaAnterior,
+      horarioAnterior,
+      horarioNuevo: dto.horarioPreferido ?? horarioAnterior,
+      direccionAnterior,
+      direccionNueva: dto.direccion ?? direccionAnterior,
+      latitude: dto.latitude !== undefined ? dto.latitude ?? undefined : reservation.latitude ? Number(reservation.latitude) : undefined,
+      longitude: dto.longitude !== undefined ? dto.longitude ?? undefined : reservation.longitude ? Number(reservation.longitude) : undefined,
+    }).catch((err) => {
+      logger.error(`Notificación de modificación falló para reserva ${reservation.id}:`, err);
+    });
+
+    return updated;
   }
 
   /**

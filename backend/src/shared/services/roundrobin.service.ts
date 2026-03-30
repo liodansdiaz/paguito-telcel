@@ -11,8 +11,8 @@ export class RoundRobinService {
    * - Registra lastAssignedAt al asignar
    */
   static async getNextVendor(): Promise<string> {
-    // Obtener todos los vendedores activos ordenados
-    const activeVendors = await prisma.user.findMany({
+    // Obtener el vendedor activo que más tiempo lleva sin asignación (LIMIT 1)
+    const selectedVendor = await prisma.user.findFirst({
       where: {
         isActive: true,
         rol: 'VENDEDOR',
@@ -25,20 +25,16 @@ export class RoundRobinService {
         id: true,
         nombre: true,
         email: true,
-        lastAssignedAt: true,
       },
     });
 
-    if (activeVendors.length === 0) {
+    if (!selectedVendor) {
       logger.warn('Round Robin: No hay vendedores activos disponibles');
       throw new AppError(
         'No hay vendedores activos disponibles. Contacta al administrador.',
         503
       );
     }
-
-    // El primero en la lista es el que más tiempo lleva sin ser asignado
-    const selectedVendor = activeVendors[0];
 
     // Actualizar su lastAssignedAt
     await prisma.user.update({

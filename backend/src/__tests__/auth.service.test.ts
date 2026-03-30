@@ -155,7 +155,6 @@ describe('AuthService', () => {
       });
       expect(bcrypt.compare).toHaveBeenCalledWith('password123', mockUser.password);
       expect(prisma.refreshToken.create).toHaveBeenCalledOnce();
-      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledOnce();
     });
 
     it('lanza 401 si usuario no existe', async () => {

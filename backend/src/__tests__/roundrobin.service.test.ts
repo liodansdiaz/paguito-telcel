@@ -5,6 +5,7 @@ vi.mock('../config/database', () => ({
   prisma: {
     user: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
       update: vi.fn(),
     },
   },
@@ -37,7 +38,7 @@ describe('RoundRobinService', () => {
 
   describe('getNextVendor', () => {
     it('lanza AppError 503 si no hay vendedores activos', async () => {
-      vi.mocked(prisma.user.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.user.findFirst).mockResolvedValue(null);
 
       await expect(RoundRobinService.getNextVendor())
         .rejects.toMatchObject({ statusCode: 503 });
@@ -45,7 +46,7 @@ describe('RoundRobinService', () => {
 
     it('selecciona el único vendedor disponible', async () => {
       const vendedor = makeVendor('v1');
-      vi.mocked(prisma.user.findMany).mockResolvedValue([vendedor] as any);
+      vi.mocked(prisma.user.findFirst).mockResolvedValue(vendedor as any);
 
       const result = await RoundRobinService.getNextVendor();
 
@@ -53,14 +54,9 @@ describe('RoundRobinService', () => {
     });
 
     it('selecciona el primer vendedor de la lista ordenada (el que menos asignaciones tiene)', async () => {
-      // Prisma devuelve la lista ya ordenada — el test verifica que el servicio
-      // toma siempre el primero, sin reordenar él mismo.
-      const vendedores = [
-        makeVendor('v1', null),                           // null = nunca asignado, va primero
-        makeVendor('v2', new Date('2026-03-08T10:00:00')),
-        makeVendor('v3', new Date('2026-03-08T11:00:00')),
-      ];
-      vi.mocked(prisma.user.findMany).mockResolvedValue(vendedores as any);
+      // Prisma devuelve el primer resultado (ya ordenado por findFirst)
+      const vendedor = makeVendor('v1', null);
+      vi.mocked(prisma.user.findFirst).mockResolvedValue(vendedor as any);
 
       const result = await RoundRobinService.getNextVendor();
 
@@ -68,7 +64,7 @@ describe('RoundRobinService', () => {
     });
 
     it('actualiza lastAssignedAt del vendedor seleccionado', async () => {
-      vi.mocked(prisma.user.findMany).mockResolvedValue([makeVendor('v1')] as any);
+      vi.mocked(prisma.user.findFirst).mockResolvedValue(makeVendor('v1') as any);
 
       await RoundRobinService.getNextVendor();
 
@@ -79,11 +75,11 @@ describe('RoundRobinService', () => {
     });
 
     it('consulta solo vendedores activos con rol VENDEDOR', async () => {
-      vi.mocked(prisma.user.findMany).mockResolvedValue([makeVendor('v1')] as any);
+      vi.mocked(prisma.user.findFirst).mockResolvedValue(makeVendor('v1') as any);
 
       await RoundRobinService.getNextVendor();
 
-      expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect(prisma.user.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { isActive: true, rol: 'VENDEDOR' },
         })
@@ -91,11 +87,11 @@ describe('RoundRobinService', () => {
     });
 
     it('ordena por lastAssignedAt ASC con NULLs primero', async () => {
-      vi.mocked(prisma.user.findMany).mockResolvedValue([makeVendor('v1')] as any);
+      vi.mocked(prisma.user.findFirst).mockResolvedValue(makeVendor('v1') as any);
 
       await RoundRobinService.getNextVendor();
 
-      expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect(prisma.user.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: expect.arrayContaining([
             { lastAssignedAt: { sort: 'asc', nulls: 'first' } },
@@ -105,11 +101,7 @@ describe('RoundRobinService', () => {
     });
 
     it('retorna el id correcto del vendedor asignado', async () => {
-      const vendedores = [
-        makeVendor('v-abc-123', new Date('2026-03-01')),
-        makeVendor('v-def-456', new Date('2026-03-08')),
-      ];
-      vi.mocked(prisma.user.findMany).mockResolvedValue(vendedores as any);
+      vi.mocked(prisma.user.findFirst).mockResolvedValue(makeVendor('v-abc-123', new Date('2026-03-01')) as any);
 
       const result = await RoundRobinService.getNextVendor();
 
@@ -117,13 +109,13 @@ describe('RoundRobinService', () => {
     });
 
     it('getNearestVendor delega a getNextVendor (no implementado aún)', async () => {
-      vi.mocked(prisma.user.findMany).mockResolvedValue([makeVendor('v1')] as any);
+      vi.mocked(prisma.user.findFirst).mockResolvedValue(makeVendor('v1') as any);
 
       // getNearestVendor debe funcionar como fallback al round robin
       const result = await RoundRobinService.getNearestVendor(14.9054, -92.2630);
 
       expect(result).toBe('v1');
-      expect(prisma.user.findMany).toHaveBeenCalledOnce();
+      expect(prisma.user.findFirst).toHaveBeenCalledOnce();
     });
   });
 });

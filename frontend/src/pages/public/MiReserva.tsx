@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { DayPicker } from 'react-day-picker';
+import { addDays, isSunday, isBefore, startOfDay } from 'date-fns';
+import 'react-day-picker/style.css';
 import { showError, showSuccess } from '../../utils/notifications';
 import api from '../../services/api';
 import { toImageUrl } from '../../services/config';
@@ -106,6 +109,14 @@ const MiReserva = () => {
   const [showConfirmReserva, setShowConfirmReserva] = useState(false);
   const [showConfirmItem, setShowConfirmItem] = useState<string | null>(null);
   const [cancelada, setCancelada] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+  const [showCalendarEdit, setShowCalendarEdit] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fechaPreferida: '',
+    horarioPreferido: '',
+    direccion: '',
+  });
 
   const handleBuscar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,6 +171,42 @@ const MiReserva = () => {
       showError(err.response?.data?.message || 'Error al cancelar el producto');
     } finally {
       setCancelando(null);
+    }
+  };
+
+  const handleAbrirEdicion = () => {
+    if (!reserva) return;
+    setEditForm({
+      fechaPreferida: reserva.fechaPreferida.split('T')[0],
+      horarioPreferido: reserva.horarioPreferido,
+      direccion: reserva.direccion,
+    });
+    setEditando(true);
+  };
+
+  const handleGuardarEdicion = async () => {
+    if (!reserva) return;
+    setGuardandoEdicion(true);
+    try {
+      const payload: Record<string, string> = { busqueda: busqueda.trim() };
+      if (editForm.fechaPreferida !== reserva.fechaPreferida.split('T')[0]) {
+        payload.fechaPreferida = new Date(editForm.fechaPreferida).toISOString();
+      }
+      if (editForm.horarioPreferido !== reserva.horarioPreferido) {
+        payload.horarioPreferido = editForm.horarioPreferido;
+      }
+      if (editForm.direccion !== reserva.direccion) {
+        payload.direccion = editForm.direccion;
+      }
+
+      const res = await api.put('/reservations/modificar', payload);
+      setReserva(res.data.data);
+      setEditando(false);
+      showSuccess('Reserva modificada exitosamente');
+    } catch (err: any) {
+      showError(err.response?.data?.message || 'Error al modificar la reserva');
+    } finally {
+      setGuardandoEdicion(false);
     }
   };
 
@@ -287,13 +334,115 @@ const MiReserva = () => {
 
               {/* Botón cancelar reserva completa */}
               {puedeCancelarReserva && (
-                <div>
+                <div className="space-y-3">
+                  {!editando && (
+                    <button
+                      onClick={handleAbrirEdicion}
+                      className="w-full sm:w-auto border-2 border-[#0f49bd] text-[#0f49bd] px-6 py-2.5 rounded-lg font-medium hover:bg-blue-50 transition-colors mr-3"
+                    >
+                      Modificar reserva
+                    </button>
+                  )}
                   <button
                     onClick={() => setShowConfirmReserva(true)}
                     className="w-full sm:w-auto border-2 border-red-500 text-red-600 px-6 py-2.5 rounded-lg font-medium hover:bg-red-50 transition-colors"
                   >
-                    🚫 Cancelar toda la reserva
+                    Cancelar toda la reserva
                   </button>
+
+                  {/* Formulario de edición */}
+                  {editando && (
+                    <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-5">
+                      <h4 className="font-bold text-blue-900 mb-4">Editar datos de la reserva</h4>
+
+                      <div className="space-y-4">
+                        {/* Fecha */}
+                        <div className="relative">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Fecha preferida</label>
+                          <button
+                            type="button"
+                            onClick={() => setShowCalendarEdit(!showCalendarEdit)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-left bg-white"
+                          >
+                            {editForm.fechaPreferida
+                              ? new Date(editForm.fechaPreferida + 'T12:00:00Z').toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                              : 'Selecciona una fecha'}
+                          </button>
+                          {showCalendarEdit && (
+                            <div className="absolute z-50 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-3">
+                              <DayPicker
+                                mode="single"
+                                selected={editForm.fechaPreferida ? new Date(editForm.fechaPreferida + 'T12:00:00Z') : undefined}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    const year = date.getUTCFullYear();
+                                    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                                    const day = String(date.getUTCDate()).padStart(2, '0');
+                                    setEditForm({ ...editForm, fechaPreferida: `${year}-${month}-${day}` });
+                                    setShowCalendarEdit(false);
+                                  }
+                                }}
+                                disabled={(date) => {
+                                  const today = startOfDay(new Date());
+                                  const minDate = addDays(today, 2);
+                                  return isBefore(date, minDate) || isSunday(date);
+                                }}
+                                fromDate={addDays(startOfDay(new Date()), 2)}
+                                style={{ '--rdp-accent-color': '#0f49bd' } as React.CSSProperties}
+                              />
+                              <p className="text-xs text-gray-500 text-center mt-2">No se atiende los domingos</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Horario */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Horario preferido</label>
+                          <select
+                            value={editForm.horarioPreferido}
+                            onChange={(e) => setEditForm({ ...editForm, horarioPreferido: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          >
+                            <option value="10:00">10:00 AM</option>
+                            <option value="11:00">11:00 AM</option>
+                            <option value="12:00">12:00 PM</option>
+                            <option value="13:00">1:00 PM</option>
+                            <option value="14:00">2:00 PM</option>
+                            <option value="15:00">3:00 PM</option>
+                            <option value="16:00">4:00 PM</option>
+                          </select>
+                        </div>
+
+                        {/* Dirección */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                          <textarea
+                            rows={2}
+                            value={editForm.direccion}
+                            onChange={(e) => setEditForm({ ...editForm, direccion: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <button
+                          onClick={() => setEditando(false)}
+                          disabled={guardandoEdicion}
+                          className="flex-1 border border-gray-300 bg-white py-2 rounded-lg font-medium hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={handleGuardarEdicion}
+                          disabled={guardandoEdicion}
+                          className="flex-1 bg-[#0f49bd] text-white py-2 rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {guardandoEdicion ? 'Guardando...' : 'Guardar cambios'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {showConfirmReserva && (
                     <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4">

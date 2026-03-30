@@ -8,6 +8,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import compression from 'compression';
 import { errorMiddleware } from './shared/middleware/error.middleware';
 import { logger } from './shared/utils/logger';
 import authRoutes from './modules/auth/auth.routes';
@@ -49,6 +50,9 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Servir imágenes estáticas
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+// Comprimir todas las respuestas HTTP
+app.use(compression());
 
 // Middlewares globales
 app.use(helmet({
