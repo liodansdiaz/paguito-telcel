@@ -58,6 +58,7 @@ const makeReservationData = (overrides = {}) => ({
   clienteTelefono: '9611234567',
   clienteCurp: 'PEGJ900101HCHRRS01',
   productoNombre: 'iPhone 14 Pro',
+  itemsDetalle: [{ nombre: 'iPhone 14 Pro', color: 'Negro', memoria: '128GB', tipoPago: 'CONTADO' }],
   tipoPago: 'CONTADO',
   direccion: 'Calle Hidalgo 123, Tapachula',
   fechaPreferida: new Date('2026-03-30'),
@@ -327,7 +328,10 @@ describe('NotificationService', () => {
       vi.mocked(prisma.notification.update).mockResolvedValue({} as any);
       vi.mocked(whatsappService.send).mockResolvedValue({ key: { id: 'msg-001' } } as any);
 
-      const data = makeReservationData({ tipoPago: 'CREDITO' });
+      const data = makeReservationData({
+        tipoPago: 'CREDITO',
+        itemsDetalle: [{ nombre: 'iPhone 14 Pro', color: 'Negro', memoria: '128GB', tipoPago: 'CREDITO' }],
+      });
       await NotificationService.sendReservationNotification(data);
 
       const vendedorCall = vi.mocked(whatsappService.send).mock.calls.find(

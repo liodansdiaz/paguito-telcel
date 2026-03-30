@@ -161,6 +161,14 @@ export class ReservationService {
     }
 
     // 10b. Notificar al vendedor asignado
+    // Construir detalle de items para notificaciones
+    const itemsDetalle = dto.items.map(item => ({
+      nombre: productsMap.get(item.productId)?.nombre ?? 'Producto desconocido',
+      color: item.color,
+      memoria: item.memoria,
+      tipoPago: item.tipoPago,
+    }));
+
     NotificationService.sendReservationNotification({
       reservationId: reservation.id,
       vendorEmail: vendor.email,
@@ -170,7 +178,8 @@ export class ReservationService {
       clienteTelefono: dto.telefono,
       clienteCurp: curpUpper,
       productoNombre: Array.from(productsMap.values()).map(p => p.nombre).join(', '),
-      tipoPago: productosCredito.length > 0 ? 'CREDITO' : 'CONTADO', // Simplificado para notificación
+      itemsDetalle,
+      tipoPago: productosCredito.length > 0 ? 'CREDITO' : 'CONTADO',
       direccion: dto.direccion,
       fechaPreferida: dto.fechaPreferida,
       horarioPreferido: dto.horarioPreferido,
@@ -333,6 +342,12 @@ export class ReservationService {
     }
 
     const productoNombre = reservation.items.map(i => i.product.nombre).join(', ');
+    const itemsDetalle = reservation.items.map(i => ({
+      nombre: i.product.nombre,
+      color: i.color,
+      memoria: i.memoria,
+      tipoPago: i.tipoPago,
+    }));
 
     // Cancelar item individual
     if (itemId) {
@@ -354,7 +369,12 @@ export class ReservationService {
         vendorTelefono: reservation.vendor?.telefono ?? undefined,
         clienteNombre: reservation.nombreCompleto,
         clienteTelefono: reservation.telefono,
-        productoNombre: item.product.nombre,
+        itemsDetalle: [{
+          nombre: item.product.nombre,
+          color: item.color,
+          memoria: item.memoria,
+          tipoPago: item.tipoPago,
+        }],
         motivo: 'Cancelación de producto individual por el cliente',
       }).catch((err) => {
         logger.error(`Notificación de cancelación de item falló para reserva ${reservation.id}:`, err);
@@ -377,7 +397,7 @@ export class ReservationService {
       vendorTelefono: reservation.vendor?.telefono ?? undefined,
       clienteNombre: reservation.nombreCompleto,
       clienteTelefono: reservation.telefono,
-      productoNombre,
+      itemsDetalle,
       motivo: 'Cancelación total por el cliente',
     }).catch((err) => {
       logger.error(`Notificación de cancelación falló para reserva ${reservation.id}:`, err);
@@ -432,7 +452,12 @@ export class ReservationService {
     logger.info(`Reserva modificada: ${reservation.id} — Cliente: ${reservation.nombreCompleto}`);
 
     // Notificar cambios
-    const productoNombre = reservation.items.map(i => i.product.nombre).join(', ');
+    const itemsDetalle = reservation.items.map(i => ({
+      nombre: i.product.nombre,
+      color: i.color,
+      memoria: i.memoria,
+      tipoPago: i.tipoPago,
+    }));
 
     NotificationService.sendModificationNotification({
       reservationId: reservation.id,
@@ -440,7 +465,7 @@ export class ReservationService {
       vendorTelefono: reservation.vendor?.telefono ?? undefined,
       clienteNombre: reservation.nombreCompleto,
       clienteTelefono: reservation.telefono,
-      productoNombre,
+      itemsDetalle,
       fechaAnterior,
       fechaNueva: dto.fechaPreferida ?? fechaAnterior,
       horarioAnterior,

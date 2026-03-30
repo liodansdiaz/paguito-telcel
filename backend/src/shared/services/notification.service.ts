@@ -13,6 +13,13 @@ interface StockAgotadoAlertData {
   stockActual: number;
 }
 
+interface ItemDetalle {
+  nombre: string;
+  color?: string | null;
+  memoria?: string | null;
+  tipoPago: string;
+}
+
 interface ReservationNotificationData {
   reservationId: string;
   vendorEmail: string;
@@ -22,6 +29,7 @@ interface ReservationNotificationData {
   clienteTelefono: string;
   clienteCurp: string;
   productoNombre: string;
+  itemsDetalle: ItemDetalle[];
   tipoPago: string;
   direccion: string;
   fechaPreferida: Date;
@@ -36,7 +44,7 @@ interface ReservationCancellationData {
   vendorTelefono?: string;
   clienteNombre: string;
   clienteTelefono: string;
-  productoNombre: string;
+  itemsDetalle: ItemDetalle[];
   motivo?: string;
 }
 
@@ -46,7 +54,7 @@ interface ReservationModificationData {
   vendorTelefono?: string;
   clienteNombre: string;
   clienteTelefono: string;
-  productoNombre: string;
+  itemsDetalle: ItemDetalle[];
   fechaAnterior: Date;
   fechaNueva: Date;
   horarioAnterior: string;
@@ -58,6 +66,20 @@ interface ReservationModificationData {
 }
 
 export class NotificationService {
+  /**
+   * Formatea los items de una reserva para mostrar en mensajes de WhatsApp.
+   * Cada item muestra: nombre del producto, color, memoria y tipo de pago.
+   */
+  private static formatItems(items: ItemDetalle[]): string {
+    return items.map(item => {
+      const detalles = [item.nombre];
+      if (item.color) detalles.push(`Color: ${item.color}`);
+      if (item.memoria) detalles.push(`Almacenamiento: ${item.memoria}`);
+      detalles.push(item.tipoPago === 'CREDITO' ? 'Crédito' : 'Contado');
+      return `• ${detalles.join(' | ')}`;
+    }).join('\n');
+  }
+
   /**
    * Ejecuta todas las notificaciones configuradas para una nueva reserva.
    * La reserva ya fue guardada. Si falla la notificación, se registra el error
@@ -94,6 +116,7 @@ export class NotificationService {
     if (!NOTIFICATIONS_CONFIG.whatsapp) return;
 
     const folio = data.reservationId.slice(0, 8).toUpperCase();
+    const itemsFormateados = this.formatItems(data.itemsDetalle);
 
     const mensajeVendedor = [
       `🚫 *RESERVA CANCELADA*`,
@@ -104,8 +127,9 @@ export class NotificationService {
       ``,
       `📋 *DATOS:*`,
       `• *Cliente:* ${data.clienteNombre}`,
-      `• *Producto(s):* ${data.productoNombre}`,
-      data.motivo ? `• *Motivo:* ${data.motivo}` : '',
+      `📦 *Producto(s):*`,
+      itemsFormateados,
+      data.motivo ? `\n• *Motivo:* ${data.motivo}` : '',
       ``,
       `No es necesario realizar la visita.`,
     ].filter(l => l !== '').join('\n');
@@ -116,7 +140,9 @@ export class NotificationService {
       `Hola ${data.clienteNombre}, tu reserva ha sido cancelada exitosamente.`,
       ``,
       `*Folio:* #${folio}`,
-      `*Producto(s):* ${data.productoNombre}`,
+      ``,
+      `📦 *Producto(s) cancelados:*`,
+      itemsFormateados,
       ``,
       `Si fue un error, puedes hacer una nueva reserva en cualquier momento.`,
     ].join('\n');
@@ -166,6 +192,7 @@ export class NotificationService {
     }
 
     const cambiosTexto = cambios.join('\n');
+    const itemsFormateados = this.formatItems(data.itemsDetalle);
 
     const hasCoords = data.latitude != null && data.longitude != null;
     const mapsUrl = hasCoords ? `https://www.google.com/maps?q=${data.latitude},${data.longitude}` : null;
@@ -177,7 +204,9 @@ export class NotificationService {
       ``,
       `*Folio:* #${folio}`,
       `*Cliente:* ${data.clienteNombre}`,
-      `*Producto(s):* ${data.productoNombre}`,
+      ``,
+      `📦 *Producto(s):*`,
+      itemsFormateados,
       ``,
       `*CAMBIOS REALIZADOS:*`,
       cambiosTexto,
@@ -190,7 +219,9 @@ export class NotificationService {
       `Hola ${data.clienteNombre}, tu reserva ha sido actualizada.`,
       ``,
       `*Folio:* #${folio}`,
-      `*Producto(s):* ${data.productoNombre}`,
+      ``,
+      `📦 *Producto(s):*`,
+      itemsFormateados,
       ``,
       `*CAMBIOS:*`,
       cambiosTexto,
@@ -381,6 +412,8 @@ export class NotificationService {
       : null;
 
     // --- Mensaje para el VENDEDOR ---
+    const itemsFormateados = this.formatItems(data.itemsDetalle);
+
     const mensajeVendedor = [
       `🔔 *NUEVA RESERVA ASIGNADA*`,
       ``,
@@ -395,8 +428,7 @@ export class NotificationService {
       `• *Dirección:* ${data.direccion}`,
       ``,
       `📦 *PRODUCTO(S):*`,
-      `• ${data.productoNombre}`,
-      `• *Tipo de pago:* ${data.tipoPago === 'CREDITO' ? 'Crédito' : 'Contado'}`,
+      itemsFormateados,
       ``,
       `📅 *FECHA PREFERIDA:* ${fecha}`,
       `🕐 *HORARIO:* ${data.horarioPreferido}`,
@@ -414,8 +446,7 @@ export class NotificationService {
       `*Folio:* #${folio}`,
       ``,
       `📦 *PRODUCTO(S) RESERVADO(S):*`,
-      `• ${data.productoNombre}`,
-      `• *Tipo de pago:* ${data.tipoPago === 'CREDITO' ? 'Crédito' : 'Contado'}`,
+      itemsFormateados,
       ``,
       `📅 *FECHA PREFERIDA:* ${fecha}`,
       `🕐 *HORARIO:* ${data.horarioPreferido}`,
