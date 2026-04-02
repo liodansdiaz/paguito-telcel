@@ -8,6 +8,7 @@ const navItems = [
   { label: 'Vendedores', path: '/admin/vendedores', icon: '🧑‍💼' },
   { label: 'Administradores', path: '/admin/administradores', icon: '🔑' },
   { label: 'Inventario', path: '/admin/inventario', icon: '📦' },
+  { label: 'Sistema', path: '/admin/sistema', icon: '⚙️' },
 ];
 
 const AdminLayout = () => {

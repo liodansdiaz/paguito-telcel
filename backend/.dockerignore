@@ -1,0 +1,14 @@
+node_modules
+dist
+.env
+.env.local
+.env.*.local
+uploads
+logs
+*.log
+.git
+.gitignore
+README.md
+src/__tests__
+vitest.config.ts
+coverage

@@ -185,19 +185,24 @@ model ReservationItem {
 }
 
 model Notification {
-  id            String              @id @default(uuid())
-  reservationId String
-  canal         CanalNotificacion
-  status        EstadoNotificacion  @default(PENDING)
-  mensaje       String?
-  error         String?
-  sentAt        DateTime?
-  createdAt     DateTime            @default(now())
+  id                  String              @id @default(uuid())
+  reservationId       String
+  canal               CanalNotificacion
+  status              EstadoNotificacion  @default(PENDING)
+  destinatario        String?             // Email o teléfono
+  destinatarioNombre  String?             // Nombre del destinatario
+  asunto              String?             // Asunto (solo emails)
+  mensaje             String?
+  error               String?
+  sentAt              DateTime?
+  createdAt           DateTime            @default(now())
 
-  reservation   Reservation         @relation(fields: [reservationId], references: [id])
+  reservation         Reservation         @relation(fields: [reservationId], references: [id])
 
   @@map("notifications")
   @@index([reservationId, status])
+  @@index([canal, status])
+  @@index([createdAt])
 }
 
 model RefreshToken {

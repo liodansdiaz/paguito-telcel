@@ -1,39 +1,245 @@
-version: '3.8'
+# ============================================
+# Docker Compose - Paguito Telcel (Full Stack)
+# ============================================
+# Servicios incluidos:
+# - Frontend (React + Nginx)
+# - Backend (Express + TypeScript)
+# - PostgreSQL (base de datos de Paguito)
+# - Redis (cache)
+# - Evolution API (WhatsApp) + auto-setup
+# - PostgreSQL (base de datos de Evolution)
+#
+# Comando para levantar todo:
+#   docker compose up -d
+#
+# Comando para ver el estado:
+#   docker compose ps
+# ============================================
 
 services:
+
+  # ═══════════════════════════════════════════
+  # POSTGRES - Base de datos de Paguito Telcel
+  # ═══════════════════════════════════════════
   postgres:
     image: postgres:16-alpine
     container_name: paguito-postgres
     environment:
-      POSTGRES_USER: paguito
-      POSTGRES_PASSWORD: paguito123
-      POSTGRES_DB: paguito_telcel
+      POSTGRES_USER: ${DB_USER:-paguito}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-paguito123}
+      POSTGRES_DB: ${DB_NAME:-paguito_telcel}
     ports:
-      - "5433:5432"
+      - "${DB_PORT:-5433}:5432"
     volumes:
       - paguito_pgdata:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U paguito -d paguito_telcel"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-paguito} -d ${DB_NAME:-paguito_telcel}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # ═══════════════════════════════════════════
+  # REDIS - Cache
+  # ═══════════════════════════════════════════
   redis:
     image: redis:7-alpine
     container_name: paguito-redis
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD}
     ports:
       - "6379:6379"
     volumes:
       - paguito_redis_data:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
 
+  # ═══════════════════════════════════════════
+  # POSTGRES - Base de datos de Evolution API
+  # ═══════════════════════════════════════════
+  evolution-postgres:
+    image: postgres:15-alpine
+    container_name: paguito-evolution-postgres
+    environment:
+      POSTGRES_USER: ${EVOLUTION_DB_USER:-evolution}
+      POSTGRES_PASSWORD: ${EVOLUTION_DB_PASSWORD:-evolution123}
+      POSTGRES_DB: ${EVOLUTION_DB_NAME:-evolution_db}
+    volumes:
+      - evolution_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${EVOLUTION_DB_USER:-evolution} -d ${EVOLUTION_DB_NAME:-evolution_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ═══════════════════════════════════════════
+  # EVOLUTION API - WhatsApp
+  # ═══════════════════════════════════════════
+  evolution-api:
+    image: atendai/evolution-api:v1.6.0
+    container_name: paguito-evolution-api
+    environment:
+      # URL pública del servidor
+      SERVER_URL: ${EVOLUTION_SERVER_URL:-http://localhost:8080}
+      
+      # CORS
+      CORS_ORIGIN: "*"
+      
+      # Autenticación
+      AUTHENTICATION_TYPE: apikey
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-paguito-whatsapp-2026-secreto}
+      
+      # Base de datos
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://${EVOLUTION_DB_USER:-evolution}:${EVOLUTION_DB_PASSWORD:-evolution123}@evolution-postgres:5432/${EVOLUTION_DB_NAME:-evolution_db}
+      DATABASE_CONNECTION_CLIENT_NAME: evolution_api
+      
+      # Guardar datos
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      STORE_MESSAGE: "true"
+      STORE_CONTACTS: "true"
+      STORE_CHATS: "true"
+      
+      # NO borrar instancias al desconectar
+      DEL_INSTANCE: "false"
+      
+      # Configuración de sesión para mantener conexión estable
+      CONFIG_SESSION_PHONE_VERSION: "2.3000.1024310525"
+      CONFIG_SESSION_PHONE_CLIENT: "Paguito Telcel"
+      
+      # Webhook (opcional - para recibir mensajes entrantes)
+      # WEBHOOK_GLOBAL_URL: http://backend:3000/api/webhook/whatsapp
+      # WEBHOOK_GLOBAL_ENABLED: "true"
+      
+      # Logs
+      LOG_LEVEL: info
+      LOG_COLOR: "true"
+    ports:
+      - "${EVOLUTION_PORT:-8080}:8080"
+    volumes:
+      - evolution_instances:/evolution/instances
+    depends_on:
+      evolution-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════
+  # EVOLUTION INIT - Auto-setup de instancia
+  # ═══════════════════════════════════════════
+  # Este servicio crea automáticamente la instancia
+  # de WhatsApp si no existe. Solo corre una vez al
+  # arrancar, espera a que Evolution API esté listo,
+  # verifica si la instancia existe, y si no, la crea.
+  #
+  # IMPORTANTE: La primera vez tenés que escanear
+  # el QR manualmente. Después la sesión persiste.
+  # ═══════════════════════════════════════════
+  evolution-init:
+    image: curlimages/curl:latest
+    container_name: paguito-evolution-init
+    environment:
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-paguito-whatsapp-2026-secreto}
+      EVOLUTION_INSTANCE_NAME: ${EVOLUTION_INSTANCE_NAME:-paguito}
+    volumes:
+      - ./evolution-init.sh:/init.sh:ro
+    entrypoint: ["/bin/sh", "/init.sh"]
+    depends_on:
+      evolution-api:
+        condition: service_started
+    restart: "no"
+
+  # ═══════════════════════════════════════════
+  # BACKEND - Express + TypeScript
+  # ═══════════════════════════════════════════
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: paguito-backend
+    environment:
+      # Base de datos de Paguito
+      DATABASE_URL: postgresql://${DB_USER:-paguito}:${DB_PASSWORD:-paguito123}@postgres:5432/${DB_NAME:-paguito_telcel}
+      
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      
+      # Servidor
+      PORT: 3000
+      NODE_ENV: ${NODE_ENV:-production}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      
+      # Redis
+      REDIS_ENABLED: ${REDIS_ENABLED:-false}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      
+      # Email
+      NOTIFICATIONS_EMAIL: ${NOTIFICATIONS_EMAIL:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      
+      # WhatsApp via Evolution API
+      # Docker resuelve "evolution-api:8080" internamente
+      NOTIFICATIONS_WHATSAPP: ${NOTIFICATIONS_WHATSAPP:-false}
+      EVOLUTION_API_URL: http://evolution-api:8080
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-paguito-whatsapp-2026-secreto}
+      EVOLUTION_INSTANCE_NAME: ${EVOLUTION_INSTANCE_NAME:-paguito}
+      
+      # Chat IA
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      
+      # Resumen diario
+      DAILY_SUMMARY_HOUR: ${DAILY_SUMMARY_HOUR:-18}
+    ports:
+      - "3000:3000"
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      evolution-api:
+        condition: service_started
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════
+  # FRONTEND - React + Nginx
+  # ═══════════════════════════════════════════
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: paguito-frontend
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+# ═══════════════════════════════════════════
+# VOLÚMENES
+# ═══════════════════════════════════════════
 volumes:
   paguito_pgdata:
   paguito_redis_data:
+  evolution_pgdata:
+  evolution_instances:
+  backend_uploads:
+  backend_logs:

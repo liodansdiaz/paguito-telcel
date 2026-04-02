@@ -249,6 +249,14 @@ export const validateEnv = (): ValidationResult => {
     }
   }
 
+  // Validar DAILY_SUMMARY_HOUR si está definido
+  if (process.env.DAILY_SUMMARY_HOUR !== undefined) {
+    const hour = parseInt(process.env.DAILY_SUMMARY_HOUR, 10);
+    if (isNaN(hour) || hour < 0 || hour > 23) {
+      errors.push('❌ DAILY_SUMMARY_HOUR debe ser un entero entre 0 y 23');
+    }
+  }
+
   // Advertencias de seguridad
   if (isProduction) {
     // Verificar que los secrets no contengan valores por defecto peligrosos
