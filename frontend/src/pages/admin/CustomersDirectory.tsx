@@ -5,6 +5,7 @@ import type { Customer, EstadoCliente } from '../../types';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { showSuccess, showError } from '../../utils/notifications';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import * as XLSX from 'xlsx';
 
 const CustomersDirectory = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -44,46 +45,56 @@ const CustomersDirectory = () => {
     }
   };
 
-  const exportCSV = async () => {
-    setExporting(true);
-    try {
-      const params: Record<string, string> = { page: '1', limit: '9999' };
-      if (search) params.search = search;
-      if (filterEstado) params.estado = filterEstado;
-      const res = await api.get('/admin/customers', { params });
-      const rows: Customer[] = res.data.data;
+   const exportToExcel = async () => {
+     setExporting(true);
+     try {
+       const params: Record<string, string> = { page: '1', limit: '9999' };
+       if (search) params.search = search;
+       if (filterEstado) params.estado = filterEstado;
+       const res = await api.get('/admin/customers', { params });
+       const rows: Customer[] = res.data.data;
 
-      const headers = ['Nombre', 'Teléfono', 'CURP', 'Email', 'Dirección', 'Reservas', 'Estado', 'Fecha registro'];
-      const data = rows.map((c) => [
-        c.nombreCompleto,
-        c.telefono,
-        c.curp,
-        c.email ?? '',
-        c.direccion ?? '',
-        c._count?.reservations ?? 0,
-        c.estado === 'ACTIVO' ? 'Activo' : 'Bloqueado',
-        new Date(c.createdAt).toLocaleDateString('es-MX'),
-      ]);
+       // Procesar datos para Excel
+       const excelData = rows.map((c) => ({
+         'Nombre': c.nombreCompleto,
+         'Teléfono': c.telefono,
+         'CURP': c.curp,
+         'Email': c.email ?? '',
+         'Dirección': c.direccion ?? '',
+         'Reservas': c._count?.reservations ?? 0,
+         'Estado': c.estado === 'ACTIVO' ? 'Activo' : 'Bloqueado',
+         'Fecha registro': new Date(c.createdAt).toLocaleDateString('es-MX'),
+       }));
 
-      const csv = [headers, ...data]
-        .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
-        .join('\n');
-
-      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `clientes_${new Date().toISOString().slice(0, 10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showSuccess('Clientes exportados correctamente');
-    } catch (err) {
-      console.error('Error al exportar:', err);
-      showError('No se pudo exportar. Intenta de nuevo.');
-    } finally {
-      setExporting(false);
-    }
-  };
+       // Crear hoja de trabajo
+       const worksheet = XLSX.utils.json_to_sheet(excelData);
+       const workbook = XLSX.utils.book_new();
+       XLSX.utils.book_append_sheet(workbook, worksheet, 'Clientes');
+       
+       // Generar archivo Excel
+       const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+       const excelBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+       const url = window.URL.createObjectURL(excelBlob);
+       
+       // Crear enlace de descarga
+       const link = document.createElement('a');
+       link.href = url;
+       link.setAttribute('download', `clientes_${new Date().toISOString().slice(0, 10)}.xlsx`);
+       document.body.appendChild(link);
+       link.click();
+       link.remove();
+       
+       // Liberar memoria
+       window.URL.revokeObjectURL(url);
+       
+       showSuccess('Clientes exportados correctamente');
+     } catch (err) {
+       console.error('Error al exportar a Excel:', err);
+       showError('No se pudo exportar a Excel. Intenta de nuevo.');
+     } finally {
+       setExporting(false);
+     }
+   };
 
   // Filtros UI
   const filtersUI = (
@@ -119,25 +130,25 @@ const CustomersDirectory = () => {
   );
 
   return (
-    <AdminPageLayout
-      title="Directorio de Clientes"
-      subtitle={`${total} clientes registrados`}
-      total={total}
-      page={page}
-      totalPages={totalPages}
-      limit={limit}
-      loading={loading}
-      exporting={exporting}
-      onPageChange={setPage}
-      onLimitChange={setLimit}
-      onExport={exportCSV}
-      searchPlaceholder="Buscar por nombre, CURP o teléfono..."
-      searchValue={search}
-      onSearchChange={setSearch}
-      onKeyDown={(e) => { if (e.key === 'Enter') setPage(1); }}
-      filters={filtersUI}
-      activeFilters={activeFiltersUI}
-    >
+       <AdminPageLayout
+         title="Directorio de Clientes"
+         subtitle={`${total} clientes registrados`}
+         total={total}
+         page={page}
+         totalPages={totalPages}
+         limit={limit}
+         loading={loading}
+         exporting={exporting}
+         onPageChange={setPage}
+         onLimitChange={setLimit}
+         onExport={exportToExcel}
+         searchPlaceholder="Buscar por nombre, CURP o teléfono..."
+         searchValue={search}
+         onSearchChange={setSearch}
+         onKeyDown={(e) => { if (e.key === 'Enter') setPage(1); }}
+         filters={filtersUI}
+         activeFilters={activeFiltersUI}
+       >
       {/* Tabla */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">

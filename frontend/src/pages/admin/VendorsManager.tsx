@@ -7,6 +7,7 @@ import type { User, Reservation } from '../../types';
 import { showSuccess, showError } from '../../utils/notifications';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
 import StatusBadge from '../../components/ui/StatusBadge';
+import * as XLSX from 'xlsx';
 
 const createSchema = z.object({
   nombre: z.string().min(2, 'Nombre requerido'),
@@ -70,7 +71,9 @@ const VendorsManager = () => {
         setZonas(uniqueZonas as string[]);
       }
     } catch (err) { 
-      console.error(err); 
+      console.error('Error fetching vendors:', err);
+      setVendors([]);
+      setTotal(0);
     } finally { 
       setLoading(false); 
     }
@@ -80,47 +83,57 @@ const VendorsManager = () => {
     fetchVendors(page, limit); 
   }, [page, limit, search, filterZona, filterEstado]);
 
-  const exportCSV = async () => {
-    setExporting(true);
-    try {
-      const params: Record<string, string> = { rol: 'VENDEDOR', limit: '9999' };
-      if (search) params.search = search;
-      if (filterZona) params.zona = filterZona;
-      if (filterEstado) params.isActive = filterEstado;
-      
-      const res = await api.get('/admin/users', { params });
-      const rows: User[] = res.data.data;
+   const exportToExcel = async () => {
+     setExporting(true);
+     try {
+       const params: Record<string, string> = { rol: 'VENDEDOR', limit: '9999' };
+       if (search) params.search = search;
+       if (filterZona) params.zona = filterZona;
+       if (filterEstado) params.isActive = filterEstado;
+       
+       const res = await api.get('/admin/users', { params });
+       const rows: User[] = res.data.data;
 
-      const headers = ['Nombre', 'Email', 'Zona', 'Teléfono', 'Estado', 'Reservas', 'Fecha registro'];
-      const data = rows.map((v) => [
-        v.nombre,
-        v.email,
-        v.zona ?? '',
-        v.telefono ?? '',
-        v.isActive ? 'Activo' : 'Inactivo',
-        v._count?.reservations ?? 0,
-        new Date(v.createdAt).toLocaleDateString('es-MX'),
-      ]);
+       // Procesar datos para Excel
+       const excelData = rows.map((v) => ({
+         'Nombre': v.nombre,
+         'Email': v.email,
+         'Zona': v.zona ?? '',
+         'Teléfono': v.telefono ?? '',
+         'Estado': v.isActive ? 'Activo' : 'Inactivo',
+         'Reservas': v._count?.reservations ?? 0,
+         'Fecha registro': new Date(v.createdAt).toLocaleDateString('es-MX'),
+       }));
 
-      const csv = [headers, ...data]
-        .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
-        .join('\n');
-
-      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `vendedores_${new Date().toISOString().slice(0, 10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showSuccess('Vendedores exportados correctamente');
-    } catch (err) {
-      console.error('Error al exportar:', err);
-      showError('No se pudo exportar. Intenta de nuevo.');
-    } finally {
-      setExporting(false);
-    }
-  };
+       // Crear hoja de trabajo
+       const worksheet = XLSX.utils.json_to_sheet(excelData);
+       const workbook = XLSX.utils.book_new();
+       XLSX.utils.book_append_sheet(workbook, worksheet, 'Vendedores');
+       
+       // Generar archivo Excel
+       const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+       const excelBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+       const url = window.URL.createObjectURL(excelBlob);
+       
+       // Crear enlace de descarga
+       const link = document.createElement('a');
+       link.href = url;
+       link.setAttribute('download', `vendedores_${new Date().toISOString().slice(0, 10)}.xlsx`);
+       document.body.appendChild(link);
+       link.click();
+       link.remove();
+       
+       // Liberar memoria
+       window.URL.revokeObjectURL(url);
+       
+       showSuccess('Vendedores exportados correctamente');
+     } catch (err) {
+       console.error('Error al exportar a Excel:', err);
+       showError('No se pudo exportar a Excel. Intenta de nuevo.');
+     } finally {
+       setExporting(false);
+     }
+   };
 
   const openCreate = () => {
     setEditingVendor(null);
@@ -270,27 +283,27 @@ const VendorsManager = () => {
 
   return (
     <>
-      <AdminPageLayout
-        title="Gestión de Vendedores"
-        subtitle={`${activos} activos / ${vendors.length} total`}
-        total={total}
-        page={page}
-        totalPages={totalPages}
-        limit={limit}
-        loading={loading}
-        exporting={exporting}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-        onExport={exportCSV}
-        onAdd={openCreate}
-        addButtonText="+ Nuevo vendedor"
-        searchPlaceholder="Buscar por nombre o zona..."
-        searchValue={search}
-        onSearchChange={setSearch}
-        onKeyDown={(e) => { if (e.key === 'Enter') setPage(1); }}
-        filters={filtersUI}
-        activeFilters={activeFiltersUI}
-      >
+       <AdminPageLayout
+         title="Gestión de Vendedores"
+         subtitle={`${activos} activos / ${vendors.length} total`}
+         total={total}
+         page={page}
+         totalPages={totalPages}
+         limit={limit}
+         loading={loading}
+         exporting={exporting}
+         onPageChange={setPage}
+         onLimitChange={setLimit}
+         onExport={exportToExcel}
+         onAdd={openCreate}
+         addButtonText="+ Nuevo vendedor"
+         searchPlaceholder="Buscar por nombre o zona..."
+         searchValue={search}
+         onSearchChange={setSearch}
+         onKeyDown={(e) => { if (e.key === 'Enter') setPage(1); }}
+         filters={filtersUI}
+         activeFilters={activeFiltersUI}
+       >
         {/* Tabla */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

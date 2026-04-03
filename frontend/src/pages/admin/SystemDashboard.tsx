@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 
 // ============================================
 // TIPOS
@@ -157,46 +158,109 @@ const LogsTab = () => {
     fetchLogs();
   }, [filters]);
 
-  const handleDownload = async (filename: string) => {
-    try {
-      const response = await api.get(`/admin/logs/download/${filename}`, {
-        responseType: 'blob',
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename.replace('.gz', ''));
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch {
-      toast.error('Error descargando archivo');
-    }
-  };
+   const handleDownload = async (filename: string) => {
+     try {
+       const response = await api.get(`/admin/logs/download/${filename}`, {
+         responseType: 'blob',
+       });
+       const url = window.URL.createObjectURL(new Blob([response.data]));
+       const link = document.createElement('a');
+       link.href = url;
+       link.setAttribute('download', filename.replace('.gz', ''));
+       document.body.appendChild(link);
+       link.click();
+       link.remove();
+     } catch {
+       toast.error('Error descargando archivo');
+     }
+   };
 
-  return (
+   const exportLogsToExcel = async () => {
+     try {
+       // Exportar logs actuales con filtros aplicados
+       const params: Record<string, string | number> = { 
+         page: filters.page, 
+         limit: 1000 // Límite alto para obtener todos los logs filtrados
+       };
+       if (filters.fecha) params.fecha = filters.fecha;
+       if (filters.nivel) params.nivel = filters.nivel;
+       if (filters.busqueda) params.busqueda = filters.busqueda;
+
+       const { data } = await api.get('/admin/logs', { params });
+       
+       // Procesar logs para el formato de Excel
+       const logData = data.logs.map((line, index) => {
+         const level = getLevel(line);
+         return {
+           'Nivel': level.toUpperCase(),
+           'Mensaje': line,
+           'Fecha/Hora': new Date().toLocaleString('es-MX') // Timestamp de exportación
+         };
+       });
+
+       // Crear hoja de trabajo
+       const worksheet = XLSX.utils.json_to_sheet(logData);
+       const workbook = XLSX.utils.book_new();
+       XLSX.utils.book_append_sheet(workbook, worksheet, 'Logs del Sistema');
+       
+        // Generar archivo Excel
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        const excelBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(excelBlob);
+       
+       // Crear enlace de descarga
+       const link = document.createElement('a');
+       link.href = url;
+       link.setAttribute('download', `logs_sistema_${new Date().toISOString().slice(0,10)}.xlsx`);
+       document.body.appendChild(link);
+       link.click();
+       link.remove();
+       
+       // Liberar memoria
+       window.URL.revokeObjectURL(url);
+       
+       toast.success('Logs exportados a Excel exitosamente');
+     } catch (error) {
+       console.error('Error exportando logs a Excel:', error);
+       toast.error('Error exportando logs a Excel');
+     }
+   };
+
+   return (
     <div className="space-y-6">
-      {/* Estadísticas de logs */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Archivos</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalFiles}</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Tamaño total</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalSize}</p>
-          </div>
-          <div className="bg-red-50 rounded-xl p-4 shadow-sm border border-red-200">
-            <p className="text-xs font-medium text-red-600 uppercase tracking-wide mb-1">Errores hoy</p>
-            <p className="text-2xl font-bold text-red-600">{stats.errorsToday}</p>
-          </div>
-          <div className="bg-yellow-50 rounded-xl p-4 shadow-sm border border-yellow-200">
-            <p className="text-xs font-medium text-yellow-600 uppercase tracking-wide mb-1">Warnings hoy</p>
-            <p className="text-2xl font-bold text-yellow-600">{stats.warningsToday}</p>
-          </div>
-        </div>
-      )}
+       {/* Estadísticas de logs */}
+       {stats && (
+         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+             <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Archivos</p>
+             <p className="text-2xl font-bold text-gray-900">{stats.totalFiles}</p>
+           </div>
+           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+             <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Tamaño total</p>
+             <p className="text-2xl font-bold text-gray-900">{stats.totalSize}</p>
+           </div>
+           <div className="bg-red-50 rounded-xl p-4 shadow-sm border border-red-200">
+             <p className="text-xs font-medium text-red-600 uppercase tracking-wide mb-1">Errores hoy</p>
+             <p className="text-2xl font-bold text-red-600">{stats.errorsToday}</p>
+           </div>
+           <div className="bg-yellow-50 rounded-xl p-4 shadow-sm border border-yellow-200">
+             <p className="text-xs font-medium text-yellow-600 uppercase tracking-wide mb-1">Warnings hoy</p>
+             <p className="text-2xl font-bold text-yellow-600">{stats.warningsToday}</p>
+           </div>
+         </div>
+       )}
+       {/* Botón para exportar logs a Excel */}
+       <div className="flex justify-end mb-4">
+         <button
+           onClick={exportLogsToExcel}
+           className="bg-[#0f49bd] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+         >
+           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+           </svg>
+           Exportar logs a Excel
+         </button>
+       </div>
 
       {/* Filtros de logs */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -368,46 +432,117 @@ const NotificationsTab = () => {
     }
   };
 
-  const fetchStats = async () => {
-    try {
-      const { data } = await api.get('/admin/notifications/stats');
-      setStats(data);
-    } catch {
-      toast.error('Error cargando estadísticas');
-    }
-  };
+   const fetchStats = async () => {
+     try {
+       const { data } = await api.get('/admin/notifications/stats');
+       setStats(data);
+     } catch {
+       toast.error('Error cargando estadísticas');
+     }
+   };
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+   const exportNotificationsToExcel = async () => {
+     try {
+       // Exportar notificaciones actuales con filtros aplicados
+       const params: Record<string, string | number> = { 
+         page: filters.page, 
+         limit: 1000 // Límite alto para obtener todas las notificaciones filtradas
+       };
+       if (filters.fecha) params.fecha = filters.fecha;
+       if (filters.canal) params.canal = filters.canal;
+       if (filters.status) params.status = filters.status;
+       if (filters.busqueda) params.busqueda = filters.busqueda;
 
-  useEffect(() => {
-    fetchNotifications();
-  }, [filters]);
+       const { data } = await api.get('/admin/notifications', { params });
+       
+       // Procesar notificaciones para el formato de Excel
+       const notificationData = data.notifications.map((notif) => ({
+         'ID': notif.id.slice(0, 8),
+         'Fecha': formatDate(notif.createdAt),
+         'Canal': notif.canal,
+         'Estado': notif.status,
+         'Destinatario Nombre': notif.destinatarioNombre || 'N/A',
+         'Destinatario Contacto': notif.destinatario || 'N/A',
+         'Asunto': notif.asunto || 'N/A',
+         'Mensaje': notif.mensaje || 'N/A',
+         'Error': notif.error || 'N/A',
+         'Reserva ID': notif.reservation.id.slice(0, 8),
+         'Reserva Cliente': notif.reservation.nombreCompleto,
+         'Reserva Teléfono': notif.reservation.telefono,
+         'Reserva Estado': notif.reservation.estado
+       }));
+
+       // Crear hoja de trabajo
+       const worksheet = XLSX.utils.json_to_sheet(notificationData);
+       const workbook = XLSX.utils.book_new();
+       XLSX.utils.book_append_sheet(workbook, worksheet, 'Notificaciones');
+       
+        // Generar archivo Excel
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        const excelBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(excelBlob);
+       
+       // Crear enlace de descarga
+       const link = document.createElement('a');
+       link.href = url;
+       link.setAttribute('download', `notificaciones_${new Date().toISOString().slice(0,10)}.xlsx`);
+       document.body.appendChild(link);
+       link.click();
+       link.remove();
+       
+       // Liberar memoria
+       window.URL.revokeObjectURL(url);
+       
+       toast.success('Notificaciones exportadas a Excel exitosamente');
+     } catch (error) {
+       console.error('Error exportando notificaciones a Excel:', error);
+       toast.error('Error exportando notificaciones a Excel');
+     }
+   };
+
+   useEffect(() => {
+     fetchStats();
+   }, []);
+
+   useEffect(() => {
+     fetchNotifications();
+   }, [filters]);
 
   return (
     <div className="space-y-6">
-      {/* Estadísticas de notificaciones */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Total</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-          </div>
-          <div className="bg-green-50 rounded-xl p-4 shadow-sm border border-green-200">
-            <p className="text-xs font-medium text-green-600 uppercase tracking-wide mb-1">Enviadas hoy</p>
-            <p className="text-2xl font-bold text-green-600">{stats.sentToday}</p>
-          </div>
-          <div className="bg-red-50 rounded-xl p-4 shadow-sm border border-red-200">
-            <p className="text-xs font-medium text-red-600 uppercase tracking-wide mb-1">Fallidas hoy</p>
-            <p className="text-2xl font-bold text-red-600">{stats.failedToday}</p>
-          </div>
-          <div className="bg-yellow-50 rounded-xl p-4 shadow-sm border border-yellow-200">
-            <p className="text-xs font-medium text-yellow-600 uppercase tracking-wide mb-1">Pendientes</p>
-            <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-          </div>
-        </div>
-      )}
+       {/* Estadísticas de notificaciones */}
+       {stats && (
+         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+             <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">Total</p>
+             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+           </div>
+           <div className="bg-green-50 rounded-xl p-4 shadow-sm border border-green-200">
+             <p className="text-xs font-medium text-green-600 uppercase tracking-wide mb-1">Enviadas hoy</p>
+             <p className="text-2xl font-bold text-green-600">{stats.sentToday}</p>
+           </div>
+           <div className="bg-red-50 rounded-xl p-4 shadow-sm border border-red-200">
+             <p className="text-xs font-medium text-red-600 uppercase tracking-wide mb-1">Fallidas hoy</p>
+             <p className="text-2xl font-bold text-red-600">{stats.failedToday}</p>
+           </div>
+           <div className="bg-yellow-50 rounded-xl p-4 shadow-sm border border-yellow-200">
+             <p className="text-xs font-medium text-yellow-600 uppercase tracking-wide mb-1">Pendientes</p>
+             <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+           </div>
+         </div>
+       )}
+       {/* Botón para exportar notificaciones a Excel */}
+       <div className="flex justify-end mb-4">
+         <button
+           onClick={exportNotificationsToExcel}
+           className="bg-[#0f49bd] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+         >
+           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+           </svg>
+           Exportar notificaciones a Excel
+         </button>
+       </div>
 
       {/* Filtros de notificaciones */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">

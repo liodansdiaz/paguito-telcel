@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { userService } from './user.service';
-import { sendSuccess } from '../../shared/utils/response.helper';
+import { sendPaginated } from '../../shared/utils/response.helper';
 
 const createUserSchema = z.object({
   nombre: z.string().min(2),
@@ -15,13 +15,15 @@ const createUserSchema = z.object({
 export class UserController {
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { search, isActive, rol } = req.query;
-      const users = await userService.getAll({
+      const { search, isActive, rol, page, limit } = req.query;
+      const result = await userService.getAll({
         search: search as string,
         isActive: isActive !== undefined ? isActive === 'true' : undefined,
         rol: rol as any,
+        page: page ? parseInt(page as string, 10) : 1,
+        limit: limit ? parseInt(limit as string, 10) : 15,
       });
-      sendSuccess(res, users);
+      sendPaginated(res, result.data, result.pagination.total, result.pagination.page, result.pagination.limit);
     } catch (err) {
       next(err);
     }

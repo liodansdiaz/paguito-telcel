@@ -6,6 +6,7 @@ import api from '../../services/api';
 import type { User } from '../../types';
 import { showSuccess, showError } from '../../utils/notifications';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import * as XLSX from 'xlsx';
 
 const createSchema = z.object({
   nombre: z.string().min(2, 'Nombre requerido'),
@@ -54,7 +55,9 @@ const AdminsManager = () => {
       setAdmins(res.data.data);
       setTotal(res.data.pagination.total);
     } catch (err) { 
-      console.error(err); 
+      console.error('Error fetching admins:', err);
+      setAdmins([]);
+      setTotal(0);
     } finally { 
       setLoading(false); 
     }
@@ -64,45 +67,55 @@ const AdminsManager = () => {
     fetchAdmins(page, limit); 
   }, [page, limit, search, filterEstado]);
 
-  const exportCSV = async () => {
-    setExporting(true);
-    try {
-      const params: Record<string, string> = { rol: 'ADMIN', limit: '9999' };
-      if (search) params.search = search;
-      if (filterEstado) params.isActive = filterEstado;
-      
-      const res = await api.get('/admin/users', { params });
-      const rows: User[] = res.data.data;
+   const exportToExcel = async () => {
+     setExporting(true);
+     try {
+       const params: Record<string, string> = { rol: 'ADMIN', limit: '9999' };
+       if (search) params.search = search;
+       if (filterEstado) params.isActive = filterEstado;
+       
+       const res = await api.get('/admin/users', { params });
+       const rows: User[] = res.data.data;
 
-      const headers = ['Nombre', 'Email', 'Teléfono', 'Estado', 'Fecha registro', 'Último acceso'];
-      const data = rows.map((a) => [
-        a.nombre,
-        a.email,
-        a.telefono ?? '',
-        a.isActive ? 'Activo' : 'Inactivo',
-        new Date(a.createdAt).toLocaleDateString('es-MX'),
-        a.lastAssignedAt ? new Date(a.lastAssignedAt).toLocaleDateString('es-MX') : 'Nunca',
-      ]);
+       // Procesar datos para Excel
+       const excelData = rows.map((a) => ({
+         'Nombre': a.nombre,
+         'Email': a.email,
+         'Teléfono': a.telefono ?? '',
+         'Estado': a.isActive ? 'Activo' : 'Inactivo',
+         'Fecha registro': new Date(a.createdAt).toLocaleDateString('es-MX'),
+         'Último acceso': a.lastAssignedAt ? new Date(a.lastAssignedAt).toLocaleDateString('es-MX') : 'Nunca',
+       }));
 
-      const csv = [headers, ...data]
-        .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
-        .join('\n');
-
-      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `administradores_${new Date().toISOString().slice(0, 10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showSuccess('Administradores exportados correctamente');
-    } catch (err) {
-      console.error('Error al exportar:', err);
-      showError('No se pudo exportar. Intenta de nuevo.');
-    } finally {
-      setExporting(false);
-    }
-  };
+       // Crear hoja de trabajo
+       const worksheet = XLSX.utils.json_to_sheet(excelData);
+       const workbook = XLSX.utils.book_new();
+       XLSX.utils.book_append_sheet(workbook, worksheet, 'Administradores');
+       
+       // Generar archivo Excel
+       const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+       const excelBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+       const url = window.URL.createObjectURL(excelBlob);
+       
+       // Crear enlace de descarga
+       const link = document.createElement('a');
+       link.href = url;
+       link.setAttribute('download', `administradores_${new Date().toISOString().slice(0, 10)}.xlsx`);
+       document.body.appendChild(link);
+       link.click();
+       link.remove();
+       
+       // Liberar memoria
+       window.URL.revokeObjectURL(url);
+       
+       showSuccess('Administradores exportados correctamente');
+     } catch (err) {
+       console.error('Error al exportar a Excel:', err);
+       showError('No se pudo exportar a Excel. Intenta de nuevo.');
+     } finally {
+       setExporting(false);
+     }
+   };
 
   const openCreate = () => {
     setEditingAdmin(null);
@@ -193,25 +206,25 @@ const AdminsManager = () => {
 
   return (
     <>
-      <AdminPageLayout
-        title="Administradores"
-        subtitle={`${total} ${total === 1 ? 'administrador registrado' : 'administradores registrados'} • ${activos} ${activos === 1 ? 'activo' : 'activos'}`}
-        total={total}
-        page={page}
-        totalPages={totalPages}
-        limit={limit}
-        loading={loading}
-        exporting={exporting}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-        onExport={exportCSV}
-        onAdd={openCreate}
-        addButtonText="+ Nuevo administrador"
-        searchPlaceholder="Nombre o email..."
-        searchValue={search}
-        onSearchChange={(value) => { setSearch(value); setPage(1); }}
-        filters={filtersUI}
-      >
+       <AdminPageLayout
+         title="Administradores"
+         subtitle={`${total} ${total === 1 ? 'administrador registrado' : 'administradores registrados'} • ${activos} ${activos === 1 ? 'activo' : 'activos'}`}
+         total={total}
+         page={page}
+         totalPages={totalPages}
+         limit={limit}
+         loading={loading}
+         exporting={exporting}
+         onPageChange={setPage}
+         onLimitChange={setLimit}
+         onExport={exportToExcel}
+         onAdd={openCreate}
+         addButtonText="+ Nuevo administrador"
+         searchPlaceholder="Nombre o email..."
+         searchValue={search}
+         onSearchChange={(value) => { setSearch(value); setPage(1); }}
+         filters={filtersUI}
+       >
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600"></div>

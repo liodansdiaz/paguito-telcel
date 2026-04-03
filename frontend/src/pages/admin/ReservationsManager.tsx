@@ -4,6 +4,7 @@ import type { Reservation, EstadoReserva, User } from '../../types';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Pagination from '../../components/ui/Pagination';
 import { showSuccess, showError } from '../../utils/notifications';
+import * as XLSX from 'xlsx';
 
 const ESTADOS: EstadoReserva[] = ['NUEVA', 'ASIGNADA', 'EN_VISITA', 'PARCIAL', 'COMPLETADA', 'CANCELADA', 'SIN_STOCK'];
 const estadoLabel: Record<EstadoReserva, string> = {
@@ -11,8 +12,8 @@ const estadoLabel: Record<EstadoReserva, string> = {
   PARCIAL: 'Parcial', COMPLETADA: 'Completada', CANCELADA: 'Cancelada', SIN_STOCK: 'Sin stock',
 };
 
-// ── Exportar a CSV ────────────────────────────────────────────────────────────
-const exportCSV = async (filters: {
+// ── Exportar a XLSX ────────────────────────────────────────────────────────────
+const exportToExcel = async (filters: {
   estado: string;
   search: string;
   vendorId: string;
@@ -33,39 +34,58 @@ const exportCSV = async (filters: {
     const res = await api.get('/reservations/admin', { params });
     const rows: Reservation[] = res.data.data;
 
-    const headers = ['Folio', 'Nombre', 'Teléfono', 'CURP', 'Total Productos', 'Productos', 'Variante', 'Notas', 'Dirección', 'Fecha preferida', 'Horario', 'Vendedor', 'Estado', 'Fecha creación'];
-    const data = rows.map((r) => [
-      r.id.slice(0, 8).toUpperCase(),
-      r.nombreCompleto,
-      r.telefono,
-      r.curp,
-      r.items?.length ?? 0,
-      r.items?.map(i => `${i.product?.nombre} (${i.tipoPago})`).join('; ') ?? '',
-      r.items?.map(i => [i.color, i.memoria].filter(Boolean).join(', ') || '—').join('; ') ?? '',
-      r.notas ?? '',
-      r.direccion,
-      new Date(r.fechaPreferida).toLocaleDateString('es-MX'),
-      r.horarioPreferido,
-      r.vendor?.nombre ?? 'Sin asignar',
-      estadoLabel[r.estado],
-      new Date(r.createdAt).toLocaleDateString('es-MX'),
-    ]);
+    const data = rows.map((r) => ({
+      Folio: r.id.slice(0, 8).toUpperCase(),
+      Nombre: r.nombreCompleto,
+      Teléfono: r.telefono,
+      CURP: r.curp,
+      'Total Productos': r.items?.length ?? 0,
+      Productos: r.items?.map(i => `${i.product?.nombre} (${i.tipoPago})`).join('; ') ?? '',
+      Variante: r.items?.map(i => [i.color, i.memoria].filter(Boolean).join(', ') || '—').join('; ') ?? '',
+      Notas: r.notas ?? '',
+      Dirección: r.direccion,
+      'Fecha preferida': new Date(r.fechaPreferida).toLocaleDateString('es-MX'),
+      Horario: r.horarioPreferido,
+      Vendedor: r.vendor?.nombre ?? 'Sin asignar',
+      Estado: estadoLabel[r.estado],
+      'Fecha creación': new Date(r.createdAt).toLocaleDateString('es-MX'),
+    }));
 
-    const csv = [headers, ...data]
-      .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Reservas');
 
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    // Ajustar ancho de columnas
+    const wscols = [
+      { wch: 10 },  // Folio
+      { wch: 20 },  // Nombre
+      { wch: 15 },  // Teléfono
+      { wch: 15 },  // CURP
+      { wch: 12 },  // Total Productos
+      { wch: 30 },  // Productos
+      { wch: 20 },  // Variante
+      { wch: 30 },  // Notas
+      { wch: 30 },  // Dirección
+      { wch: 12 },  // Fecha preferida
+      { wch: 10 },  // Horario
+      { wch: 20 },  // Vendedor
+      { wch: 12 },  // Estado
+      { wch: 12 },  // Fecha creación
+    ];
+    worksheet['!cols'] = wscols;
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `reservas_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `reservas_${new Date().toISOString().slice(0, 10)}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
-    showSuccess('Reservas exportadas correctamente');
+    showSuccess('Reservas exportadas correctamente a Excel');
   } catch (err) {
-    console.error('Error al exportar:', err);
-    showError('No se pudo exportar. Intenta de nuevo.');
+    console.error('Error al exportar a Excel:', err);
+    showError('No se pudo exportar a Excel. Intenta de nuevo.');
   }
 };
 
@@ -166,19 +186,19 @@ const ReservationsManager = () => {
     finally { setActionLoading(false); }
   };
 
-  const handleExport = async () => {
-    setExporting(true);
-    await exportCSV({
-      estado: filterEstado,
-      search,
-      vendorId: filterVendor,
-      fechaDesde,
-      fechaHasta,
-      producto: searchProducto,
-      tipoPago: filterTipoPago,
-    });
-    setExporting(false);
-  };
+   const handleExport = async () => {
+     setExporting(true);
+     await exportToExcel({
+       estado: filterEstado,
+       search,
+       vendorId: filterVendor,
+       fechaDesde,
+       fechaHasta,
+       producto: searchProducto,
+       tipoPago: filterTipoPago,
+     });
+     setExporting(false);
+   };
 
   const totalPages = Math.ceil(total / limit);
 
@@ -198,17 +218,17 @@ const ReservationsManager = () => {
             <option value={25}>Mostrar 25</option>
             <option value={50}>Mostrar 50</option>
           </select>
-          <button
-            onClick={handleExport}
-            disabled={exporting || total === 0}
-            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-            title="Exportar a CSV"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            {exporting ? 'Exportando...' : 'CSV'}
-          </button>
+           <button
+             onClick={handleExport}
+             disabled={exporting || total === 0}
+             className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+             title="Exportar a Excel"
+           >
+             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+             </svg>
+             {exporting ? 'Exportando...' : 'Exportar a Excel'}
+           </button>
         </div>
       </div>
 

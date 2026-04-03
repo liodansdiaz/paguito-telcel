@@ -13,8 +13,8 @@ export interface CreateUserDTO {
 }
 
 export class UserService {
-  async getAll(filters: { search?: string; isActive?: boolean; rol?: Rol } = {}) {
-    const { search, isActive, rol } = filters;
+  async getAll(filters: { search?: string; isActive?: boolean; rol?: Rol; page?: number; limit?: number } = {}) {
+    const { search, isActive, rol, page = 1, limit = 15 } = filters;
     const where: any = {};
     if (isActive !== undefined) where.isActive = isActive;
     if (rol) where.rol = rol;
@@ -26,15 +26,32 @@ export class UserService {
       ];
     }
 
-    return prisma.user.findMany({
-      where,
-      select: {
-        id: true, nombre: true, email: true, rol: true, isActive: true,
-        zona: true, telefono: true, lastAssignedAt: true, createdAt: true,
-        _count: { select: { reservations: true } },
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true, nombre: true, email: true, rol: true, isActive: true,
+          zona: true, telefono: true, lastAssignedAt: true, createdAt: true,
+          _count: { select: { reservations: true } },
+        },
+        orderBy: { nombre: 'asc' },
+        skip,
+        take: limit,
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    return {
+      data: users,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-      orderBy: { nombre: 'asc' },
-    });
+    };
   }
 
   async getById(id: string) {

@@ -7,6 +7,7 @@ import { toImageUrl } from '../../services/config';
 import type { Product } from '../../types';
 import { showSuccess, showError } from '../../utils/notifications';
 import AdminPageLayout from '../../components/admin/AdminPageLayout';
+import * as XLSX from 'xlsx';
 
 const productSchema = z.object({
   sku: z.string().min(1, 'SKU requerido'),
@@ -111,59 +112,69 @@ const InventoryManager = () => {
     fetchOptions();
   }, []);
 
-  // ── Exportar a CSV ────────────────────────────────────────────────────────────
-  const exportCSV = async () => {
-    setExporting(true);
-    try {
-      const params: Record<string, string> = { page: '1', limit: '9999', sort: 'reciente' };
-      if (search) params.search = search;
-      if (selectedMarca) params.marca = selectedMarca;
-      if (selectedColor) params.color = selectedColor;
-      if (selectedMemoria) params.memoria = selectedMemoria;
-      if (precioMin !== undefined) params.precioMin = String(precioMin);
-      if (precioMax !== undefined) params.precioMax = String(precioMax);
-      
-      const res = await api.get('/products/admin/list', { params });
-      const rows: Product[] = res.data.data;
-
-      const headers = ['SKU', 'Nombre', 'Marca', 'Precio', 'Precio Anterior', 'Stock', 'Stock Mínimo', 'Estado', 'Crédito', 'Enganche', 'Pago Semanal', 'Badge', 'Colores', 'Memorias', 'Fecha Creación'];
-      const data = rows.map((p) => [
-        p.sku,
-        p.nombre,
-        p.marca,
-        p.precio,
-        p.precioAnterior ?? '',
-        p.stock,
-        p.stockMinimo,
-        p.isActive ? 'Activo' : 'Inactivo',
-        p.disponibleCredito ? 'Sí' : 'No',
-        p.enganche ?? '',
-        p.pagoSemanal ?? '',
-        p.badge ?? '',
-        p.colores?.join('; ') ?? '',
-        p.memorias?.join('; ') ?? '',
-        new Date(p.createdAt).toLocaleDateString('es-MX'),
-      ]);
-
-      const csv = [headers, ...data]
-        .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
-        .join('\n');
-
-      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `inventario_${new Date().toISOString().slice(0, 10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showSuccess('Inventario exportado correctamente');
-    } catch (err) {
-      console.error('Error al exportar:', err);
-      showError('No se pudo exportar. Intenta de nuevo.');
-    } finally {
-      setExporting(false);
-    }
-  };
+   // ── Exportar a Excel ────────────────────────────────────────────────────────────
+   const exportToExcel = async () => {
+     setExporting(true);
+     try {
+       const params: Record<string, string> = { page: '1', limit: '9999', sort: 'reciente' };
+       if (search) params.search = search;
+       if (selectedMarca) params.marca = selectedMarca;
+       if (selectedColor) params.color = selectedColor;
+       if (selectedMemoria) params.memoria = selectedMemoria;
+       if (precioMin !== undefined) params.precioMin = String(precioMin);
+       if (precioMax !== undefined) params.precioMax = String(precioMax);
+       
+       const res = await api.get('/products/admin/list', { params });
+       const rows: Product[] = res.data.data;
+ 
+       // Procesar datos para Excel
+       const excelData = rows.map((p) => ({
+         'SKU': p.sku,
+         'Nombre': p.nombre,
+         'Marca': p.marca,
+         'Precio': p.precio,
+         'Precio Anterior': p.precioAnterior ?? '',
+         'Stock': p.stock,
+         'Stock Mínimo': p.stockMinimo,
+         'Estado': p.isActive ? 'Activo' : 'Inactivo',
+         'Crédito': p.disponibleCredito ? 'Sí' : 'No',
+         'Enganche': p.enganche ?? '',
+         'Pago Semanal': p.pagoSemanal ?? '',
+         'Badge': p.badge ?? '',
+         'Colores': p.colores?.join('; ') ?? '',
+         'Memorias': p.memorias?.join('; ') ?? '',
+         'Fecha Creación': new Date(p.createdAt).toLocaleDateString('es-MX'),
+       }));
+ 
+       // Crear hoja de trabajo
+       const worksheet = XLSX.utils.json_to_sheet(excelData);
+       const workbook = XLSX.utils.book_new();
+       XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventario');
+       
+       // Generar archivo Excel
+       const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+       const excelBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+       const url = window.URL.createObjectURL(excelBlob);
+       
+       // Crear enlace de descarga
+       const link = document.createElement('a');
+       link.href = url;
+       link.setAttribute('download', `inventario_${new Date().toISOString().slice(0, 10)}.xlsx`);
+       document.body.appendChild(link);
+       link.click();
+       link.remove();
+       
+       // Liberar memoria
+       window.URL.revokeObjectURL(url);
+       
+       showSuccess('Inventario exportado correctamente');
+     } catch (err) {
+       console.error('Error al exportar a Excel:', err);
+       showError('No se pudo exportar a Excel. Intenta de nuevo.');
+     } finally {
+       setExporting(false);
+     }
+   };
 
   const openEdit = (product: Product) => {
     setEditingProduct(product);
@@ -418,27 +429,27 @@ const InventoryManager = () => {
 
   return (
     <>
-      <AdminPageLayout
-        title="Inventario y Stock"
-        subtitle={`${total} productos · página ${page} de ${totalPages || 1}`}
-        total={total}
-        page={page}
-        totalPages={totalPages}
-        limit={limit}
-        loading={loading}
-        exporting={exporting}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-        onExport={exportCSV}
-        onAdd={openCreate}
-        addButtonText="+ Agregar producto"
-        searchPlaceholder="Buscar por SKU, nombre o marca..."
-        searchValue={search}
-        onSearchChange={setSearch}
-        onKeyDown={(e) => { if (e.key === 'Enter') setPage(1); }}
-        filters={filtersUI}
-        activeFilters={activeFiltersUI}
-      >
+       <AdminPageLayout
+         title="Inventario y Stock"
+         subtitle={`${total} productos · página ${page} de ${totalPages || 1}`}
+         total={total}
+         page={page}
+         totalPages={totalPages}
+         limit={limit}
+         loading={loading}
+         exporting={exporting}
+         onPageChange={setPage}
+         onLimitChange={setLimit}
+         onExport={exportToExcel}
+         onAdd={openCreate}
+         addButtonText="+ Agregar producto"
+         searchPlaceholder="Buscar por SKU, nombre o marca..."
+         searchValue={search}
+         onSearchChange={setSearch}
+         onKeyDown={(e) => { if (e.key === 'Enter') setPage(1); }}
+         filters={filtersUI}
+         activeFilters={activeFiltersUI}
+       >
         {/* Tabla */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
