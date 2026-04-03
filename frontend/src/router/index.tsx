@@ -72,7 +72,7 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute role="ADMIN"><AdminLayout /></ProtectedRoute>,
     errorElement: <RouteErrorBoundary />,
     children: [
-      { index: true, element: <Navigate to="/admin/dashboard" replace /> },
+      { index: true, element: <AdminDashboard /> },
       { path: 'dashboard', element: <AdminDashboard /> },
       { path: 'reservas', element: <ReservationsManager /> },
       { path: 'clientes', element: <CustomersDirectory /> },

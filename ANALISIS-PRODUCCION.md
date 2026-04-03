@@ -261,7 +261,58 @@ new winston.transports.DailyRotateFile({
 - Descargar cualquier archivo de log
 - Ver estadísticas (archivos, tamaño total, errores hoy, warnings hoy)
 
-#### 11. HEALTH CHECK EXTERNO
+#### 11. ✅ BACKUP AUTOMÁTICO DE BASE DE DATOS - IMPLEMENTADO (OPCIÓN LOCAL)
+
+**Problema:** No había mecanismo de backup automático de la base de datos.
+
+**Resolución (02/04/2026):**
+- ✅ Se creó script de backup local (`backup/backup-local.sh`) que usa `pg_dump` y gzip
+- ✅ Se creó script de restauración (`backup/restore-backup.sh`) con confirmación de seguridad
+- ✅ Los scripts son ejecutables y funcionan en entornos Linux/WSL/Git Bash
+- ✅ El backup se ejecuta mediante `docker exec paguito-postgres pg_dump | gzip`
+- ✅ Los backups se guardan en el directorio `./backup/` con nombre `paguito-YYYY-MM-DD_HH-MM-SS.sql.gz`
+- ✅ Se elimina automáticamente backups más antiguos de 7 días (configurable)
+- ✅ Se incluye verificación de éxito y manejo de errores
+
+**Cómo usar:**
+```bash
+# Hacer los scripts ejecutables (solo primera vez)
+chmod +x backup/backup-local.sh
+chmod +x backup/restore-backup.sh
+
+# Ejecutar backup manual
+./backup/backup-local.sh
+
+# Restaurar un backup
+./backup/restore-backup.sh
+# Luego seleccionar el backup cuando se solicite
+```
+
+**Para automatizar en producción (Linux/Unix):**
+1. Agregar un cron job que ejecute el backup diario:
+   ```bash
+   crontab -e
+   # Agregar esta línea (ejecutar todos los días a las 2:00 AM)
+   0 2 * * * /ruta/al/proyecto/backup/backup-local.sh >> /ruta/al/proyecto/backup/backup.log 2>&1
+   ```
+
+**Para automatizar en Windows (usando Git Bash o WSL):**
+1. Abrir Git Bash como Administrador
+2. Ejecutar: `crontab -e`
+3. Agregar esta línea:
+   ```
+   0 2 * * * /c/Repo/Mexico/Amigos\ Paguito\ Telcel/paguito-telcel/backup/backup-local.sh >> /c/Repo\Mexico/Amigos\ Paguito\ Telcel/paguito-telcel/backup/backup.log 2>&1
+   ```
+   (Ajustar la ruta según la instalación)
+
+**Configuración actual en el script:**
+- Directorio de backups: `./backup/`
+- Retención: 7 días (modificable en el script)
+- Compresión: gzip
+- Base de datos: paguito_telcel
+- Usuario: paguito
+
+#### 12. HEALTH CHECK EXTERNO
 
 **Problema:** El health check existe (`/health`, `/health/detailed`) pero no hay monitoreo externo configurado.
 

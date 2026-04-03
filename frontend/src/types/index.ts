@@ -37,6 +37,8 @@ export interface Product {
   enganche?: string; // Ej: "Enganche desde $300 a $800"
   pagoSemanal?: string; // Ej: "Desde $150 a $240/semana"
   especificaciones?: Record<string, string>;
+  // Mapeo opcional de color a imágenes específicas (para futuro backend)
+  colorImagenes?: Record<string, string[]>;
   createdAt: string;
 }
 

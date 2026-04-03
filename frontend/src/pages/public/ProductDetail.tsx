@@ -14,7 +14,37 @@ const COLOR_MAP: Record<string, string> = {
   naranja: '#ea580c', titanio: '#a0a098', 'titanio negro': '#3a3a3a',
   'titanio natural': '#a0a098', beige: '#d4b896', café: '#92400e', cafe: '#92400e',
 };
+
 const getColorHex = (c: string) => COLOR_MAP[c.toLowerCase()] ?? '#9ca3af';
+
+const getImageForColor = (imagenes: string[], colores: string[] | undefined, color: string | null): string => {
+  // Si no hay imagenes, devolver vacío
+  if (!imagenes || imagenes.length === 0) {
+    return '';
+  }
+  
+  // Si hay un color seleccionado, buscar imagen que coincida con ese color
+  if (color && imagenes.length > 0) {
+    const colorLower = color.toLowerCase();
+    const matchingImage = imagenes.find(img => 
+      img.toLowerCase().includes(colorLower)
+    );
+    return matchingImage || imagenes[0]; // fallback a primera imagen
+  }
+  
+  // Si no hay color seleccionado pero sí hay colores definidos, usar la imagen del primer color
+  if (colores && colores.length > 0 && imagenes.length > 0) {
+    const primerColor = colores[0];
+    const colorLower = primerColor.toLowerCase();
+    const matchingImage = imagenes.find(img => 
+      img.toLowerCase().includes(colorLower)
+    );
+    return matchingImage || imagenes[0]; // fallback a primera imagen
+  }
+  
+  // Caso por defecto: devolver la primera imagen
+  return imagenes[0];
+};
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,17 +58,24 @@ const ProductDetail = () => {
   
   const { agregarAlCarrito, contarProductosCredito } = useCarritoStore();
 
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    api.get(`/products/${id}`)
-      .then((r) => {
-        setProduct(r.data.data);
-        setActiveImage(0);
-      })
-      .catch(() => navigate('/catalogo'))
-      .finally(() => setLoading(false));
-  }, [id]);
+   const [colorInitialized, setColorInitialized] = useState(false);
+   
+   useEffect(() => {
+     if (!id) return;
+     setLoading(true);
+     api.get(`/products/${id}`)
+       .then((r) => {
+         setProduct(r.data.data);
+         setActiveImage(0);
+         // Seleccionar automáticamente el primer color disponible si no hay uno seleccionado
+         if (r.data.data.colores && r.data.data.colores.length > 0 && !selectedColor && !colorInitialized) {
+           setSelectedColor(r.data.data.colores[0]);
+           setColorInitialized(true);
+         }
+       })
+       .catch(() => navigate('/catalogo'))
+       .finally(() => setLoading(false));
+   }, [id]); // Eliminado selectedColor de dependencias para evitar bucles infinitos
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(price);
@@ -135,7 +172,7 @@ const ProductDetail = () => {
             )}
             {imagenes.length > 0 ? (
               <img
-                src={toImageUrl(imagenes[activeImage])}
+                src={toImageUrl(getImageForColor(imagenes, product.colores, selectedColor))}
                 alt={product.nombre}
                 className="h-64 object-contain transition-opacity duration-200"
               />
