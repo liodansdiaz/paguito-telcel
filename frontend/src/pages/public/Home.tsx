@@ -1,186 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { showError, toast } from '../../utils/notifications';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
-import { toImageUrl } from '../../services/config';
-import { useCarritoStore } from '../../store/carrito.store';
+import { ProductCard, CardSkeleton } from '../../components/product';
+import { confianza, testimonios } from './constants';
 import type { Product } from '../../types';
 
-const formatPrice = (p: number) =>
-  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(p);
-
-const COLOR_MAP: Record<string, string> = {
-  negro: '#1a1a1a', blanco: '#f5f5f5', plata: '#C0C0C0', gris: '#808080',
-  azul: '#2563eb', 'azul oscuro': '#1e3a8a', 'azul claro': '#60a5fa',
-  verde: '#16a34a', 'verde menta': '#6ee7b7', morado: '#7c3aed',
-  rojo: '#dc2626', rosa: '#ec4899', dorado: '#d97706', amarillo: '#eab308',
-  naranja: '#ea580c', titanio: '#a0a098', 'titanio negro': '#3a3a3a',
-  'titanio natural': '#a0a098', beige: '#d4b896', café: '#92400e', cafe: '#92400e',
-};
-const getColorHex = (c: string) => COLOR_MAP[c.toLowerCase()] ?? '#9ca3af';
-
 // ════════════════════════════════════════════════════════════════════════════
-// ICONOS
+// HOME PAGE - Pagina principal
 // ════════════════════════════════════════════════════════════════════════════
-const IconCart = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="9" cy="21" r="1" />
-    <circle cx="20" cy="21" r="1" />
-    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-  </svg>
-);
-
-// ════════════════════════════════════════════════════════════════════════════
-// TARJETA DE PRODUCTO - Diseño único "premium"
-// ════════════════════════════════════════════════════════════════════════════
-const ProductCard = ({ product }: { product: Product }) => {
-  const navigate = useNavigate();
-  const { agregarAlCarrito } = useCarritoStore();
-  const imagen = product.imagenes && product.imagenes.length > 0
-    ? toImageUrl(product.imagenes[0])
-    : null;
-
-  const handleReservar = () => {
-    const tieneColores = product.colores && product.colores.length > 0;
-    const tieneMemorias = product.memorias && product.memorias.length > 0;
-
-    if (tieneColores || tieneMemorias) {
-      navigate(`/producto/${product.id}`);
-      return;
-    }
-
-    try {
-      agregarAlCarrito({
-        productId: product.id,
-        nombre: product.nombre,
-        marca: product.marca,
-        precio: product.precio,
-        imagen: product.imagenes?.[0],
-        tipoPago: 'CONTADO',
-      });
-
-      toast.success(
-        (t) => (
-          <div className="flex items-center gap-3">
-            <span>✅ {product.nombre} agregado al carrito</span>
-            <button
-              onClick={() => {
-                toast.dismiss(t.id);
-                navigate('/carrito');
-              }}
-              className="bg-primary-500 text-white px-3 py-1 rounded text-sm font-medium hover:bg-secondary-600 transition-colors"
-            >
-              Ver carrito
-            </button>
-          </div>
-        ),
-        { duration: 4000 }
-      );
-    } catch (error: any) {
-      showError(error.message || 'Error al agregar al carrito');
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-200">
-      <div className="relative bg-white h-44 flex items-center justify-center group">
-        {product.precioAnterior ? (
-          <span className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg z-10">
-            Oferta
-          </span>
-        ) : product.badge ? (
-          <span className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full z-10">
-            {product.badge}
-          </span>
-        ) : null}
-        {imagen ? <img src={imagen} alt={product.nombre} className="h-36 w-36 object-contain group-hover:scale-105 transition-transform" /> : <span className="text-5xl">📱</span>}
-      </div>
-      <div className="p-3">
-        <h3 className="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 min-h-[2.5rem]">{product.nombre}</h3>
-        
-        <div className="mb-1">
-          <div className="flex items-baseline gap-1.5 flex-wrap">
-            <span className="text-xl font-extrabold text-primary-500">{formatPrice(product.precio)}</span>
-            {product.precioAnterior && <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
-          </div>
-          {product.precioAnterior && (
-            <p className="text-[10px] text-green-600 font-semibold">
-              Ahorra {formatPrice(product.precioAnterior - product.precio)}
-            </p>
-          )}
-        </div>
-
-        {((product.colores && product.colores.length > 0) || (product.memorias && product.memorias.length > 0)) && (
-          <div className="flex items-center gap-2 mb-2">
-            {product.colores && product.colores.length > 0 && (
-              <div className="flex gap-1">
-                {product.colores.slice(0, 4).map((color, idx) => (
-                  <div
-                    key={idx}
-                    className="w-4 h-4 rounded-full border-2 border-gray-300"
-                    style={{ backgroundColor: getColorHex(color) }}
-                    title={color}
-                  />
-                ))}
-                {product.colores.length > 4 && (
-                  <span className="text-[9px] text-gray-400 self-center">+{product.colores.length - 4}</span>
-                )}
-              </div>
-            )}
-            {product.colores && product.colores.length > 0 && product.memorias && product.memorias.length > 0 && (
-              <span className="text-gray-300">•</span>
-            )}
-            {product.memorias && product.memorias.length > 0 && (
-              <span className="text-[10px] text-gray-600 font-medium">
-                {product.memorias.join(' / ')}
-              </span>
-            )}
-          </div>
-        )}
-
-        {product.disponibleCredito && (product.pagoSemanal || product.enganche) && (
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 mb-2">
-            {product.pagoSemanal && (
-              <p className="text-[11px] text-blue-700 font-bold leading-tight">
-                💳 {product.pagoSemanal}
-              </p>
-            )}
-            {product.enganche && (
-              <p className="text-[9px] text-blue-600 leading-tight mt-0.5">
-                {product.enganche}
-              </p>
-            )}
-          </div>
-        )}
-
-        {product.stock > 0 && (
-          <p className="text-[9px] text-green-600 font-semibold mb-2 flex items-center gap-1">
-            <span>✓</span> Disponible
-          </p>
-        )}
-
-        <button onClick={handleReservar} className="w-full bg-primary-500 hover:bg-secondary-600 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 mb-1.5 transition-colors">
-          <IconCart />Reservar
-        </button>
-        <Link to={`/producto/${product.id}`} className="block text-center text-primary-500 text-[10px] font-bold hover:underline">
-          Ver detalles completos
-        </Link>
-      </div>
-    </div>
-  );
-};
-
-// ─── Skeleton de tarjeta ─────────────────────────────────────────────────────
-const CardSkeleton = () => (
-  <div className="bg-white rounded-2xl p-4 animate-pulse shadow-sm border border-gray-100">
-    <div className="bg-gray-200 h-44 rounded-xl mb-4" />
-    <div className="h-3 bg-gray-200 rounded mb-2 w-1/3" />
-    <div className="h-4 bg-gray-200 rounded mb-4 w-3/4" />
-    <div className="h-5 bg-gray-200 rounded w-1/2" />
-  </div>
-);
-
-// ─── Componente principal ─────────────────────────────────────────────────────
 const Home = () => {
   const [populares, setPopulares] = useState<Product[]>([]);
   const [ofertas, setOfertas] = useState<Product[]>([]);
@@ -199,182 +26,50 @@ const Home = () => {
       .finally(() => setLoadingOfertas(false));
   }, []);
 
-  const confianza = [
-    {
-      icon: '🚚',
-      titulo: 'Entrega a domicilio',
-      desc: 'Un vendedor va a tu casa o lugar de trabajo, sin que tengas que moverte.',
-    },
-    {
-      icon: '💳',
-      titulo: 'Crédito semanal',
-      desc: 'Págalo en cómodas cuotas semanales sin necesidad de tarjeta de crédito.',
-    },
-    {
-      icon: '🛡️',
-      titulo: 'Sin aval ni buró',
-      desc: 'Proceso sencillo, sin trámites complicados ni consultas al historial crediticio.',
-    },
-    {
-      icon: '📱',
-      titulo: 'Equipos originales',
-      desc: 'Todos los celulares son originales, nuevos y con garantía Telcel incluida.',
-    },
-  ];
-
-  const testimonios = [
-    {
-      nombre: 'María González',
-      producto: 'Motorola G24',
-      comentario: 'Excelente servicio, el vendedor llegó puntual y muy amable. Me explicó todo sobre el crédito y salí con mi celular el mismo día. Lo recomiendo mucho.',
-    },
-    {
-      nombre: 'Carlos Ramírez',
-      producto: 'Samsung A55',
-      comentario: 'No tenía historial crediticio y pensé que no me iban a dar el crédito. Me sorprendió lo fácil que fue el trámite. Sin aval, sin buró y con pagos cómodos semanales.',
-    },
-    {
-      nombre: 'Laura Méndez',
-      producto: 'Oppo Reno 14',
-      comentario: 'Me gustó mucho que el vendedor fue hasta mi trabajo. No tuve que salir ni perder tiempo. El proceso fue rápido y transparente. Muy buena experiencia.',
-    },
-    {
-      nombre: 'Roberto Fuentes',
-      producto: 'Redmi Note 14',
-      comentario: 'Ya llevo dos celulares con Amigo Paguitos Telcel. El trato es muy bueno, los precios justos y los pagos semanales se ajustan perfecto a mi presupuesto.',
-    },
-    {
-      nombre: 'Ana Soto',
-      producto: 'Redmi A5',
-      comentario: 'Dudé al principio porque era a crédito, pero todo fue muy formal. Me dieron contrato, me explicaron las condiciones y el equipo llegó en perfectas condiciones.',
-    },
-    {
-      nombre: 'Miguel Torres',
-      producto: 'Samsung A16',
-      comentario: 'Lo mejor es que no tienes que ir a ningún lado. Hice la reserva en línea, elegí el horario y listo. El vendedor llegó con el celular y en media hora ya lo tenía configurado.',
-    },
-  ];
-
   return (
-    <div>
-
-      {/* ── 1. HERO MEJORADO ─────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-secondary-500 via-primary-500 to-secondary-500">
-        
-        {/* ═══ Pattern Geométrico Abstracto ═══ */}
-        <svg className="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="geometric-pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-              {/* Hexágonos */}
-              <path 
-                d="M25 10 L40 19 L40 35 L25 44 L10 35 L10 19 Z" 
-                fill="none" 
-                stroke="white" 
-                strokeWidth="1" 
-                opacity="0.3"
-              />
-              {/* Círculos */}
-              <circle cx="75" cy="25" r="15" fill="white" opacity="0.1"/>
-              <circle cx="15" cy="75" r="10" fill="white" opacity="0.15"/>
-              {/* Diamantes */}
-              <path 
-                d="M60 70 L75 60 L90 70 L75 80 Z" 
-                fill="white" 
-                opacity="0.15"
-              />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#geometric-pattern)" />
-        </svg>
-        
-        {/* ═══ Dots Pattern ═══ */}
-        <div 
-          className="absolute inset-0 opacity-[0.08]"
-          style={{
-            backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
-            backgroundSize: '24px 24px'
-          }}
-        />
-        
-        {/* ═══ Formas Flotantes con Blur ═══ */}
-        <div className="absolute top-20 right-10 w-64 h-64 bg-accent-500 rounded-full opacity-10 blur-3xl animate-float-slow" />
-        <div className="absolute bottom-20 left-10 w-96 h-96 bg-white rounded-full opacity-5 blur-3xl animate-float-slower" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-primary-500 rounded-full opacity-15 blur-2xl animate-float" />
-        
-        {/* ═══ Contenido Principal ═══ */}
-        <div className="relative z-10 text-white py-20 px-4">
-          <div className="max-w-4xl mx-auto text-center animate-fade-in-up">
-            
-            <span className="bg-accent-500 text-secondary-500 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-6 inline-block">
-              Servicio a domicilio
-            </span>
-            
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
-              Tu próximo celular,<br />
-              <span className="text-accent-500">en la puerta de tu casa</span>
-            </h1>
-            
-            <p className="text-blue-100 text-lg mb-4 max-w-2xl mx-auto">
-              Elige tu celular favorito, agenda una visita y un vendedor te lo lleva.
-              Sin filas, sin esperas.
-            </p>
-            
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-xl px-5 py-3 mb-10">
-              <span className="text-accent-500 text-xl">✓</span>
-              <span className="text-white text-sm font-medium">
-                Disponible a crédito o al contado · Sin aval · Sin buró
-              </span>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/catalogo"
-                className="bg-accent-500 text-secondary-500 px-8 py-4 rounded-xl font-bold text-lg hover:bg-green-400 transition-all shadow-lg"
-              >
-                Ver catálogo
-              </Link>
-            </div>
-            
+    <div className="min-h-screen">
+      {/* ── HERO SECTION ───────────────────────────────────────────────────── */}
+      <section className="bg-gradient-to-br from-secondary-500 to-primary-500 text-white py-16 px-4">
+        <div className="max-w-5xl mx-auto text-center">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold mb-4 leading-tight">
+            Tu próximo celular a la puerta de tu casa
+          </h1>
+          <p className="text-lg sm:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            Resérvalo ahora, un vendedor te visita en tu domicilio y lo tienes el mismo día. 
+            Crédito fácil sin buró.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to="/catalogo"
+              className="bg-accent-500 text-secondary-500 px-8 py-3 rounded-xl font-bold text-sm hover:bg-accent-400 transition-colors shadow-lg"
+            >
+              Ver catálogo
+            </Link>
+            <Link
+              to="/mi-reserva"
+              className="bg-white/10 backdrop-blur text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-white/20 transition-colors"
+            >
+              Consultar mi reserva
+            </Link>
           </div>
         </div>
-        
-        {/* ═══ Wave Divisor al Final ═══ */}
-        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
-          <svg 
-            className="relative block w-full h-16" 
-            xmlns="http://www.w3.org/2000/svg" 
-            viewBox="0 0 1440 120"
-            preserveAspectRatio="none"
-          >
-            <path 
-              fill="white" 
-              d="M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,864,58.7C960,64,1056,64,1152,58.7C1248,53,1344,43,1392,37.3L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"
-            />
-          </svg>
-        </div>
-        
       </section>
 
-      {/* ── 2. CÓMO FUNCIONA ─────────────────────────────────────────────────── */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-1">Fácil y rápido</p>
+      {/* ── CÓMO FUNCIONA ───────────────────────────────────────────────────── */}
+      <section className="py-14 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-1">Proceso simple</p>
             <h2 className="text-2xl font-bold text-gray-900">¿Cómo funciona?</h2>
-            <p className="text-gray-500 text-sm mt-2 max-w-xl mx-auto">
-              En 4 sencillos pasos puedes tener tu celular nuevo sin salir de tu casa
-            </p>
           </div>
 
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-0">
-
+          <div className="flex flex-col md:flex-row items-start justify-center gap-8 md:gap-4">
             {/* Paso 1 */}
             <div className="flex-1 flex flex-col items-center text-center px-4">
               <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 relative">
                 <span className="absolute -top-2 -right-2 bg-accent-500 text-secondary-500 text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">1</span>
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <rect x="5" y="2" width="14" height="20" rx="2" />
-                  <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth={2.5} strokeLinecap="round" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M7 14h10m-3 4h4" />
                 </svg>
               </div>
               <h3 className="font-semibold text-gray-900 mb-1">Elige tu celular</h3>
@@ -422,7 +117,6 @@ const Home = () => {
               <h3 className="font-semibold text-gray-900 mb-1">¡Listo, es tuyo!</h3>
               <p className="text-gray-500 text-sm leading-relaxed">Firma el contrato y lleva tu celular ese mismo día, sin filas ni esperas</p>
             </div>
-
           </div>
 
           <div className="text-center mt-10">
@@ -430,19 +124,19 @@ const Home = () => {
               to="/catalogo"
               className="inline-block bg-primary-500 text-white px-8 py-3 rounded-xl font-semibold text-sm hover:bg-primary-600 transition-all shadow-md"
             >
-              Comenzar ahora →
+              Ver celulares disponibles
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ── 3. MÁS POPULARES ─────────────────────────────────────────────────── */}
-      <section className="py-14 px-4 bg-gradient-to-b from-white to-blue-50">
+      {/* ── 3. POPULARES ───────────────────────────────────────────────────── */}
+      <section className="py-14 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-end justify-between mb-8">
             <div>
-              <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-1">Lo que más se vende</p>
-              <h2 className="text-2xl font-bold text-gray-900">Los más populares</h2>
+              <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-1">Los más pedidos</p>
+              <h2 className="text-2xl font-bold text-gray-900">Celulares populares</h2>
             </div>
             <Link
               to="/catalogo"
@@ -474,7 +168,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ── 4. OFERTAS ───────────────────────────────────────────────────────── */}
+      {/* ── 4. OFERTAS ───────────────────────────────────────────────────── */}
       {(loadingOfertas || ofertas.length > 0) && (
         <section className="py-14 px-4 bg-gradient-to-b from-blue-50 to-white">
           <div className="max-w-6xl mx-auto">
@@ -527,54 +221,43 @@ const Home = () => {
       <section className="py-16 px-4 bg-gradient-to-b from-blue-50 to-white">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-1">Lo que dicen nuestros clientes</p>
-            <h2 className="text-2xl font-bold text-gray-900">Clientes satisfechos</h2>
+            <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-1">Comentarios de clientes</p>
+            <h2 className="text-2xl font-bold text-gray-900">Lo que dicen nuestros clientes</h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {testimonios.map((t) => (
-              <div key={t.nombre} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                {/* Estrellas */}
-                <div className="flex gap-0.5 mb-4">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <svg key={i} xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                {/* Comentario */}
-                <p className="text-gray-600 text-sm leading-relaxed flex-1 mb-4">"{t.comentario}"</p>
-                {/* Cliente */}
-                <div className="flex items-center gap-3 pt-4 border-t border-gray-50">
-                  <div className="w-9 h-9 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+              <div key={t.nombre} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold">
                     {t.nombre.split(' ').map((n) => n[0]).slice(0, 2).join('')}
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">{t.nombre}</p>
-                    <p className="text-gray-400 text-xs">{t.producto}</p>
+                    <p className="text-xs text-primary-500">{t.producto}</p>
                   </div>
                 </div>
+                <p className="text-gray-600 text-sm leading-relaxed">"{t.comentario}"</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── CTA FINAL ────────────────────────────────────────────────────────── */}
+      {/* ── CTA FINAL ───────────────────────────────────────────────────── */}
       <section className="bg-gradient-to-r from-secondary-500 to-primary-500 text-white py-16 px-4">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-3">¿Listo para estrenar celular?</h2>
-          <p className="text-blue-200 mb-8">
-            Explora nuestro catálogo, elige el tuyo y agenda la visita en minutos.
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4">¿Listo para tu nuevo celular?</h2>
+          <p className="text-blue-100 mb-8">
+            Encuentra el perfecto para ti. Reserva ahora y un vendedor te visitará en tu domicilio.
           </p>
           <Link
             to="/catalogo"
-            className="bg-accent-500 text-secondary-500 px-10 py-4 rounded-xl font-bold text-lg hover:bg-green-400 transition-all inline-block shadow-lg"
+            className="inline-block bg-accent-500 text-secondary-500 px-8 py-3 rounded-xl font-bold text-sm hover:bg-accent-400 transition-all shadow-lg"
           >
-            Explorar celulares
+            Ver catálogo de celulares
           </Link>
         </div>
       </section>
-
     </div>
   );
 };
