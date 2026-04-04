@@ -19,14 +19,9 @@ const COLOR_MAP: Record<string, string> = {
 };
 const getColorHex = (c: string) => COLOR_MAP[c.toLowerCase()] ?? '#9ca3af';
 
-// ─── Íconos ──────────────────────────────────────────────────────────────────
-const IconEye = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
-
+// ════════════════════════════════════════════════════════════════════════════
+// ICONOS
+// ════════════════════════════════════════════════════════════════════════════
 const IconCart = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <circle cx="9" cy="21" r="1" />
@@ -35,32 +30,25 @@ const IconCart = () => (
   </svg>
 );
 
-type CardVariant = 'original' | 'compact' | 'premium' | 'minimal' | 'horizontal' | 'hybrid';
-
-// ─── Tarjeta de producto reutilizable ────────────────────────────────────────
-const ProductCard = ({ product, variant = 'original' }: { product: Product; variant?: CardVariant }) => {
+// ════════════════════════════════════════════════════════════════════════════
+// TARJETA DE PRODUCTO - Diseño único "premium"
+// ════════════════════════════════════════════════════════════════════════════
+const ProductCard = ({ product }: { product: Product }) => {
   const navigate = useNavigate();
   const { agregarAlCarrito } = useCarritoStore();
   const imagen = product.imagenes && product.imagenes.length > 0
     ? toImageUrl(product.imagenes[0])
     : null;
 
-  /**
-   * Función inteligente de reserva:
-   * - Si el producto tiene opciones (color/memoria) → redirige a ProductDetail
-   * - Si no tiene opciones → agrega directo al carrito
-   */
   const handleReservar = () => {
     const tieneColores = product.colores && product.colores.length > 0;
     const tieneMemorias = product.memorias && product.memorias.length > 0;
 
-    // Si tiene opciones, redirigir a detalle para que el usuario seleccione
     if (tieneColores || tieneMemorias) {
       navigate(`/producto/${product.id}`);
       return;
     }
 
-    // Agregar al carrito directamente
     try {
       agregarAlCarrito({
         productId: product.id,
@@ -68,7 +56,7 @@ const ProductCard = ({ product, variant = 'original' }: { product: Product; vari
         marca: product.marca,
         precio: product.precio,
         imagen: product.imagenes?.[0],
-        tipoPago: 'CONTADO', // Default, el usuario puede cambiarlo en el carrito
+        tipoPago: 'CONTADO',
       });
 
       toast.success(
@@ -93,259 +81,90 @@ const ProductCard = ({ product, variant = 'original' }: { product: Product; vari
     }
   };
 
-  // Helpers para parsear pagos
-  const parsePagos = (text: string) => {
-    const engancheMatch = text.match(/Enganche:\s*([^P]+)/);
-    const pagosMatch = text.match(/Pagos semanales:\s*(.+)/);
-    return { enganche: engancheMatch?.[1]?.trim(), pagos: pagosMatch?.[1]?.trim() };
-  };
-
-  // VARIANT 1: ORIGINAL (diseño actual)
-  if (variant === 'original') {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100 flex flex-col">
-        <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 h-44 flex items-center justify-center">
-          {imagen ? <img src={imagen} alt={product.nombre} className="h-36 w-36 object-contain" /> : <span className="text-5xl">📱</span>}
-        </div>
-        <div className="p-4 flex flex-col flex-1">
-          <p className="text-xs text-gray-400 font-medium mb-0.5">{product.marca}</p>
-          <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-2">{product.nombre}</h3>
-          <span className="text-lg font-bold text-secondary-500 mb-3">{formatPrice(product.precio)}</span>
-          <div className="flex gap-2 mt-auto">
-            <button onClick={handleReservar} className="flex-1 bg-accent-500 text-secondary-500 py-2.5 px-2 rounded-xl text-xs font-bold">Reservar</button>
-            <Link to={`/producto/${product.id}`} className="flex-1 border border-[primary-500] text-primary-500 py-2.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"><IconEye />Detalles</Link>
-          </div>
-        </div>
+  return (
+    <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-200">
+      <div className="relative bg-white h-44 flex items-center justify-center group">
+        {product.precioAnterior ? (
+          <span className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg z-10">
+            Oferta
+          </span>
+        ) : product.badge ? (
+          <span className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full z-10">
+            {product.badge}
+          </span>
+        ) : null}
+        {imagen ? <img src={imagen} alt={product.nombre} className="h-36 w-36 object-contain group-hover:scale-105 transition-transform" /> : <span className="text-5xl">📱</span>}
       </div>
-    );
-  }
-
-  // VARIANT 2: COMPACT (compacto y moderno)
-  if (variant === 'compact') {
-    const { enganche } = parsePagos(String(product.pagosSemanales || ''));
-    return (
-      <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100">
-        <div className="relative bg-gray-50 h-36 flex items-center justify-center">
-          {product.precioAnterior && <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">PROMO</span>}
-          {imagen ? <img src={imagen} alt={product.nombre} className="h-28 w-28 object-contain" /> : <span className="text-4xl">📱</span>}
-        </div>
-        <div className="p-3">
-          <p className="text-[9px] text-gray-400 uppercase tracking-wide">{product.marca} | {product.sku}</p>
-          <h3 className="font-bold text-gray-900 text-xs mb-2 line-clamp-1">{product.nombre}</h3>
-          {product.colores && product.colores.length > 0 && (
-            <div className="flex gap-1.5 mb-2 items-center">
-              {product.colores.slice(0, 3).map((c, i) => <div key={i} className="w-5 h-5 rounded-full border-2 border-gray-300" style={{ backgroundColor: getColorHex(c) }} />)}
-              {product.memorias && <span className="text-[9px] text-gray-500 ml-1">{product.memorias[0]}</span>}
-            </div>
+      <div className="p-3">
+        <h3 className="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 min-h-[2.5rem]">{product.nombre}</h3>
+        
+        <div className="mb-1">
+          <div className="flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-xl font-extrabold text-primary-500">{formatPrice(product.precio)}</span>
+            {product.precioAnterior && <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
+          </div>
+          {product.precioAnterior && (
+            <p className="text-[10px] text-green-600 font-semibold">
+              Ahorra {formatPrice(product.precioAnterior - product.precio)}
+            </p>
           )}
-          <div className="mb-2">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-bold text-primary-500">{formatPrice(product.precio)}</span>
-              {product.precioAnterior && <span className="text-[10px] text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
-            </div>
-            {enganche && <p className="text-[9px] text-gray-500">💵 Contado • 📊 Desde {enganche} enganche</p>}
-          </div>
-          <div className="grid grid-cols-2 gap-1.5">
-            <button onClick={handleReservar} className="bg-primary-500 text-white py-2 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1"><IconCart />Reservar</button>
-            <Link to={`/producto/${product.id}`} className="border border-gray-300 text-gray-700 py-2 rounded-lg text-[10px] font-medium flex items-center justify-center gap-1"><IconEye />Ver</Link>
-          </div>
         </div>
-      </div>
-    );
-  }
 
-  // VARIANT 3: PREMIUM (tipo Amazon) - Diseño principal
-  if (variant === 'premium') {
-    return (
-      <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-200">
-        <div className="relative bg-white h-44 flex items-center justify-center group">
-          {product.precioAnterior ? (
-            <span className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg z-10">
-              Oferta
-            </span>
-          ) : product.badge ? (
-            <span className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full z-10">
-              {product.badge}
-            </span>
-          ) : null}
-          {imagen ? <img src={imagen} alt={product.nombre} className="h-36 w-36 object-contain group-hover:scale-105 transition-transform" /> : <span className="text-5xl">📱</span>}
-        </div>
-        <div className="p-3">
-          <h3 className="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 min-h-[2.5rem]">{product.nombre}</h3>
-          
-          {/* Precio */}
-          <div className="mb-1">
-            <div className="flex items-baseline gap-1.5 flex-wrap">
-              <span className="text-xl font-extrabold text-primary-500">{formatPrice(product.precio)}</span>
-              {product.precioAnterior && <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
-            </div>
-            {/* Ahorro calculado */}
-            {product.precioAnterior && (
-              <p className="text-[10px] text-green-600 font-semibold">
-                Ahorra {formatPrice(product.precioAnterior - product.precio)}
+        {((product.colores && product.colores.length > 0) || (product.memorias && product.memorias.length > 0)) && (
+          <div className="flex items-center gap-2 mb-2">
+            {product.colores && product.colores.length > 0 && (
+              <div className="flex gap-1">
+                {product.colores.slice(0, 4).map((color, idx) => (
+                  <div
+                    key={idx}
+                    className="w-4 h-4 rounded-full border-2 border-gray-300"
+                    style={{ backgroundColor: getColorHex(color) }}
+                    title={color}
+                  />
+                ))}
+                {product.colores.length > 4 && (
+                  <span className="text-[9px] text-gray-400 self-center">+{product.colores.length - 4}</span>
+                )}
+              </div>
+            )}
+            {product.colores && product.colores.length > 0 && product.memorias && product.memorias.length > 0 && (
+              <span className="text-gray-300">•</span>
+            )}
+            {product.memorias && product.memorias.length > 0 && (
+              <span className="text-[10px] text-gray-600 font-medium">
+                {product.memorias.join(' / ')}
+              </span>
+            )}
+          </div>
+        )}
+
+        {product.disponibleCredito && (product.pagoSemanal || product.enganche) && (
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 mb-2">
+            {product.pagoSemanal && (
+              <p className="text-[11px] text-blue-700 font-bold leading-tight">
+                💳 {product.pagoSemanal}
+              </p>
+            )}
+            {product.enganche && (
+              <p className="text-[9px] text-blue-600 leading-tight mt-0.5">
+                {product.enganche}
               </p>
             )}
           </div>
-
-          {/* Colores + Almacenamiento */}
-          {((product.colores && product.colores.length > 0) || (product.memorias && product.memorias.length > 0)) && (
-            <div className="flex items-center gap-2 mb-2">
-              {/* Colores */}
-              {product.colores && product.colores.length > 0 && (
-                <div className="flex gap-1">
-                  {product.colores.slice(0, 4).map((color, idx) => (
-                    <div
-                      key={idx}
-                      className="w-4 h-4 rounded-full border-2 border-gray-300"
-                      style={{ backgroundColor: getColorHex(color) }}
-                      title={color}
-                    />
-                  ))}
-                  {product.colores.length > 4 && (
-                    <span className="text-[9px] text-gray-400 self-center">+{product.colores.length - 4}</span>
-                  )}
-                </div>
-              )}
-              {/* Separador */}
-              {product.colores && product.colores.length > 0 && product.memorias && product.memorias.length > 0 && (
-                <span className="text-gray-300">•</span>
-              )}
-              {/* Almacenamiento */}
-              {product.memorias && product.memorias.length > 0 && (
-                <span className="text-[10px] text-gray-600 font-medium">
-                  {product.memorias.join(' / ')}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Información de crédito mejorada */}
-          {product.disponibleCredito && (product.pagoSemanal || product.enganche) && (
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 mb-2">
-              {product.pagoSemanal && (
-                <p className="text-[11px] text-blue-700 font-bold leading-tight">
-                  💳 {product.pagoSemanal}
-                </p>
-              )}
-              {product.enganche && (
-                <p className="text-[9px] text-blue-600 leading-tight mt-0.5">
-                  {product.enganche}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Disponibilidad */}
-          {product.stock > 0 && (
-            <p className="text-[9px] text-green-600 font-semibold mb-2 flex items-center gap-1">
-              <span>✓</span> Disponible - Entrega inmediata
-            </p>
-          )}
-
-          {/* Botones de acción */}
-          <button onClick={handleReservar} className="w-full bg-primary-500 hover:bg-secondary-600 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 mb-1.5 transition-colors">
-            <IconCart />Reservar
-          </button>
-          <Link to={`/producto/${product.id}`} className="block text-center text-primary-500 text-[10px] font-bold hover:underline">
-            Ver detalles completos
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // VARIANT 4: MINIMAL (minimalista escandinavo)
-  if (variant === 'minimal') {
-    return (
-      <div className="bg-white rounded-3xl shadow-sm hover:shadow-lg transition-all overflow-hidden border border-gray-50">
-        <div className="bg-gray-50 h-52 flex items-center justify-center p-6">
-          {imagen ? <img src={imagen} alt={product.nombre} className="h-full w-full object-contain" /> : <span className="text-6xl">📱</span>}
-        </div>
-        <div className="p-6 text-center">
-          <h3 className="font-bold text-gray-900 text-base mb-2">{product.nombre}</h3>
-          <p className="text-3xl font-bold text-gray-900 mb-3">{formatPrice(product.precio)}</p>
-          {product.colores && product.colores.length > 0 && (
-            <div className="flex gap-2 justify-center mb-3">
-              {product.colores.slice(0, 4).map((c, i) => <div key={i} className="w-7 h-7 rounded-full border border-gray-200" style={{ backgroundColor: getColorHex(c) }} />)}
-            </div>
-          )}
-          {product.disponibleCredito && <span className="inline-block bg-gray-100 text-gray-700 text-[10px] font-medium px-3 py-1 rounded-full mb-4">📊 A crédito disponible</span>}
-          <div className="flex gap-3">
-            <button onClick={handleReservar} className="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-2xl text-sm font-medium">Agregar</button>
-            <Link to={`/producto/${product.id}`} className="flex-1 border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white py-3 rounded-2xl text-sm font-medium flex items-center justify-center transition-colors">Detalles</Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // VARIANT 5: HORIZONTAL (lista horizontal)
-  if (variant === 'horizontal') {
-    return (
-      <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-100 flex overflow-hidden h-36">
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 w-36 flex-shrink-0 flex items-center justify-center">
-          {imagen ? <img src={imagen} alt={product.nombre} className="h-28 w-28 object-contain drop-shadow-md" /> : <span className="text-5xl">📱</span>}
-        </div>
-        <div className="flex-1 p-4 flex flex-col justify-between">
-          <div>
-            <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">{product.marca} | {product.sku}</p>
-            <h3 className="font-bold text-gray-900 text-base line-clamp-2 mb-2 leading-tight">{product.nombre}</h3>
-          </div>
-          <div className="flex items-center gap-3">
-            {product.colores && product.colores.length > 0 && (
-              <div className="flex gap-1.5">
-                {product.colores.slice(0, 4).map((c, i) => <div key={i} className="w-5 h-5 rounded-full border-2 border-gray-300" style={{ backgroundColor: getColorHex(c) }} />)}
-              </div>
-            )}
-            {product.memorias && product.memorias.length > 0 && <span className="text-xs text-gray-600">{product.memorias[0]}</span>}
-            <span className="text-xs text-green-600 font-medium">{product.stock > 0 ? '✓ Disponible' : '✗ Sin stock'}</span>
-          </div>
-        </div>
-        <div className="w-48 flex-shrink-0 p-4 flex flex-col justify-between items-end border-l border-gray-100 bg-gray-50">
-          <div className="text-right">
-            <div className="flex items-baseline gap-2 justify-end">
-              <span className="text-2xl font-extrabold text-primary-500">{formatPrice(product.precio)}</span>
-              {product.precioAnterior && <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
-            </div>
-            {product.disponibleCredito && <p className="text-[10px] text-gray-600 mt-1">💳 Desde ${product.pagosSemanales?.toString().match(/\$?\d+/)?.[0] || '350'} enganche</p>}
-          </div>
-          <div className="flex gap-2 w-full">
-            <button onClick={handleReservar} className="flex-1 bg-primary-500 text-white py-2.5 rounded-lg hover:bg-secondary-600 flex items-center justify-center gap-1.5 text-xs font-bold transition-colors"><IconCart />Reservar</button>
-            <Link to={`/producto/${product.id}`} className="border-2 border-gray-300 text-gray-700 p-2.5 rounded-lg hover:bg-gray-100 transition-colors"><IconEye /></Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // VARIANT 6: HYBRID (recomendada)
-  return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all overflow-hidden border border-gray-100">
-      <div className="relative bg-gradient-to-br from-blue-50 to-gray-50 h-44 flex items-center justify-center">
-        {product.precioAnterior && <span className="absolute top-2 left-2 bg-gradient-to-r from-red-500 to-orange-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">-{Math.round((1 - product.precio / product.precioAnterior) * 100)}%</span>}
-        {imagen ? <img src={imagen} alt={product.nombre} className="h-36 w-36 object-contain drop-shadow-lg" /> : <span className="text-5xl">📱</span>}
-      </div>
-      <div className="p-4">
-        <p className="text-[9px] text-gray-400 uppercase tracking-wider mb-1">{product.marca} | {product.sku}</p>
-        <h3 className="font-bold text-gray-900 text-sm mb-3 line-clamp-2 leading-tight">{product.nombre}</h3>
-        {product.colores && product.colores.length > 0 && product.memorias && product.memorias.length > 0 && (
-          <div className="flex items-center gap-2 mb-3 text-[10px] text-gray-600">
-            <div className="flex gap-1">{product.colores.slice(0, 3).map((c, i) => <div key={i} className="w-5 h-5 rounded-full border-2 border-gray-300" style={{ backgroundColor: getColorHex(c) }} />)}</div>
-            <span>•</span>
-            <span>{product.memorias[0]}</span>
-          </div>
         )}
-        <div className="mb-3">
-          <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-2xl font-extrabold text-primary-500">{formatPrice(product.precio)}</span>
-            {product.precioAnterior && <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
-          </div>
-          {product.disponibleCredito && <p className="text-[10px] text-gray-600">💳 Desde <span className="font-semibold">${product.pagosSemanales?.toString().match(/\$?\d+/)?.[0] || '350'}</span> enganche</p>}
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={handleReservar} className="bg-primary-500 hover:bg-secondary-600 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"><IconCart />Reservar</button>
-          <Link to={`/producto/${product.id}`} className="border-2 border-[primary-500] text-primary-500 hover:bg-blue-50 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"><IconEye />Detalles</Link>
-        </div>
+
+        {product.stock > 0 && (
+          <p className="text-[9px] text-green-600 font-semibold mb-2 flex items-center gap-1">
+            <span>✓</span> Disponible
+          </p>
+        )}
+
+        <button onClick={handleReservar} className="w-full bg-primary-500 hover:bg-secondary-600 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 mb-1.5 transition-colors">
+          <IconCart />Reservar
+        </button>
+        <Link to={`/producto/${product.id}`} className="block text-center text-primary-500 text-[10px] font-bold hover:underline">
+          Ver detalles completos
+        </Link>
       </div>
     </div>
   );
@@ -637,7 +456,7 @@ const Home = () => {
             {loadingPopulares
               ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
               : populares.length > 0
-                ? populares.map((p) => <ProductCard key={p.id} product={p} variant="premium" />)
+                ? populares.map((p) => <ProductCard key={p.id} product={p} />)
                 : (
                   <div className="col-span-6 text-center py-10 text-gray-400">
                     <p className="text-4xl mb-3">📱</p>
@@ -675,7 +494,7 @@ const Home = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {loadingOfertas
                 ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
-                : ofertas.map((p) => <ProductCard key={p.id} product={p} variant="premium" />)
+                : ofertas.map((p) => <ProductCard key={p.id} product={p} />)
               }
             </div>
           </div>
