@@ -4,7 +4,7 @@ import type { AuthState } from '../types';
 import { setTokens, clearTokens, getRefreshToken } from '../services/api';
 
 interface AuthStore extends AuthState {
-  login: (user: AuthState['user'], accessToken: string, refreshToken: string) => void;
+  login: (user: AuthState['user'], accessToken: string, refreshToken: string | null) => void;
   logout: () => void;
   updateToken: (accessToken: string) => void;
 }

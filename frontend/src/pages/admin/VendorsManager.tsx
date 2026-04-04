@@ -330,7 +330,7 @@ const VendorsManager = () => {
                   <tr key={v.id} className={`hover:bg-gray-50 transition-colors ${!v.isActive ? 'opacity-50' : ''}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${v.isActive ? 'bg-[#0f49bd]' : 'bg-gray-300'}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${v.isActive ? 'bg-primary-500' : 'bg-gray-300'}`}>
                           {v.nombre.split(' ').map((n) => n[0]).slice(0, 2).join('')}
                         </div>
                         <span className="font-medium text-gray-900">{v.nombre}</span>
@@ -347,7 +347,7 @@ const VendorsManager = () => {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => openReservationsModal(v)}
-                        className="text-[#0f49bd] hover:text-blue-800 hover:underline font-medium transition-colors"
+                        className="text-primary-500 hover:text-blue-800 hover:underline font-medium transition-colors"
                       >
                         {v._count?.reservations ?? 0}
                       </button>
@@ -426,7 +426,7 @@ const VendorsManager = () => {
                 <button type="button" onClick={closeModal} className="flex-1 border border-gray-300 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50">
                   Cancelar
                 </button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 bg-[#0f49bd] text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-blue-700">
+                <button type="submit" disabled={isSubmitting} className="flex-1 bg-primary-500 text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-primary-600">
                   {isSubmitting ? 'Guardando...' : editingVendor ? 'Guardar cambios' : 'Crear vendedor'}
                 </button>
               </div>

@@ -72,10 +72,17 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      if (refreshToken) {
+      // En producción: la cookie de refresh token se envía automáticamente
+      // En desarrollo: necesitamos el token de memoria
+      const isProduction = import.meta.env.PROD;
+      const hasRefreshToken = !!refreshToken;
+
+      if (hasRefreshToken || isProduction) {
         try {
-          const refreshUrl = import.meta.env.PROD ? `${PROD_API}/auth/refresh` : '/api/auth/refresh';
-          const { data } = await axios.post(refreshUrl, { refreshToken }, { withCredentials: true });
+          const refreshUrl = isProduction ? `${PROD_API}/auth/refresh` : '/api/auth/refresh';
+          // En producción, la cookie se envía automáticamente; en desarrollo, enviar el token en el body
+          const payload = isProduction ? {} : { refreshToken };
+          const { data } = await axios.post(refreshUrl, payload, { withCredentials: true });
           const newToken = data.data.accessToken;
           accessToken = newToken;
           notifyListeners();
@@ -85,13 +92,15 @@ api.interceptors.response.use(
           return api(originalRequest);
         } catch {
           try {
-            const logoutUrl = import.meta.env.PROD ? `${PROD_API}/auth/logout` : '/api/auth/logout';
-            await axios.post(logoutUrl, { refreshToken }, { withCredentials: true });
+            const logoutUrl = isProduction ? `${PROD_API}/auth/logout` : '/api/auth/logout';
+            await axios.post(logoutUrl, { withCredentials: true });
           } catch {}
           clearTokens();
           window.location.href = '/login';
         }
       } else {
+        // No hay refresh token y estamos en desarrollo - redirigir directamente
+        clearTokens();
         window.location.href = '/login';
       }
     }

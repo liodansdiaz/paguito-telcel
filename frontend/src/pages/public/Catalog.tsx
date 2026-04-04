@@ -52,7 +52,7 @@ const FilterSection = ({ title, children, defaultOpen = true }: {
   return (
     <div className="border-b border-gray-100 pb-4 mb-4 last:border-0 last:mb-0 last:pb-0">
       <button
-        className="flex items-center justify-between w-full text-sm font-semibold text-gray-800 mb-3 hover:text-[#0f49bd] transition-colors"
+        className="flex items-center justify-between w-full text-sm font-semibold text-gray-800 mb-3 hover:text-primary-500 transition-colors"
         onClick={() => setOpen(!open)}
       >
         {title}
@@ -128,11 +128,11 @@ const SidebarContent = ({
           placeholder="Buscar equipo..."
           value={searchInput}
           onChange={(e) => onSearchInputChange(e.target.value)}
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f49bd]"
+          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
         <button
           type="submit"
-          className="bg-[#0f49bd] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[#002f87] transition-colors"
+          className="bg-primary-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-secondary-600 transition-colors"
         >
           Ir
         </button>
@@ -148,9 +148,9 @@ const SidebarContent = ({
               type="checkbox"
               checked={selectedMarcas.includes(m)}
               onChange={() => onToggleMarca(m)}
-              className="w-4 h-4 accent-[#0f49bd] rounded cursor-pointer"
+              className="w-4 h-4 accent-[primary-500] rounded cursor-pointer"
             />
-            <span className="text-sm text-gray-700 group-hover:text-[#0f49bd] transition-colors">{m}</span>
+            <span className="text-sm text-gray-700 group-hover:text-primary-500 transition-colors">{m}</span>
           </label>
         ))}
       </div>
@@ -166,13 +166,13 @@ const SidebarContent = ({
               name="precio"
               checked={selectedPriceRange === idx}
               onChange={() => onPriceRange(idx)}
-              className="w-4 h-4 accent-[#0f49bd] cursor-pointer"
+              className="w-4 h-4 accent-[primary-500] cursor-pointer"
             />
-            <span className="text-sm text-gray-700 group-hover:text-[#0f49bd] transition-colors">{r.label}</span>
+            <span className="text-sm text-gray-700 group-hover:text-primary-500 transition-colors">{r.label}</span>
           </label>
         ))}
         {selectedPriceRange !== null && (
-          <button onClick={onClearPriceRange} className="text-xs text-[#0f49bd] hover:underline ml-6">
+          <button onClick={onClearPriceRange} className="text-xs text-primary-500 hover:underline ml-6">
             Limpiar
           </button>
         )}
@@ -185,7 +185,7 @@ const SidebarContent = ({
           value={precioMinInput}
           onChange={(e) => onPrecioMinInputChange(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onApplyPrecioPersonalizado()}
-          className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#0f49bd]"
+          className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
         />
         <span className="text-gray-400 text-xs flex-shrink-0">–</span>
         <input
@@ -194,7 +194,7 @@ const SidebarContent = ({
           value={precioMaxInput}
           onChange={(e) => onPrecioMaxInputChange(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onApplyPrecioPersonalizado()}
-          className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#0f49bd]"
+          className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
         />
         <button
           onClick={onApplyPrecioPersonalizado}
@@ -219,7 +219,7 @@ const SidebarContent = ({
                 onClick={() => onColorChange(c)}
                 className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 ${
                   active
-                    ? 'border-[#0f49bd] scale-110 ring-2 ring-blue-300'
+                    ? 'border-primary-500 scale-110 ring-2 ring-blue-300'
                     : 'border-gray-300'
                 }`}
                 style={{ backgroundColor: hex }}
@@ -230,7 +230,7 @@ const SidebarContent = ({
         {selectedColor && (
           <button
             onClick={() => onColorChange(selectedColor)}
-            className="text-xs text-[#0f49bd] hover:underline mt-2 block"
+            className="text-xs text-primary-500 hover:underline mt-2 block"
           >
             Limpiar color
           </button>
@@ -249,13 +249,13 @@ const SidebarContent = ({
                 name="memoria"
                 checked={selectedMemoria === m}
                 onChange={() => onMemoriaChange(m)}
-              className="w-4 h-4 accent-[#0f49bd] cursor-pointer"
+              className="w-4 h-4 accent-[primary-500] cursor-pointer"
             />
-            <span className="text-sm text-gray-700 group-hover:text-[#0f49bd] transition-colors">{m}</span>
+            <span className="text-sm text-gray-700 group-hover:text-primary-500 transition-colors">{m}</span>
           </label>
         ))}
         {selectedMemoria && (
-          <button onClick={() => onMemoriaChange(selectedMemoria)} className="text-xs text-[#0f49bd] hover:underline ml-6">
+          <button onClick={() => onMemoriaChange(selectedMemoria)} className="text-xs text-primary-500 hover:underline ml-6">
               Limpiar
             </button>
           )}
@@ -341,7 +341,7 @@ const Catalog = () => {
                 toast.dismiss(t.id);
                 navigate('/carrito');
               }}
-              className="bg-[#0f49bd] text-white px-3 py-1 rounded text-sm font-medium hover:bg-[#002f87] transition-colors"
+              className="bg-primary-500 text-white px-3 py-1 rounded text-sm font-medium hover:bg-secondary-600 transition-colors"
             >
               Ver carrito
             </button>
@@ -541,7 +541,7 @@ const Catalog = () => {
             <IconFilter />
             Filtros
             {activeFiltersCount > 0 && (
-              <span className="bg-[#0f49bd] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+              <span className="bg-primary-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
                 {activeFiltersCount}
               </span>
             )}
@@ -549,42 +549,42 @@ const Catalog = () => {
 
           {/* Chips de filtros activos */}
           {selectedMarcas.map(m => (
-            <span key={m} className="inline-flex items-center gap-1 bg-blue-50 text-[#0f49bd] text-xs px-2.5 py-1 rounded-full border border-blue-100">
+            <span key={m} className="inline-flex items-center gap-1 bg-blue-50 text-primary-500 text-xs px-2.5 py-1 rounded-full border border-blue-100">
               {m}
-              <button onClick={() => toggleMarca(m)} className="hover:text-[#002f87]"><IconX /></button>
+              <button onClick={() => toggleMarca(m)} className="hover:text-[secondary-500]"><IconX /></button>
             </span>
           ))}
           {selectedColor && (
-            <span className="inline-flex items-center gap-1.5 bg-blue-50 text-[#0f49bd] text-xs px-2.5 py-1 rounded-full border border-blue-100">
+            <span className="inline-flex items-center gap-1.5 bg-blue-50 text-primary-500 text-xs px-2.5 py-1 rounded-full border border-blue-100">
               <span className="w-3 h-3 rounded-full inline-block border border-white/50" style={{ backgroundColor: getColorHex(selectedColor) }} />
               {selectedColor}
-              <button onClick={() => setSelectedColor('')} className="hover:text-[#002f87]"><IconX /></button>
+              <button onClick={() => setSelectedColor('')} className="hover:text-[secondary-500]"><IconX /></button>
             </span>
           )}
           {selectedMemoria && (
-            <span className="inline-flex items-center gap-1 bg-blue-50 text-[#0f49bd] text-xs px-2.5 py-1 rounded-full border border-blue-100">
+            <span className="inline-flex items-center gap-1 bg-blue-50 text-primary-500 text-xs px-2.5 py-1 rounded-full border border-blue-100">
               {selectedMemoria}
-              <button onClick={() => setSelectedMemoria('')} className="hover:text-[#002f87]"><IconX /></button>
+              <button onClick={() => setSelectedMemoria('')} className="hover:text-[secondary-500]"><IconX /></button>
             </span>
           )}
           {selectedPriceRange !== null && (
-            <span className="inline-flex items-center gap-1 bg-blue-50 text-[#0f49bd] text-xs px-2.5 py-1 rounded-full border border-blue-100">
+            <span className="inline-flex items-center gap-1 bg-blue-50 text-primary-500 text-xs px-2.5 py-1 rounded-full border border-blue-100">
               {PRICE_RANGES[selectedPriceRange].label}
-              <button onClick={() => setSelectedPriceRange(null)} className="hover:text-[#002f87]"><IconX /></button>
+              <button onClick={() => setSelectedPriceRange(null)} className="hover:text-[secondary-500]"><IconX /></button>
             </span>
           )}
           {(precioMin || precioMax) && selectedPriceRange === null && (
-            <span className="inline-flex items-center gap-1 bg-blue-50 text-[#0f49bd] text-xs px-2.5 py-1 rounded-full border border-blue-100">
+            <span className="inline-flex items-center gap-1 bg-blue-50 text-primary-500 text-xs px-2.5 py-1 rounded-full border border-blue-100">
               ${precioMin || '0'} – ${precioMax || '∞'}
-              <button onClick={() => { setPrecioMin(''); setPrecioMax(''); setPrecioMinInput(''); setPrecioMaxInput(''); }} className="hover:text-[#002f87]">
+              <button onClick={() => { setPrecioMin(''); setPrecioMax(''); setPrecioMinInput(''); setPrecioMaxInput(''); }} className="hover:text-[secondary-500]">
                 <IconX />
               </button>
             </span>
           )}
           {search && (
-            <span className="inline-flex items-center gap-1 bg-blue-50 text-[#0f49bd] text-xs px-2.5 py-1 rounded-full border border-blue-100">
+            <span className="inline-flex items-center gap-1 bg-blue-50 text-primary-500 text-xs px-2.5 py-1 rounded-full border border-blue-100">
               "{search}"
-              <button onClick={() => { setSearch(''); setSearchInput(''); }} className="hover:text-[#002f87]"><IconX /></button>
+              <button onClick={() => { setSearch(''); setSearchInput(''); }} className="hover:text-[secondary-500]"><IconX /></button>
             </span>
           )}
           {activeFiltersCount > 0 && (
@@ -598,7 +598,7 @@ const Catalog = () => {
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f49bd] bg-white self-start sm:self-auto flex-shrink-0"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white self-start sm:self-auto flex-shrink-0"
         >
           <option value="reciente">Más recientes</option>
           <option value="precio_asc">Menor precio</option>
@@ -616,7 +616,7 @@ const Catalog = () => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-gray-800 text-sm">Filtrar por</h2>
               {activeFiltersCount > 0 && (
-                <button onClick={clearFilters} className="text-xs text-[#0f49bd] hover:underline">
+                <button onClick={clearFilters} className="text-xs text-primary-500 hover:underline">
                   Limpiar
                 </button>
               )}
@@ -642,7 +642,7 @@ const Catalog = () => {
               <div className="p-4 border-t border-gray-100 flex-shrink-0">
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="w-full bg-[#0f49bd] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#002f87] transition-colors"
+                  className="w-full bg-primary-500 text-white py-3 rounded-xl font-semibold text-sm hover:bg-secondary-600 transition-colors"
                 >
                   Ver {total} resultado{total !== 1 ? 's' : ''}
                 </button>
@@ -662,7 +662,7 @@ const Catalog = () => {
               <p className="text-5xl mb-4">📱</p>
               <p className="text-lg font-medium mb-1 text-gray-600">Sin resultados</p>
               <p className="text-sm">Intenta con otros filtros o búsqueda</p>
-              <button onClick={clearFilters} className="mt-4 text-sm text-[#0f49bd] underline hover:no-underline">
+              <button onClick={clearFilters} className="mt-4 text-sm text-primary-500 underline hover:no-underline">
                 Limpiar filtros
               </button>
             </div>
@@ -714,7 +714,7 @@ const Catalog = () => {
                         {/* Precio */}
                         <div className="mb-1">
                           <div className="flex items-baseline gap-1 sm:gap-1.5 flex-wrap">
-                            <span className="text-base sm:text-xl font-extrabold text-[#0f49bd]">{formatPrice(product.precio)}</span>
+                            <span className="text-base sm:text-xl font-extrabold text-primary-500">{formatPrice(product.precio)}</span>
                             {product.precioAnterior && (
                               <span className="text-[10px] sm:text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>
                             )}
@@ -787,7 +787,7 @@ const Catalog = () => {
                           {!unavailable ? (
                             <button
                               onClick={() => handleReservar(product)}
-                              className="w-full bg-[#0f49bd] hover:bg-[#002f87] text-white py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 mb-1 sm:mb-1.5 transition-colors"
+                              className="w-full bg-primary-500 hover:bg-secondary-600 text-white py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 mb-1 sm:mb-1.5 transition-colors"
                             >
                               <IconCart />
                               Reservar
@@ -802,7 +802,7 @@ const Catalog = () => {
                           )}
                           <Link
                             to={`/producto/${product.id}`}
-                            className="block text-center text-[#0f49bd] text-[9px] sm:text-[10px] font-bold hover:underline"
+                            className="block text-center text-primary-500 text-[9px] sm:text-[10px] font-bold hover:underline"
                           >
                             Ver detalles
                           </Link>

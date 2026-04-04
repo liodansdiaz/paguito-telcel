@@ -344,7 +344,7 @@ const CartCheckout = () => {
         <p className="text-gray-500 mb-6">Agrega productos desde el catálogo para hacer tu reserva</p>
         <Link
           to="/catalogo"
-          className="inline-block bg-[#0f49bd] text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors"
+          className="inline-block bg-primary-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-primary-600 transition-colors"
         >
           Ver catálogo
         </Link>
@@ -370,18 +370,18 @@ const CartCheckout = () => {
       {/* Progress bar */}
       <div className="flex items-center justify-center mb-10">
         <div className="flex items-center gap-4">
-          <div className={`flex items-center gap-2 ${step === 'cart' ? 'text-[#0f49bd]' : 'text-gray-400'}`}>
+          <div className={`flex items-center gap-2 ${step === 'cart' ? 'text-primary-500' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-              step === 'cart' ? 'bg-[#0f49bd] text-white' : 'bg-gray-200 text-gray-600'
+              step === 'cart' ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-600'
             }`}>
               1
             </div>
             <span className="font-medium hidden sm:inline">Carrito</span>
           </div>
           <div className="w-16 h-0.5 bg-gray-300"></div>
-          <div className={`flex items-center gap-2 ${step === 'form' ? 'text-[#0f49bd]' : 'text-gray-400'}`}>
+          <div className={`flex items-center gap-2 ${step === 'form' ? 'text-primary-500' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-              step === 'form' ? 'bg-[#0f49bd] text-white' : 'bg-gray-200 text-gray-600'
+              step === 'form' ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-600'
             }`}>
               2
             </div>
@@ -463,7 +463,7 @@ const CartCheckout = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
-                    <p className="text-lg sm:text-xl font-extrabold text-[#002f87]">
+                    <p className="text-lg sm:text-xl font-extrabold text-secondary-500">
                       {formatPrice(item.precio)}
                     </p>
                   </div>
@@ -590,7 +590,7 @@ const CartCheckout = () => {
                         fromDate={addDays(startOfDay(new Date()), 2)}
                         locale={undefined}
                         className="mx-auto"
-                        style={{ '--rdp-accent-color': '#0f49bd' } as React.CSSProperties}
+                        style={{ '--rdp-accent-color': 'primary-500' } as React.CSSProperties}
                       />
                       <p className="text-xs text-gray-500 text-center mt-2">
                         No se atiende los domingos
@@ -654,11 +654,11 @@ const CartCheckout = () => {
                   <button
                     type="button"
                     onClick={handleOpenMap}
-                    className="w-full border-2 border-dashed border-[#0f49bd] text-[#0f49bd] hover:bg-blue-50 rounded-xl py-4 text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+                    className="w-full border-2 border-dashed border-primary-500 text-primary-500 hover:bg-blue-50 rounded-xl py-4 text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
                   >
                     {geocoding ? (
                       <span className="flex items-center gap-2">
-                        <span className="w-4 h-4 border-2 border-[#0f49bd] border-t-transparent rounded-full animate-spin" />
+                        <span className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
                         Buscando tu dirección...
                       </span>
                     ) : (
@@ -724,7 +724,7 @@ const CartCheckout = () => {
                         type="button"
                         onClick={() => geo.requestLocation()}
                         disabled={geo.loading}
-                        className="text-xs text-gray-500 hover:text-[#0f49bd] transition-colors flex items-center gap-1"
+                        className="text-xs text-gray-500 hover:text-primary-500 transition-colors flex items-center gap-1"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
@@ -754,7 +754,7 @@ const CartCheckout = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-[#13ec6d] text-[#002f87] py-3 rounded-xl font-bold hover:bg-green-400 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="flex-1 bg-accent-500 text-secondary-500 py-3 rounded-xl font-bold hover:bg-green-400 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {loading ? 'Confirmando...' : 'Confirmar reserva'}
                 </button>
@@ -788,14 +788,14 @@ const CartCheckout = () => {
             <div className="border-t border-gray-200 pt-4 mb-6">
               <div className="flex justify-between items-baseline">
                 <span className="text-gray-700 font-medium">Total</span>
-                <span className="text-2xl font-extrabold text-[#002f87]">{formatPrice(totalPrecio)}</span>
+                <span className="text-2xl font-extrabold text-secondary-500">{formatPrice(totalPrecio)}</span>
               </div>
             </div>
 
             {step === 'cart' && (
               <button
                 onClick={handleContinuar}
-                className="w-full bg-[#13ec6d] text-[#002f87] py-3.5 rounded-xl font-bold hover:bg-green-400 transition-all shadow-md"
+                className="w-full bg-accent-500 text-secondary-500 py-3.5 rounded-xl font-bold hover:bg-green-400 transition-all shadow-md"
               >
                 Continuar →
               </button>

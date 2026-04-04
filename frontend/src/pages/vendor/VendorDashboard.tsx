@@ -105,7 +105,7 @@ const StatusModal = ({ reservation: r, onClose, onSaved }: StatusModalProps) => 
           <button
             onClick={handleSave}
             disabled={saving || estado === r.estado && notas === (r.notas ?? '')}
-            className="flex-1 bg-[#002f87] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-900 disabled:opacity-50 transition-colors"
+            className="flex-1 bg-[secondary-500] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-secondary-700 disabled:opacity-50 transition-colors"
           >
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
@@ -213,7 +213,7 @@ const VendorDashboard = () => {
             onClick={() => setTab('mapa')}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               tab === 'mapa'
-                ? 'text-[#002f87] border-b-2 border-[#002f87] bg-blue-50/50'
+                ? 'text-[secondary-500] border-b-2 border-[secondary-500] bg-blue-50/50'
                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
           >
@@ -223,7 +223,7 @@ const VendorDashboard = () => {
             onClick={() => setTab('lista')}
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               tab === 'lista'
-                ? 'text-[#002f87] border-b-2 border-[#002f87] bg-blue-50/50'
+                ? 'text-[secondary-500] border-b-2 border-[secondary-500] bg-blue-50/50'
                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
           >
@@ -299,7 +299,7 @@ const VendorDashboard = () => {
                     onClick={() => { setFilterEstado(value); setPage(1); }}
                     className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                       filterEstado === value
-                        ? 'bg-[#002f87] text-white border-[#002f87]'
+                        ? 'bg-[secondary-500] text-white border-[secondary-500]'
                         : 'border-gray-200 text-gray-500 hover:bg-gray-50'
                     }`}
                   >
@@ -421,7 +421,7 @@ const VendorDashboard = () => {
                                 {!['VENDIDA', 'CANCELADA', 'NO_CONCRETADA', 'SIN_STOCK'].includes(r.estado) && (
                                   <button
                                     onClick={() => setStatusModal(r)}
-                                    className="text-xs bg-[#002f87] text-white px-3 py-1.5 rounded-lg hover:bg-blue-900 transition-colors whitespace-nowrap"
+                                    className="text-xs bg-[secondary-500] text-white px-3 py-1.5 rounded-lg hover:bg-secondary-700 transition-colors whitespace-nowrap"
                                   >
                                     Actualizar
                                   </button>

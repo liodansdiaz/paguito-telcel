@@ -41,7 +41,7 @@ const Carrito = () => {
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
         {cantidadTotal > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 bg-[#13ec6d] text-[#002f87] text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+          <span className="absolute -top-1.5 -right-1.5 bg-accent-500 text-secondary-500 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
             {cantidadTotal}
           </span>
         )}
@@ -51,7 +51,7 @@ const Carrito = () => {
       {open && (
         <div className="fixed right-2 top-16 w-[calc(100vw-1rem)] sm:w-96 sm:absolute sm:right-0 sm:top-12 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#002f87] to-[#0f49bd] px-5 py-4 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-[secondary-500] to-[primary-500] px-5 py-4 flex items-center justify-between">
             <div>
               <p className="text-white font-bold text-sm">Carrito de compras</p>
               <p className="text-blue-200 text-xs">
@@ -74,7 +74,7 @@ const Carrito = () => {
                 <Link
                   to="/catalogo"
                   onClick={() => setOpen(false)}
-                  className="text-[#0f49bd] text-sm font-medium hover:underline"
+                  className="text-[primary-500] text-sm font-medium hover:underline"
                 >
                   Ver catálogo →
                 </Link>
@@ -118,7 +118,7 @@ const Carrito = () => {
                       </div>
                       
                       {/* Precio */}
-                      <p className="text-sm font-bold text-[#002f87] mt-1.5">
+                      <p className="text-sm font-bold text-[secondary-500] mt-1.5">
                         {formatPrice(item.precio)}
                       </p>
                     </div>
@@ -145,14 +145,14 @@ const Carrito = () => {
               <div className="px-5 py-3 flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Total</p>
-                  <p className="text-xl font-extrabold text-[#002f87]">
+                  <p className="text-xl font-extrabold text-[secondary-500]">
                     {formatPrice(totalPrecio)}
                   </p>
                 </div>
                 <Link
                   to="/carrito"
                   onClick={() => setOpen(false)}
-                  className="bg-[#13ec6d] text-[#002f87] px-6 py-3 rounded-xl font-bold text-sm hover:bg-green-400 transition-all shadow-md flex items-center gap-2"
+                  className="bg-accent-500 text-secondary-500 px-6 py-3 rounded-xl font-bold text-sm hover:bg-green-400 transition-all shadow-md flex items-center gap-2"
                 >
                   Continuar
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

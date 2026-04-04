@@ -6,7 +6,7 @@ import {
 import api from '../../services/api';
 import type { AdminMetrics, ChartDataPoint, StatusDistribution, VendorRanking } from '../../types';
 
-const COLORS = ['#13ec6d', '#0f49bd', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#6b7280'];
+const COLORS = ['accent-500', 'primary-500', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#6b7280'];
 
 const MetricCard = ({ label, value, sub }: { label: string; value: number | string; sub?: string }) => (
   <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
@@ -232,7 +232,7 @@ const AdminDashboard = () => {
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
               <Tooltip />
-              <Line type="monotone" dataKey="count" stroke="#0f49bd" strokeWidth={2} dot={{ fill: '#0f49bd' }} name="Reservas" />
+              <Line type="monotone" dataKey="count" stroke="primary-500" strokeWidth={2} dot={{ fill: 'primary-500' }} name="Reservas" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -272,8 +272,8 @@ const AdminDashboard = () => {
             <YAxis type="category" dataKey="nombre" tick={{ fontSize: 11 }} width={110} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="totalVendidas" name="Vendidas" fill="#13ec6d" radius={[0, 4, 4, 0]} />
-            <Bar dataKey="totalAsignadas" name="Asignadas" fill="#0f49bd" radius={[0, 4, 4, 0]} />
+            <Bar dataKey="totalVendidas" name="Vendidas" fill="accent-500" radius={[0, 4, 4, 0]} />
+            <Bar dataKey="totalAsignadas" name="Asignadas" fill="primary-500" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

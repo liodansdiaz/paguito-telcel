@@ -175,7 +175,7 @@ const CustomersDirectory = () => {
                 <tr key={c.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#0f49bd] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-primary-500 text-white flex items-center justify-center text-xs font-bold shrink-0">
                         {c.nombreCompleto.split(' ').map((n) => n[0]).slice(0, 2).join('')}
                       </div>
                       <div>

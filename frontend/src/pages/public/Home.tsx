@@ -80,7 +80,7 @@ const ProductCard = ({ product, variant = 'original' }: { product: Product; vari
                 toast.dismiss(t.id);
                 navigate('/carrito');
               }}
-              className="bg-[#0f49bd] text-white px-3 py-1 rounded text-sm font-medium hover:bg-[#002f87] transition-colors"
+              className="bg-primary-500 text-white px-3 py-1 rounded text-sm font-medium hover:bg-secondary-600 transition-colors"
             >
               Ver carrito
             </button>
@@ -110,10 +110,10 @@ const ProductCard = ({ product, variant = 'original' }: { product: Product; vari
         <div className="p-4 flex flex-col flex-1">
           <p className="text-xs text-gray-400 font-medium mb-0.5">{product.marca}</p>
           <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-2">{product.nombre}</h3>
-          <span className="text-lg font-bold text-[#002f87] mb-3">{formatPrice(product.precio)}</span>
+          <span className="text-lg font-bold text-secondary-500 mb-3">{formatPrice(product.precio)}</span>
           <div className="flex gap-2 mt-auto">
-            <button onClick={handleReservar} className="flex-1 bg-[#13ec6d] text-[#002f87] py-2.5 px-2 rounded-xl text-xs font-bold">Reservar</button>
-            <Link to={`/producto/${product.id}`} className="flex-1 border border-[#0f49bd] text-[#0f49bd] py-2.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"><IconEye />Detalles</Link>
+            <button onClick={handleReservar} className="flex-1 bg-accent-500 text-secondary-500 py-2.5 px-2 rounded-xl text-xs font-bold">Reservar</button>
+            <Link to={`/producto/${product.id}`} className="flex-1 border border-[primary-500] text-primary-500 py-2.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"><IconEye />Detalles</Link>
           </div>
         </div>
       </div>
@@ -140,13 +140,13 @@ const ProductCard = ({ product, variant = 'original' }: { product: Product; vari
           )}
           <div className="mb-2">
             <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-bold text-[#0f49bd]">{formatPrice(product.precio)}</span>
+              <span className="text-xl font-bold text-primary-500">{formatPrice(product.precio)}</span>
               {product.precioAnterior && <span className="text-[10px] text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
             </div>
             {enganche && <p className="text-[9px] text-gray-500">💵 Contado • 📊 Desde {enganche} enganche</p>}
           </div>
           <div className="grid grid-cols-2 gap-1.5">
-            <button onClick={handleReservar} className="bg-[#0f49bd] text-white py-2 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1"><IconCart />Reservar</button>
+            <button onClick={handleReservar} className="bg-primary-500 text-white py-2 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1"><IconCart />Reservar</button>
             <Link to={`/producto/${product.id}`} className="border border-gray-300 text-gray-700 py-2 rounded-lg text-[10px] font-medium flex items-center justify-center gap-1"><IconEye />Ver</Link>
           </div>
         </div>
@@ -176,7 +176,7 @@ const ProductCard = ({ product, variant = 'original' }: { product: Product; vari
           {/* Precio */}
           <div className="mb-1">
             <div className="flex items-baseline gap-1.5 flex-wrap">
-              <span className="text-xl font-extrabold text-[#0f49bd]">{formatPrice(product.precio)}</span>
+              <span className="text-xl font-extrabold text-primary-500">{formatPrice(product.precio)}</span>
               {product.precioAnterior && <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
             </div>
             {/* Ahorro calculado */}
@@ -243,10 +243,10 @@ const ProductCard = ({ product, variant = 'original' }: { product: Product; vari
           )}
 
           {/* Botones de acción */}
-          <button onClick={handleReservar} className="w-full bg-[#0f49bd] hover:bg-[#002f87] text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 mb-1.5 transition-colors">
+          <button onClick={handleReservar} className="w-full bg-primary-500 hover:bg-secondary-600 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 mb-1.5 transition-colors">
             <IconCart />Reservar
           </button>
-          <Link to={`/producto/${product.id}`} className="block text-center text-[#0f49bd] text-[10px] font-bold hover:underline">
+          <Link to={`/producto/${product.id}`} className="block text-center text-primary-500 text-[10px] font-bold hover:underline">
             Ver detalles completos
           </Link>
         </div>
@@ -304,13 +304,13 @@ const ProductCard = ({ product, variant = 'original' }: { product: Product; vari
         <div className="w-48 flex-shrink-0 p-4 flex flex-col justify-between items-end border-l border-gray-100 bg-gray-50">
           <div className="text-right">
             <div className="flex items-baseline gap-2 justify-end">
-              <span className="text-2xl font-extrabold text-[#0f49bd]">{formatPrice(product.precio)}</span>
+              <span className="text-2xl font-extrabold text-primary-500">{formatPrice(product.precio)}</span>
               {product.precioAnterior && <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
             </div>
             {product.disponibleCredito && <p className="text-[10px] text-gray-600 mt-1">💳 Desde ${product.pagosSemanales?.toString().match(/\$?\d+/)?.[0] || '350'} enganche</p>}
           </div>
           <div className="flex gap-2 w-full">
-            <button onClick={handleReservar} className="flex-1 bg-[#0f49bd] text-white py-2.5 rounded-lg hover:bg-[#002f87] flex items-center justify-center gap-1.5 text-xs font-bold transition-colors"><IconCart />Reservar</button>
+            <button onClick={handleReservar} className="flex-1 bg-primary-500 text-white py-2.5 rounded-lg hover:bg-secondary-600 flex items-center justify-center gap-1.5 text-xs font-bold transition-colors"><IconCart />Reservar</button>
             <Link to={`/producto/${product.id}`} className="border-2 border-gray-300 text-gray-700 p-2.5 rounded-lg hover:bg-gray-100 transition-colors"><IconEye /></Link>
           </div>
         </div>
@@ -337,14 +337,14 @@ const ProductCard = ({ product, variant = 'original' }: { product: Product; vari
         )}
         <div className="mb-3">
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-2xl font-extrabold text-[#0f49bd]">{formatPrice(product.precio)}</span>
+            <span className="text-2xl font-extrabold text-primary-500">{formatPrice(product.precio)}</span>
             {product.precioAnterior && <span className="text-xs text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>}
           </div>
           {product.disponibleCredito && <p className="text-[10px] text-gray-600">💳 Desde <span className="font-semibold">${product.pagosSemanales?.toString().match(/\$?\d+/)?.[0] || '350'}</span> enganche</p>}
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <button onClick={handleReservar} className="bg-[#0f49bd] hover:bg-[#002f87] text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"><IconCart />Reservar</button>
-          <Link to={`/producto/${product.id}`} className="border-2 border-[#0f49bd] text-[#0f49bd] hover:bg-blue-50 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"><IconEye />Detalles</Link>
+          <button onClick={handleReservar} className="bg-primary-500 hover:bg-secondary-600 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"><IconCart />Reservar</button>
+          <Link to={`/producto/${product.id}`} className="border-2 border-[primary-500] text-primary-500 hover:bg-blue-50 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"><IconEye />Detalles</Link>
         </div>
       </div>
     </div>
@@ -440,7 +440,7 @@ const Home = () => {
     <div>
 
       {/* ── 1. HERO MEJORADO ─────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#002f87] via-[#0f49bd] to-[#002f87]">
+      <section className="relative overflow-hidden bg-gradient-to-br from-secondary-500 via-primary-500 to-secondary-500">
         
         {/* ═══ Pattern Geométrico Abstracto ═══ */}
         <svg className="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg">
@@ -478,21 +478,21 @@ const Home = () => {
         />
         
         {/* ═══ Formas Flotantes con Blur ═══ */}
-        <div className="absolute top-20 right-10 w-64 h-64 bg-[#13ec6d] rounded-full opacity-10 blur-3xl animate-float-slow" />
+        <div className="absolute top-20 right-10 w-64 h-64 bg-accent-500 rounded-full opacity-10 blur-3xl animate-float-slow" />
         <div className="absolute bottom-20 left-10 w-96 h-96 bg-white rounded-full opacity-5 blur-3xl animate-float-slower" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-[#0f49bd] rounded-full opacity-15 blur-2xl animate-float" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-primary-500 rounded-full opacity-15 blur-2xl animate-float" />
         
         {/* ═══ Contenido Principal ═══ */}
         <div className="relative z-10 text-white py-20 px-4">
           <div className="max-w-4xl mx-auto text-center animate-fade-in-up">
             
-            <span className="bg-[#13ec6d] text-[#002f87] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-6 inline-block">
+            <span className="bg-accent-500 text-secondary-500 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-6 inline-block">
               Servicio a domicilio
             </span>
             
             <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
               Tu próximo celular,<br />
-              <span className="text-[#13ec6d]">en la puerta de tu casa</span>
+              <span className="text-accent-500">en la puerta de tu casa</span>
             </h1>
             
             <p className="text-blue-100 text-lg mb-4 max-w-2xl mx-auto">
@@ -501,7 +501,7 @@ const Home = () => {
             </p>
             
             <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-xl px-5 py-3 mb-10">
-              <span className="text-[#13ec6d] text-xl">✓</span>
+              <span className="text-accent-500 text-xl">✓</span>
               <span className="text-white text-sm font-medium">
                 Disponible a crédito o al contado · Sin aval · Sin buró
               </span>
@@ -510,7 +510,7 @@ const Home = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/catalogo"
-                className="bg-[#13ec6d] text-[#002f87] px-8 py-4 rounded-xl font-bold text-lg hover:bg-green-400 transition-all shadow-lg"
+                className="bg-accent-500 text-secondary-500 px-8 py-4 rounded-xl font-bold text-lg hover:bg-green-400 transition-all shadow-lg"
               >
                 Ver catálogo
               </Link>
@@ -540,7 +540,7 @@ const Home = () => {
       <section className="py-16 px-4 bg-white">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-xs font-bold text-[#0f49bd] uppercase tracking-widest mb-1">Fácil y rápido</p>
+            <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-1">Fácil y rápido</p>
             <h2 className="text-2xl font-bold text-gray-900">¿Cómo funciona?</h2>
             <p className="text-gray-500 text-sm mt-2 max-w-xl mx-auto">
               En 4 sencillos pasos puedes tener tu celular nuevo sin salir de tu casa
@@ -552,8 +552,8 @@ const Home = () => {
             {/* Paso 1 */}
             <div className="flex-1 flex flex-col items-center text-center px-4">
               <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 relative">
-                <span className="absolute -top-2 -right-2 bg-[#13ec6d] text-[#002f87] text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">1</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-[#0f49bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <span className="absolute -top-2 -right-2 bg-accent-500 text-secondary-500 text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">1</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <rect x="5" y="2" width="14" height="20" rx="2" />
                   <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth={2.5} strokeLinecap="round" />
                 </svg>
@@ -567,8 +567,8 @@ const Home = () => {
             {/* Paso 2 */}
             <div className="flex-1 flex flex-col items-center text-center px-4">
               <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 relative">
-                <span className="absolute -top-2 -right-2 bg-[#13ec6d] text-[#002f87] text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">2</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-[#0f49bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <span className="absolute -top-2 -right-2 bg-accent-500 text-secondary-500 text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">2</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />
                 </svg>
               </div>
@@ -581,8 +581,8 @@ const Home = () => {
             {/* Paso 3 */}
             <div className="flex-1 flex flex-col items-center text-center px-4">
               <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 relative">
-                <span className="absolute -top-2 -right-2 bg-[#13ec6d] text-[#002f87] text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">3</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-[#0f49bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <span className="absolute -top-2 -right-2 bg-accent-500 text-secondary-500 text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">3</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6" />
                 </svg>
               </div>
@@ -595,8 +595,8 @@ const Home = () => {
             {/* Paso 4 */}
             <div className="flex-1 flex flex-col items-center text-center px-4">
               <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center mb-4 relative">
-                <span className="absolute -top-2 -right-2 bg-[#13ec6d] text-[#002f87] text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">4</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-[#13ec6d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <span className="absolute -top-2 -right-2 bg-accent-500 text-secondary-500 text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">4</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-accent-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -609,7 +609,7 @@ const Home = () => {
           <div className="text-center mt-10">
             <Link
               to="/catalogo"
-              className="inline-block bg-[#0f49bd] text-white px-8 py-3 rounded-xl font-semibold text-sm hover:bg-blue-700 transition-all shadow-md"
+              className="inline-block bg-primary-500 text-white px-8 py-3 rounded-xl font-semibold text-sm hover:bg-primary-600 transition-all shadow-md"
             >
               Comenzar ahora →
             </Link>
@@ -622,12 +622,12 @@ const Home = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex items-end justify-between mb-8">
             <div>
-              <p className="text-xs font-bold text-[#0f49bd] uppercase tracking-widest mb-1">Lo que más se vende</p>
+              <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-1">Lo que más se vende</p>
               <h2 className="text-2xl font-bold text-gray-900">Los más populares</h2>
             </div>
             <Link
               to="/catalogo"
-              className="text-sm font-semibold text-[#0f49bd] hover:underline hidden sm:block"
+              className="text-sm font-semibold text-primary-500 hover:underline hidden sm:block"
             >
               Ver todos →
             </Link>
@@ -648,7 +648,7 @@ const Home = () => {
           </div>
 
           <div className="text-center mt-6 sm:hidden">
-            <Link to="/catalogo" className="text-sm font-semibold text-[#0f49bd] hover:underline">
+            <Link to="/catalogo" className="text-sm font-semibold text-primary-500 hover:underline">
               Ver todos los celulares →
             </Link>
           </div>
@@ -666,7 +666,7 @@ const Home = () => {
               </div>
               <Link
                 to="/catalogo"
-                className="text-sm font-semibold text-[#0f49bd] hover:underline hidden sm:block"
+                className="text-sm font-semibold text-primary-500 hover:underline hidden sm:block"
               >
                 Ver todos →
               </Link>
@@ -686,7 +686,7 @@ const Home = () => {
       <section className="py-16 px-4 bg-gradient-to-b from-white to-blue-50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-xs font-bold text-[#0f49bd] uppercase tracking-widest mb-1">Nuestras ventajas</p>
+            <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-1">Nuestras ventajas</p>
             <h2 className="text-2xl font-bold text-gray-900">¿Por qué elegir Amigo Paguitos Telcel?</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -708,7 +708,7 @@ const Home = () => {
       <section className="py-16 px-4 bg-gradient-to-b from-blue-50 to-white">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-xs font-bold text-[#0f49bd] uppercase tracking-widest mb-1">Lo que dicen nuestros clientes</p>
+            <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-1">Lo que dicen nuestros clientes</p>
             <h2 className="text-2xl font-bold text-gray-900">Clientes satisfechos</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -726,7 +726,7 @@ const Home = () => {
                 <p className="text-gray-600 text-sm leading-relaxed flex-1 mb-4">"{t.comentario}"</p>
                 {/* Cliente */}
                 <div className="flex items-center gap-3 pt-4 border-t border-gray-50">
-                  <div className="w-9 h-9 rounded-full bg-[#0f49bd] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                     {t.nombre.split(' ').map((n) => n[0]).slice(0, 2).join('')}
                   </div>
                   <div>
@@ -741,7 +741,7 @@ const Home = () => {
       </section>
 
       {/* ── CTA FINAL ────────────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-r from-[#002f87] to-[#0f49bd] text-white py-16 px-4">
+      <section className="bg-gradient-to-r from-secondary-500 to-primary-500 text-white py-16 px-4">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-3">¿Listo para estrenar celular?</h2>
           <p className="text-blue-200 mb-8">
@@ -749,7 +749,7 @@ const Home = () => {
           </p>
           <Link
             to="/catalogo"
-            className="bg-[#13ec6d] text-[#002f87] px-10 py-4 rounded-xl font-bold text-lg hover:bg-green-400 transition-all inline-block shadow-lg"
+            className="bg-accent-500 text-secondary-500 px-10 py-4 rounded-xl font-bold text-lg hover:bg-green-400 transition-all inline-block shadow-lg"
           >
             Explorar celulares
           </Link>

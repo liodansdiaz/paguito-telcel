@@ -282,7 +282,7 @@ export default function ChatWidget() {
               <button
                 onClick={sendMessage}
                 disabled={loading || !input.trim()}
-                className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center hover:bg-primary-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
                 title="Enviar (Enter)"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
@@ -298,7 +298,7 @@ export default function ChatWidget() {
       {/* Burbuja flotante */}
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
+        className="w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-primary-600 transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
         title="Abrir asistente virtual"
         aria-label="Abrir chat de soporte"
       >

@@ -11,6 +11,27 @@ const NAV_LINKS = [
   { to: '/mi-reserva', label: 'Mi reserva' },
 ];
 
+// Icono de menú hamburguesa
+const IconMenu = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+);
+
+// Icono de cierre (X)
+const IconClose = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+  </svg>
+);
+
+// Icono de login
+const IconLogin = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+  </svg>
+);
+
 const PublicLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
@@ -20,7 +41,7 @@ const PublicLayout = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Navbar */}
-      <header className="bg-[#002f87] text-white shadow-lg sticky top-0 z-50">
+      <header className="bg-secondary-500 text-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-3" onClick={closeMobile}>
@@ -35,17 +56,15 @@ const PublicLayout = () => {
                   key={to}
                   to={to}
                   className={`transition-colors text-sm font-medium ${
-                    location.pathname === to ? 'text-[#13ec6d]' : 'hover:text-[#13ec6d]'
+                    location.pathname === to ? 'text-accent-500' : 'hover:text-accent-500'
                   }`}
                 >
                   {label}
                 </Link>
               ))}
               <Carrito />
-              <Link to="/login" className="bg-[#13ec6d] text-[#002f87] p-2 rounded-lg hover:bg-green-400 transition-colors" title="Portal Vendedores">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
+              <Link to="/login" className="bg-accent-500 text-secondary-500 p-2 rounded-lg hover:bg-accent-400 transition-colors" title="Portal Vendedores">
+                <IconLogin />
               </Link>
             </nav>
 
@@ -57,15 +76,7 @@ const PublicLayout = () => {
                 onClick={() => setMobileOpen((v) => !v)}
                 aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
               >
-                {mobileOpen ? (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                )}
+                {mobileOpen ? <IconClose /> : <IconMenu />}
               </button>
             </div>
           </div>
@@ -73,7 +84,7 @@ const PublicLayout = () => {
 
         {/* Mobile dropdown */}
         {mobileOpen && (
-          <div className="md:hidden bg-[#001f5c] border-t border-white/10">
+          <div className="md:hidden bg-secondary-700 border-t border-white/10">
             <nav className="flex flex-col px-4 py-3 gap-1">
               {NAV_LINKS.map(({ to, label }) => (
                 <Link
@@ -82,7 +93,7 @@ const PublicLayout = () => {
                   onClick={closeMobile}
                   className={`py-3 px-3 rounded-lg text-sm font-medium transition-colors ${
                     location.pathname === to
-                      ? 'bg-[#13ec6d]/20 text-[#13ec6d]'
+                      ? 'bg-accent-500/20 text-accent-500'
                       : 'text-white/80 hover:bg-white/10 hover:text-white'
                   }`}
                 >
@@ -92,11 +103,9 @@ const PublicLayout = () => {
               <Link
                 to="/login"
                 onClick={closeMobile}
-                className="mt-2 flex items-center gap-2 py-3 px-3 rounded-lg text-sm font-medium bg-[#13ec6d] text-[#002f87] hover:bg-green-400 transition-colors"
+                className="mt-2 flex items-center gap-2 py-3 px-3 rounded-lg text-sm font-medium bg-accent-500 text-secondary-500 hover:bg-accent-400 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
+                <IconLogin />
                 Portal Vendedores
               </Link>
             </nav>
@@ -113,7 +122,7 @@ const PublicLayout = () => {
       <ChatWidget />
 
       {/* Footer */}
-      <footer className="bg-[#002a5c] text-white py-10 mt-auto">
+      <footer className="bg-brand-navy-500 text-white py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div className="flex items-center gap-3">

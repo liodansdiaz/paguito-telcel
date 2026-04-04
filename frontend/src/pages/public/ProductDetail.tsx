@@ -46,6 +46,17 @@ const getImageForColor = (imagenes: string[], colores: string[] | undefined, col
   return imagenes[0];
 };
 
+// Función para detectar el color de una imagen basándose en su nombre
+const detectColorFromImage = (imagen: string, coloresDisponibles: string[]): string | null => {
+  const imagenLower = imagen.toLowerCase();
+  for (const color of coloresDisponibles) {
+    if (imagenLower.includes(color.toLowerCase())) {
+      return color;
+    }
+  }
+  return null;
+};
+
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -55,6 +66,7 @@ const ProductDetail = () => {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedMemoria, setSelectedMemoria] = useState<string | null>(null);
   const [tipoPago, setTipoPago] = useState<'CONTADO' | 'CREDITO'>('CONTADO');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const { agregarAlCarrito, contarProductosCredito } = useCarritoStore();
 
@@ -109,7 +121,7 @@ const ProductDetail = () => {
               toast.dismiss(t.id);
               navigate('/carrito');
             }}
-            className="bg-[#0f49bd] text-white px-3 py-1 rounded text-sm font-medium hover:bg-[#002f87] transition-colors"
+            className="bg-primary-500 text-white px-3 py-1 rounded text-sm font-medium hover:bg-secondary-500 transition-colors"
           >
             Ver carrito
           </button>
@@ -164,9 +176,12 @@ const ProductDetail = () => {
         {/* Galería de imágenes */}
         <div className="space-y-3">
           {/* Imagen principal */}
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl flex items-center justify-center h-80 relative overflow-hidden">
+          <div 
+            className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl flex items-center justify-center h-80 relative overflow-hidden cursor-zoom-in"
+            onClick={() => setIsModalOpen(true)}
+          >
             {product.badge && (
-              <span className="absolute top-4 left-4 bg-[#13ec6d] text-[#002f87] text-xs font-bold px-3 py-1 rounded-full z-10">
+              <span className="absolute top-4 left-4 bg-accent-500 text-secondary-500 text-xs font-bold px-3 py-1 rounded-full z-10">
                 {product.badge}
               </span>
             )}
@@ -183,31 +198,46 @@ const ProductDetail = () => {
 
           {/* Miniaturas */}
           {imagenes.length > 1 && (
-            <div className="flex gap-2">
-              {imagenes.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveImage(i)}
-                  className={`w-16 h-16 rounded-lg border-2 overflow-hidden flex-shrink-0 transition-all ${
-                    activeImage === i
-                      ? 'border-[#0f49bd] shadow-md'
-                      : 'border-gray-200 hover:border-gray-400'
-                  }`}
-                >
-                  <img
-                    src={toImageUrl(img)}
-                    alt={`${product.nombre} ${i + 1}`}
-                    className="w-full h-full object-contain bg-gray-50"
-                  />
-                </button>
-              ))}
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {imagenes.map((img, i) => {
+                // Detectar el color de esta imagen si hay colores disponibles
+                const colorDeImagen = product.colores ? detectColorFromImage(img, product.colores) : null;
+                const isSelected = selectedColor 
+                  ? colorDeImagen === selectedColor 
+                  : activeImage === i;
+                
+                return (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      if (colorDeImagen && product.colores) {
+                        setSelectedColor(colorDeImagen);
+                      } else {
+                        setActiveImage(i);
+                        setSelectedColor(null);
+                      }
+                    }}
+                    className={`w-16 h-16 rounded-lg border-2 overflow-hidden flex-shrink-0 transition-all ${
+                      isSelected
+                        ? 'border-[primary-500] shadow-md'
+                        : 'border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    <img
+                      src={toImageUrl(img)}
+                      alt={`${product.nombre} ${i + 1}`}
+                      className="w-full h-full object-contain bg-gray-50"
+                    />
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
 
         {/* Detalles */}
         <div>
-          <p className="text-sm font-semibold text-[#0f49bd] mb-1">{product.marca}</p>
+          <p className="text-sm font-semibold text-primary-500 mb-1">{product.marca}</p>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.nombre}</h1>
           <p className="text-sm text-gray-500 mb-5">SKU: {product.sku}</p>
 
@@ -215,7 +245,7 @@ const ProductDetail = () => {
           <div className="mb-4">
             <p className="text-sm font-medium text-gray-700 mb-2">Precio al contado</p>
             <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-extrabold text-[#002f87]">{formatPrice(product.precio)}</span>
+              <span className="text-3xl font-extrabold text-secondary-500">{formatPrice(product.precio)}</span>
               {product.precioAnterior && (
                 <span className="text-lg text-gray-400 line-through">{formatPrice(product.precioAnterior)}</span>
               )}
@@ -224,7 +254,7 @@ const ProductDetail = () => {
               <div className="mt-3">
                 <p className="text-sm font-medium text-gray-700 mb-2">A crédito</p>
                 <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 inline-block">
-                  <div className="text-sm text-[#0f49bd]">
+                  <div className="text-sm text-primary-500">
                     {product.enganche && (
                       <p className="mb-1">
                         <span className="font-bold">💰</span> {product.enganche}
@@ -269,7 +299,7 @@ const ProductDetail = () => {
                     type="button"
                     title={c}
                     onClick={() => setSelectedColor(selectedColor === c ? null : c)}
-                    className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${selectedColor === c ? 'border-[#0f49bd] ring-2 ring-blue-300 scale-110' : 'border-gray-300'}`}
+                    className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${selectedColor === c ? 'border-[primary-500] ring-2 ring-blue-300 scale-110' : 'border-gray-300'}`}
                     style={{ backgroundColor: getColorHex(c) }}
                   />
                 ))}
@@ -289,7 +319,7 @@ const ProductDetail = () => {
                     key={m}
                     type="button"
                     onClick={() => setSelectedMemoria(selectedMemoria === m ? null : m)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${selectedMemoria === m ? 'bg-[#0f49bd] text-white border-[#0f49bd]' : 'bg-white text-gray-700 border-gray-300 hover:border-[#0f49bd]'}`}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${selectedMemoria === m ? 'bg-primary-500 text-white border-[primary-500]' : 'bg-white text-gray-700 border-gray-300 hover:border-[primary-500]'}`}
                   >
                     {m}
                   </button>
@@ -307,8 +337,8 @@ const ProductDetail = () => {
                 onClick={() => setTipoPago('CONTADO')}
                 className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium border-2 transition-all ${
                   tipoPago === 'CONTADO'
-                    ? 'bg-[#0f49bd] text-white border-[#0f49bd]'
-                    : 'bg-white text-gray-700 border-gray-300 hover:border-[#0f49bd]'
+                    ? 'bg-primary-500 text-white border-[primary-500]'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-[primary-500]'
                 }`}
               >
                 <div className="flex flex-col items-center gap-1">
@@ -323,8 +353,8 @@ const ProductDetail = () => {
                   onClick={() => setTipoPago('CREDITO')}
                   className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium border-2 transition-all ${
                     tipoPago === 'CREDITO'
-                      ? 'bg-[#0f49bd] text-white border-[#0f49bd]'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-[#0f49bd]'
+                      ? 'bg-primary-500 text-white border-[primary-500]'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-[primary-500]'
                   }`}
                   disabled={contarProductosCredito() > 0}
                   title={contarProductosCredito() > 0 ? 'Ya tienes un producto a crédito en el carrito' : ''}
@@ -351,7 +381,7 @@ const ProductDetail = () => {
               className={`flex-1 py-3.5 rounded-xl font-bold text-center text-base transition-all shadow-md flex items-center justify-center gap-2 ${
                 unavailable
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-[#13ec6d] text-[#002f87] hover:bg-green-400'
+                  : 'bg-accent-500 text-secondary-500 hover:bg-green-400'
               }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -361,7 +391,7 @@ const ProductDetail = () => {
             </button>
             <Link
               to="/carrito"
-              className="border-2 border-[#0f49bd] text-[#0f49bd] px-5 py-3.5 rounded-xl font-medium hover:bg-blue-50 transition-colors flex items-center gap-2"
+              className="border-2 border-[primary-500] text-primary-500 px-5 py-3.5 rounded-xl font-medium hover:bg-blue-50 transition-colors flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -381,7 +411,7 @@ const ProductDetail = () => {
         <div className="mt-12 bg-white">
           {/* Encabezado de pestaña */}
           <div className="border-b border-gray-200">
-            <button className="inline-flex items-center gap-2 px-4 py-3 border-b-2 border-[#0f49bd] text-[#0f49bd] font-semibold text-sm">
+            <button className="inline-flex items-center gap-2 px-4 py-3 border-b-2 border-[primary-500] text-primary-500 font-semibold text-sm">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
@@ -402,68 +432,68 @@ const ProductDetail = () => {
                 // Iconos según el tipo de especificación
                 if (keyLower.includes('red')) {
                   icon = (
-                    <svg className="w-6 h-6 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
                     </svg>
                   );
                 } else if (keyLower.includes('pantalla') || keyLower.includes('display')) {
                   icon = (
-                    <svg className="w-6 h-6 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                   );
                 } else if (keyLower.includes('memoria') || keyLower.includes('almacen') || keyLower.includes('ram')) {
                   icon = (
-                    <svg className="w-6 h-6 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                     </svg>
                   );
                 } else if (keyLower.includes('cámara') || keyLower.includes('camara')) {
                   icon = (
-                    <svg className="w-6 h-6 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   );
                 } else if (keyLower.includes('procesador') || keyLower.includes('cpu') || keyLower.includes('chip')) {
                   icon = (
-                    <svg className="w-6 h-6 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                     </svg>
                   );
                 } else if (keyLower.includes('sistema') || keyLower.includes('os') || keyLower.includes('operativo')) {
                   icon = (
-                    <svg className="w-6 h-6 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   );
                 } else if (keyLower.includes('conexi') || keyLower.includes('inalám')) {
                   icon = (
-                    <svg className="w-6 h-6 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0" />
                     </svg>
                   );
                 } else if (keyLower.includes('bater')) {
                   icon = (
-                    <svg className="w-6 h-6 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 3v1m0 16v1m9-9h1M3 12h1m13.28-7.636l.707.707M5.636 5.636l.707.707m12.02 12.02l.707.707M5.636 18.364l.707.707M17 12a5 5 0 11-10 0 5 5 0 0110 0z" />
                     </svg>
                   );
                 } else if (keyLower.includes('dimension')) {
                   icon = (
-                    <svg className="w-6 h-6 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                     </svg>
                   );
                 } else if (keyLower.includes('peso')) {
                   icon = (
-                    <svg className="w-6 h-6 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                     </svg>
                   );
                 } else {
                   icon = (
-                    <svg className="w-6 h-6 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   );
@@ -490,6 +520,72 @@ const ProductDetail = () => {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Modal para ampliar imagen */}
+      {isModalOpen && imagenes.length > 0 && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setIsModalOpen(false)}
+        >
+          {/* Botón cerrar */}
+          <button 
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+            onClick={() => setIsModalOpen(false)}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Imagen principal */}
+          <div className="max-w-4xl max-h-[80vh] p-4">
+            <img
+              src={toImageUrl(getImageForColor(imagenes, product.colores, selectedColor))}
+              alt={product.nombre}
+              className="max-w-full max-h-[75vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+
+          {/* Miniaturas en el modal */}
+          {imagenes.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 bg-black/50 p-2 rounded-xl">
+              {imagenes.map((img, i) => {
+                const colorDeImagen = product.colores ? detectColorFromImage(img, product.colores) : null;
+                const isSelected = selectedColor 
+                  ? colorDeImagen === selectedColor 
+                  : activeImage === i;
+                
+                return (
+                  <button
+                    key={i}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (colorDeImagen && product.colores) {
+                        setSelectedColor(colorDeImagen);
+                      } else {
+                        setActiveImage(i);
+                        setSelectedColor(null);
+                      }
+                    }}
+                    className={`w-14 h-14 rounded-lg border-2 overflow-hidden flex-shrink-0 transition-all ${
+                      isSelected
+                        ? 'border-white shadow-md'
+                        : 'border-white/30 hover:border-white/60'
+                    }`}
+                  >
+                    <img
+                      src={toImageUrl(img)}
+                      alt={`${product.nombre} ${i + 1}`}
+                      className="w-full h-full object-contain bg-gray-900"
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

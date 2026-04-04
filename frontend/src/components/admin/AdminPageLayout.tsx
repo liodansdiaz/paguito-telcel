@@ -63,7 +63,7 @@ export const AdminPageLayout = ({
             <option value={50}>Mostrar 50</option>
           </select>
           {onAdd && (
-            <button onClick={onAdd} className="bg-[#0f49bd] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors whitespace-nowrap">
+            <button onClick={onAdd} className="bg-[primary-500] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary-600 transition-colors whitespace-nowrap">
               {addButtonText || '+ Agregar'}
             </button>
           )}

@@ -486,7 +486,7 @@ const InventoryManager = () => {
                       <td className="px-4 py-3 font-mono text-xs text-gray-500">{p.sku}</td>
                       <td className="px-4 py-3">
                         <p className="font-medium text-gray-900 whitespace-nowrap">{p.nombre}</p>
-                        {p.badge && <span className="text-xs bg-[#13ec6d] text-[#002f87] px-1.5 py-0.5 rounded font-medium">{p.badge}</span>}
+                        {p.badge && <span className="text-xs bg-accent-500 text-secondary-500 px-1.5 py-0.5 rounded font-medium">{p.badge}</span>}
                       </td>
                       <td className="px-4 py-3 text-gray-600">{p.marca}</td>
                       <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{formatPrice(p.precio)}</td>
@@ -640,8 +640,8 @@ const InventoryManager = () => {
                       }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                         selectedColores.includes(color)
-                          ? 'bg-[#0f49bd] text-white border-[#0f49bd]'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-[#0f49bd]'
+                          ? 'bg-[primary-500] text-white border-[primary-500]'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-[primary-500]'
                       }`}
                     >
                       {color}
@@ -666,8 +666,8 @@ const InventoryManager = () => {
                       }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                         selectedMemorias.includes(memoria)
-                          ? 'bg-[#0f49bd] text-white border-[#0f49bd]'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-[#0f49bd]'
+                          ? 'bg-[primary-500] text-white border-[primary-500]'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-[primary-500]'
                       }`}
                     >
                       {memoria}
@@ -698,7 +698,7 @@ const InventoryManager = () => {
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                           especificaciones[categoria]
                             ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'bg-white text-[#0f49bd] border border-[#0f49bd] hover:bg-[#0f49bd] hover:text-white'
+                            : 'bg-white text-[primary-500] border border-[primary-500] hover:bg-[primary-500] hover:text-white'
                         }`}
                       >
                         {especificaciones[categoria] ? '✓ ' : '+ '}{categoria}
@@ -716,75 +716,75 @@ const InventoryManager = () => {
                     
                     if (keyLower.includes('red')) {
                       icon = (
-                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[primary-500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
                         </svg>
                       );
                     } else if (keyLower.includes('pantalla')) {
                       icon = (
-                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[primary-500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
                       );
                     } else if (keyLower.includes('memoria')) {
                       icon = (
-                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[primary-500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                         </svg>
                       );
                     } else if (keyLower.includes('cámara') || keyLower.includes('camara')) {
                       icon = (
-                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[primary-500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                           <circle cx="12" cy="13" r="3" />
                         </svg>
                       );
                     } else if (keyLower.includes('procesador') || keyLower.includes('cpu')) {
                       icon = (
-                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[primary-500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                         </svg>
                       );
                     } else if (keyLower.includes('sistema')) {
                       icon = (
-                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[primary-500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                       );
                     } else if (keyLower.includes('conexi') || keyLower.includes('inalám')) {
                       icon = (
-                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[primary-500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0" />
                         </svg>
                       );
                     } else if (keyLower.includes('bater')) {
                       icon = (
-                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[primary-500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v1m0 16v1m9-9h1M3 12h1m13.28-7.636l.707.707M5.636 5.636l.707.707m12.02 12.02l.707.707M5.636 18.364l.707.707M17 12a5 5 0 11-10 0 5 5 0 0110 0z" />
                         </svg>
                       );
                     } else if (keyLower.includes('dimension')) {
                       icon = (
-                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[primary-500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                         </svg>
                       );
                     } else if (keyLower.includes('peso')) {
                       icon = (
-                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[primary-500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                         </svg>
                       );
                     } else {
                       icon = (
-                        <svg className="w-5 h-5 text-[#0f49bd]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[primary-500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       );
                     }
 
                     return (
-                      <div key={key} className="flex gap-2 items-start p-3 bg-white border border-gray-200 rounded-lg hover:border-[#0f49bd] transition-colors">
+                      <div key={key} className="flex gap-2 items-start p-3 bg-white border border-gray-200 rounded-lg hover:border-[primary-500] transition-colors">
                         <div className="flex-shrink-0 mt-0.5">
                           {icon}
                         </div>
@@ -901,7 +901,7 @@ const InventoryManager = () => {
                       }}
                       className="hidden"
                     />
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#0f49bd] transition-colors">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[primary-500] transition-colors">
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
@@ -920,7 +920,7 @@ const InventoryManager = () => {
                   Cancelar
                 </button>
                 <button type="submit" disabled={isSubmitting}
-                  className="flex-1 bg-[#0f49bd] text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-blue-700">
+                  className="flex-1 bg-[primary-500] text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-primary-600">
                   {isSubmitting ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Agregar producto'}
                 </button>
               </div>

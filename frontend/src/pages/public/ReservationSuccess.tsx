@@ -68,7 +68,7 @@ const ReservationSuccess = () => {
           </p>
           <Link
             to="/catalogo"
-            className="inline-block bg-[#0f49bd] text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors"
+            className="inline-block bg-[primary-500] text-white px-8 py-3 rounded-xl font-bold hover:bg-primary-600 transition-colors"
           >
             Ver catálogo
           </Link>
@@ -94,7 +94,7 @@ const ReservationSuccess = () => {
           {/* Folio destacado */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6">
             <p className="text-sm text-gray-600 mb-2">Tu número de reserva es</p>
-            <p className="text-4xl font-extrabold text-[#0f49bd] mb-2">#{folio}</p>
+            <p className="text-4xl font-extrabold text-primary-500 mb-2">#{folio}</p>
             <p className="text-xs text-gray-500">
               Guárdalo para consultar o cancelar tu reserva
             </p>
@@ -112,7 +112,7 @@ const ReservationSuccess = () => {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Productos reservados</span>
-              <span className="font-semibold text-[#0f49bd]">{totalProductos}</span>
+              <span className="font-semibold text-primary-500">{totalProductos}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Visita programada</span>
@@ -176,7 +176,7 @@ const ReservationSuccess = () => {
 
                   {/* Precio */}
                   <div className="text-right flex-shrink-0">
-                    <p className="text-lg font-extrabold text-[#002f87]">
+                    <p className="text-lg font-extrabold text-secondary-500">
                       {formatPrice(item.precioCapturado)}
                     </p>
                   </div>
@@ -188,7 +188,7 @@ const ReservationSuccess = () => {
           {/* Total */}
           <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
             <span className="text-gray-700 font-semibold">Total de la reserva</span>
-            <span className="text-2xl font-extrabold text-[#002f87]">
+            <span className="text-2xl font-extrabold text-secondary-500">
               {formatPrice(totalPrecio)}
             </span>
           </div>
@@ -211,13 +211,13 @@ const ReservationSuccess = () => {
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
             to="/catalogo"
-            className="flex-1 bg-[#13ec6d] text-[#002f87] py-3.5 rounded-xl font-bold text-center hover:bg-green-400 transition-colors shadow-md"
+            className="flex-1 bg-accent-500 text-secondary-500 py-3.5 rounded-xl font-bold text-center hover:bg-accent-400 transition-colors shadow-md"
           >
             Ver más celulares
           </Link>
           <Link
             to="/mi-reserva"
-            className="flex-1 border-2 border-[#0f49bd] text-[#0f49bd] py-3.5 rounded-xl font-bold text-center hover:bg-blue-50 transition-colors"
+            className="flex-1 border-2 border-[primary-500] text-primary-500 py-3.5 rounded-xl font-bold text-center hover:bg-blue-50 transition-colors"
           >
             Consultar mi reserva
           </Link>

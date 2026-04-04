@@ -216,9 +216,9 @@ const MiReserva = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-[#002f87] to-[#0f49bd] text-white py-14 px-4">
+      <section className="bg-gradient-to-br from-secondary-500 to-primary-500 text-white py-14 px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <span className="bg-[#13ec6d] text-[#002f87] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-4 inline-block">
+          <span className="bg-accent-500 text-secondary-500 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-4 inline-block">
             Sin necesidad de cuenta
           </span>
           <h1 className="text-3xl font-extrabold mb-2">Consulta tu reserva</h1>
@@ -245,7 +245,7 @@ const MiReserva = () => {
             <button
               type="submit"
               disabled={loading || !busqueda.trim()}
-              className="w-full mt-4 bg-[#0f49bd] text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-4 bg-primary-500 text-white py-3 rounded-xl font-bold hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Buscando...' : 'Buscar mi reserva'}
             </button>
@@ -338,7 +338,7 @@ const MiReserva = () => {
                   {!editando && (
                     <button
                       onClick={handleAbrirEdicion}
-                      className="w-full sm:w-auto border-2 border-[#0f49bd] text-[#0f49bd] px-6 py-2.5 rounded-lg font-medium hover:bg-blue-50 transition-colors mr-3"
+                      className="w-full sm:w-auto border-2 border-[primary-500] text-[primary-500] px-6 py-2.5 rounded-lg font-medium hover:bg-blue-50 transition-colors mr-3"
                     >
                       Modificar reserva
                     </button>
@@ -388,7 +388,7 @@ const MiReserva = () => {
                                   return isBefore(date, minDate) || isSunday(date);
                                 }}
                                 fromDate={addDays(startOfDay(new Date()), 2)}
-                                style={{ '--rdp-accent-color': '#0f49bd' } as React.CSSProperties}
+                                style={{ '--rdp-accent-color': 'primary-500' } as React.CSSProperties}
                               />
                               <p className="text-xs text-gray-500 text-center mt-2">No se atiende los domingos</p>
                             </div>
@@ -436,7 +436,7 @@ const MiReserva = () => {
                         <button
                           onClick={handleGuardarEdicion}
                           disabled={guardandoEdicion}
-                          className="flex-1 bg-[#0f49bd] text-white py-2 rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50"
+                          className="flex-1 bg-primary-500 text-white py-2 rounded-lg font-bold hover:bg-primary-600 disabled:opacity-50"
                         >
                           {guardandoEdicion ? 'Guardando...' : 'Guardar cambios'}
                         </button>
@@ -521,7 +521,7 @@ const MiReserva = () => {
                         </div>
 
                         {/* Precio */}
-                        <p className="text-lg font-extrabold text-[#002f87]">
+                        <p className="text-lg font-extrabold text-secondary-500">
                           {formatPrice(item.precioCapturado)}
                         </p>
                       </div>
@@ -575,7 +575,7 @@ const MiReserva = () => {
             <div className="mt-8 text-center">
               <Link
                 to="/catalogo"
-                className="inline-block text-[#0f49bd] font-medium hover:underline"
+                className="inline-block text-[primary-500] font-medium hover:underline"
               >
                 ← Volver al catálogo
               </Link>

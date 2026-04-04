@@ -36,7 +36,7 @@ const CustomerProfile = () => {
 
       {/* Tarjeta del cliente */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row gap-6">
-        <div className="w-16 h-16 rounded-full bg-[#0f49bd] text-white flex items-center justify-center text-2xl font-bold shrink-0">
+        <div className="w-16 h-16 rounded-full bg-primary-500 text-white flex items-center justify-center text-2xl font-bold shrink-0">
           {customer.nombreCompleto.split(' ').map((n) => n[0]).slice(0, 2).join('')}
         </div>
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
