@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import brandingConfig from '../../config/branding';
+import { logoConfig } from '../../config/branding';
 
 interface LogoProps {
   className?: string;
@@ -17,18 +17,16 @@ const sizeClasses = {
 };
 
 export const Logo = ({ className = '', size = 'md', variant = 'full', textColor = 'text-gray-900' }: LogoProps) => {
-  const { logoPath, brandName } = brandingConfig;
+  const { mainLogo, brandName } = logoConfig;
   
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      {/* Icono del logo */}
       <img 
-        src={logoPath} 
+        src={mainLogo} 
         alt={brandName} 
         className={`${sizeClasses[size]} object-contain`} 
       />
       
-      {/* Texto (solo si es variant full) */}
       {variant === 'full' && (
         <span className={`font-bold ${textColor} whitespace-nowrap`}>
           {brandName}

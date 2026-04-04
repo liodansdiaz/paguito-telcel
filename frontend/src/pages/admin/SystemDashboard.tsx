@@ -188,15 +188,15 @@ const LogsTab = () => {
 
        const { data } = await api.get('/admin/logs', { params });
        
-       // Procesar logs para el formato de Excel
-       const logData = data.logs.map((line, index) => {
-         const level = getLevel(line);
-         return {
-           'Nivel': level.toUpperCase(),
-           'Mensaje': line,
-           'Fecha/Hora': new Date().toLocaleString('es-MX') // Timestamp de exportación
-         };
-       });
+        // Procesar logs para el formato de Excel
+        const logData = data.logs.map((line: string) => {
+          const level = getLevel(line);
+          return {
+            'Nivel': level.toUpperCase(),
+            'Mensaje': line,
+            'Fecha/Hora': new Date().toLocaleString('es-MX')
+          };
+        });
 
        // Crear hoja de trabajo
        const worksheet = XLSX.utils.json_to_sheet(logData);
@@ -455,8 +455,8 @@ const NotificationsTab = () => {
 
        const { data } = await api.get('/admin/notifications', { params });
        
-       // Procesar notificaciones para el formato de Excel
-       const notificationData = data.notifications.map((notif) => ({
+        // Procesar notificaciones para el formato de Excel
+        const notificationData = data.notifications.map((notif: any) => ({
          'ID': notif.id.slice(0, 8),
          'Fecha': formatDate(notif.createdAt),
          'Canal': notif.canal,
