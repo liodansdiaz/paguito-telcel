@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  FunnelChart, Funnel, LabelList,
 } from 'recharts';
 import api from '../../services/api';
 import type { AdminMetrics, ChartDataPoint, StatusDistribution, VendorRanking } from '../../types';
@@ -290,14 +289,6 @@ const AdminDashboard = () => {
   // Vendedor top
   const topVendor = ranking.length > 0 ? ranking[0] : null;
 
-  // Funnel data (conversión de estados) - usando string keys
-  const funnelData = [
-    { name: 'Nuevas', value: distribution.find(d => d.estado === 'NUEVA' as any)?.count || 0, fill: CHART_COLORS.primary },
-    { name: 'Asignadas', value: distribution.find(d => d.estado === 'ASIGNADA' as any)?.count || 0, fill: CHART_COLORS.secondary },
-    { name: 'En visita', value: distribution.find(d => d.estado === 'EN_VISITA' as any)?.count || 0, fill: CHART_COLORS.cyan },
-    { name: 'Vendidas', value: distribution.find(d => d.estado === 'VENDIDA' as any)?.count || 0, fill: CHART_COLORS.accent },
-  ];
-
   if (loading) {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -509,19 +500,6 @@ const AdminDashboard = () => {
             </PieChart>
           </ResponsiveContainer>
         </div>
-      </div>
-
-      {/* Funnel de conversión */}
-      <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-        <h3 className="font-semibold text-gray-800 mb-4">Funnel de conversión</h3>
-        <ResponsiveContainer width="100%" height={200}>
-          <FunnelChart>
-            <Tooltip />
-            <Funnel dataKey="value" data={funnelData} isAnimationActive>
-              <LabelList position="right" fill="#000" stroke="none" dataKey="name" />
-            </Funnel>
-          </FunnelChart>
-        </ResponsiveContainer>
       </div>
 
       {/* Ranking de vendedores */}
