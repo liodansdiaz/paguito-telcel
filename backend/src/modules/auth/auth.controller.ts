@@ -13,7 +13,10 @@ export class AuthController {
     try {
       const { email, password } = loginSchema.parse(req.body);
       const result = await authService.login(email, password);
-      sendSuccess(res, result, 'Login exitoso');
+      // Configurar cookie para refresh token
+      res.cookie('refreshToken', result.refreshToken, authService.getRefreshTokenCookieOptions());
+      // Devolver access token y datos del usuario (NO el refresh token en el body por seguridad)
+      sendSuccess(res, { accessToken: result.accessToken, user: result.user }, 'Login exitoso');
     } catch (err) {
       next(err);
     }
