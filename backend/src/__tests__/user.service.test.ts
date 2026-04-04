@@ -11,6 +11,7 @@ vi.mock('../config/database', () => ({
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      count: vi.fn(),
     },
   },
 }));
@@ -99,12 +100,14 @@ describe('UserService', () => {
   // ── getAll ────────────────────────────────────────────────────────────────────
   describe('getAll', () => {
     it('devuelve lista de usuarios con filtros', async () => {
-      const mockResult = [mockUser, mockUser2];
-      vi.mocked(prisma.user.findMany).mockResolvedValue(mockResult as any);
+      const mockUsers = [mockUser, mockUser2];
+      vi.mocked(prisma.user.findMany).mockResolvedValue(mockUsers as any);
+      vi.mocked(prisma.user.count).mockResolvedValue(2);
 
       const result = await service.getAll();
 
-      expect(result).toEqual(mockResult);
+      expect(result.data).toEqual(mockUsers);
+      expect(result.pagination.total).toBe(2);
       expect(prisma.user.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { nombre: 'asc' },
