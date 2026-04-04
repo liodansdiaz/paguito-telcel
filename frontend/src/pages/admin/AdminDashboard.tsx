@@ -6,7 +6,28 @@ import {
 import api from '../../services/api';
 import type { AdminMetrics, ChartDataPoint, StatusDistribution, VendorRanking } from '../../types';
 
-const COLORS = ['accent-500', 'primary-500', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#6b7280'];
+// Colores reales para Recharts (no clases Tailwind)
+const CHART_COLORS = {
+  primary: '#0f49bd',      // Azul principal
+  secondary: '#002f87',    // Azul oscuro
+  accent: '#13ec6d',       // Verde
+  warning: '#f59e0b',      // Naranja/amarillo
+  danger: '#ef4444',       // Rojo
+  purple: '#8b5cf6',       // Morado
+  cyan: '#06b6d4',         // Cyan
+  gray: '#6b7280',         // Gris
+};
+
+// Colores para el pie chart (distribución por estado)
+const PIE_COLORS = [
+  CHART_COLORS.primary,    // Nueva
+  CHART_COLORS.secondary,   // Asignada
+  CHART_COLORS.cyan,        // En visita
+  CHART_COLORS.accent,      // Vendida
+  CHART_COLORS.warning,     // No concretada
+  CHART_COLORS.danger,     // Cancelada
+  CHART_COLORS.gray,       // Sin stock
+];
 
 const MetricCard = ({ label, value, sub }: { label: string; value: number | string; sub?: string }) => (
   <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
@@ -232,7 +253,7 @@ const AdminDashboard = () => {
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
               <Tooltip />
-              <Line type="monotone" dataKey="count" stroke="primary-500" strokeWidth={2} dot={{ fill: 'primary-500' }} name="Reservas" />
+              <Line type="monotone" dataKey="count" stroke={CHART_COLORS.primary} strokeWidth={2} dot={{ fill: CHART_COLORS.primary }} name="Reservas" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -253,7 +274,7 @@ const AdminDashboard = () => {
                 labelLine={false}
               >
                 {distribution.map((_, index) => (
-                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip formatter={(val, name) => [val, statusLabel[name as string] ?? name]} />
@@ -272,8 +293,8 @@ const AdminDashboard = () => {
             <YAxis type="category" dataKey="nombre" tick={{ fontSize: 11 }} width={110} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="totalVendidas" name="Vendidas" fill="accent-500" radius={[0, 4, 4, 0]} />
-            <Bar dataKey="totalAsignadas" name="Asignadas" fill="primary-500" radius={[0, 4, 4, 0]} />
+            <Bar dataKey="totalVendidas" name="Vendidas" fill={CHART_COLORS.accent} radius={[0, 4, 4, 0]} />
+            <Bar dataKey="totalAsignadas" name="Asignadas" fill={CHART_COLORS.primary} radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
