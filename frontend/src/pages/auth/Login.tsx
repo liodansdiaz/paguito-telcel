@@ -64,7 +64,7 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-secondary-500 to-primary-500 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <img src="https://res.cloudinary.com/dq4mwiut5/image/upload/v1775375372/LOGO_AMIGO_PAGUITOS_azul_rgb_Horizontal2-2_akxj8i.webp" alt="Amigo Paguitos Telcel" className="h-12 mx-auto mb-4" />
+          <img src="https://res.cloudinary.com/dq4mwiut5/image/upload/v1775379764/Gemini_Generated_Image_m0htjzm0htjzm0ht-fotor-bg-remover-2026040523941_xxxftz.png" alt="Amigo Paguitos Telcel" className="h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900">Portal de Vendedores</h1>
         </div>
 
