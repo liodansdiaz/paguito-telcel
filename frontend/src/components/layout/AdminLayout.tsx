@@ -42,11 +42,7 @@ const AdminLayout = () => {
         {/* Logo */}
         <div className="p-5 border-b border-secondary-600">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Amigo Paguitos Telcel" className="w-12 h-12 object-contain" />
-            <div>
-              <p className="font-bold text-sm leading-tight">Amigo Paguitos Telcel</p>
-              <p className="text-blue-300 text-xs">Panel Admin</p>
-            </div>
+            <img src="https://res.cloudinary.com/dq4mwiut5/image/upload/v1775375372/LOGO_AMIGO_PAGUITOS_azul_rgb_Horizontal2-2_akxj8i.webp" alt="Amigo Paguitos Telcel" className="h-8" />
           </div>
         </div>
 

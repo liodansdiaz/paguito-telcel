@@ -12,8 +12,8 @@
 // ═══════════════════════════════════════════════════════════════════════════=
 
 export const logoConfig = {
-  /** Ruta al logo principal en public/ */
-  mainLogo: '/logo.png',
+  /** Ruta al logo principal - puede ser URL externa o ruta local */
+  mainLogo: 'https://res.cloudinary.com/dq4mwiut5/image/upload/v1775375372/LOGO_AMIGO_PAGUITOS_azul_rgb_Horizontal2-2_akxj8i.webp',
   
   /** Ruta al favicon */
   faviconLogo: '/logo.svg',
