@@ -1,44 +1,5 @@
 import { Link } from 'react-router-dom';
 
-const mediosPago = [
-  {
-    titulo: 'Pago en línea',
-    desc: 'Realiza tu pago semanal con tarjeta de débito o crédito desde la comodidad de tu hogar.',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-      </svg>
-    ),
-  },
-  {
-    titulo: 'Centros de Atención Telcel',
-    desc: 'Visita cualquier Centro de Atención a Clientes (CAC), DATS o CVT Telcel para realizar tu pago.',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-      </svg>
-    ),
-  },
-  {
-    titulo: 'Tiendas de conveniencia',
-    desc: 'Paga en tiendas like OXXO, Extra, Chedraui y otras cadenas comerciales autorizadas.',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h8m-8 4h8m-4 8v-4m4-4h4m-8 0H4m4 0h4m-1-4v4m4-4h4m-8 8v-4m4-4h4" />
-      </svg>
-    ),
-  },
-  {
-    titulo: 'Cajeros ATM',
-    desc: 'Utiliza los cajeros automáticos de bancos participantes para pagar tu factura.',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-      </svg>
-    ),
-  },
-];
-
 // Mapeo de logos locales por nombre
 const getLogoSrc = (nombre: string): string | null => {
   const logos: Record<string, string> = {
@@ -53,13 +14,11 @@ const getLogoSrc = (nombre: string): string | null => {
     'Elektra': '/logos/Frame-10.webp',
     'Claro': '/logos/Frame-12.webp',
     'Mercado Pago': '/logos/version-horizontal-large-logo-mercado-pago.webp',
-    'Telcel': '/logos/Frame-1.webp',
-    'Cajeros ATM': '/logos/Frame-1.webp',
   };
   return logos[nombre] || null;
 };
 
-// Lista de bancos y tiendas (ordenados como en la página original)
+// Lista de bancos y tiendas
 const bancosYTiendas = [
   { nombre: 'Scotiabank', label: 'Scotiabank' },
   { nombre: 'Santander', label: 'Santander' },
@@ -89,40 +48,18 @@ const DondePagar = () => {
           <p className="text-blue-100 text-sm sm:text-base max-w-xl mx-auto">
             Para facilitar el pago de tu factura, Telcel pone a tu disposición diferentes formas de pago.
           </p>
+          <p className="text-white text-sm mt-4 font-medium">
+            Ten a la mano tu <strong>número de cuenta Amigo Paguitos</strong> al momento de realizar tu pago.
+          </p>
         </div>
       </section>
 
-      {/* ── Importante ───────────────────────────────────────────────────────── */}
-      <section className="py-8 px-4 bg-yellow-50">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-yellow-100 border border-yellow-300 rounded-xl p-4 flex items-start gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-yellow-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div>
-              <p className="font-semibold text-yellow-800 text-sm mb-1">IMPORTANTE</p>
-              <p className="text-yellow-700 text-sm">
-                Ten a la mano tu <strong>número de cuenta Amigo Paguitos</strong> al momento de realizar tu pago.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Medios de pago ────────────────────────────────────────────────────── */}
-      <section className="py-12 sm:py-16 px-4 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {mediosPago.map((medio) => (
-              <div key={medio.titulo} className="bg-gray-50 rounded-2xl p-6 border border-gray-100 hover:shadow-md transition-shadow">
-                <div className="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center mb-4">
-                  {medio.icon}
-                </div>
-                <h3 className="font-bold text-gray-900 text-lg mb-2">{medio.titulo}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{medio.desc}</p>
-              </div>
-            ))}
-          </div>
+      {/* ── Descripción ─────────────────────────────────────────────────────── */}
+      <section className="py-8 px-4 bg-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-gray-600 text-sm sm:text-base">
+            Realiza tu pago semanal, con tarjeta de débito o crédito en cualquier Centro de Atención a Clientes, en estos bancos y comercios autorizados; únicamente indica tu número de cuenta Amigo Paguitos.
+          </p>
         </div>
       </section>
 
@@ -144,7 +81,7 @@ const DondePagar = () => {
                     <img 
                       src={logoSrc} 
                       alt={lugar.label} 
-                      className="max-h-16 max-w-full object-contain grayscale hover:grayscale-0 transition-all"
+                      className="max-h-16 max-w-full object-contain"
                     />
                   ) : (
                     <span className="text-sm font-medium text-gray-700">{lugar.label}</span>
