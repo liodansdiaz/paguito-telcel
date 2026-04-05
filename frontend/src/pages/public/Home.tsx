@@ -34,8 +34,11 @@ const Home = () => {
           
           {/* Texto Principal */}
           <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-4">
-              Bienvenido a <span className="text-accent-500">Amigo Paguito Tapachula</span>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-2">
+              Bienvenido a
+            </h1>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-accent-500 mb-4">
+              Amigo Paguitos Tapachula
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-blue-100 mb-6 sm:mb-8">
               Ahora adquiere tu <strong>Amigo Kit a DOMICILIO!</strong>
