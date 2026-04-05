@@ -109,9 +109,9 @@ const FAQ = () => {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-[secondary-500] to-[primary-500] text-white py-16 px-4">
+      <section className="bg-gradient-to-br from-secondary-500 to-primary-500 text-white py-16 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <span className="bg-[accent-500] text-[secondary-500] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-4 inline-block">
+          <span className="bg-accent-500 text-secondary-500 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-4 inline-block">
             Centro de ayuda
           </span>
           <h1 className="text-3xl md:text-4xl font-extrabold mb-3">

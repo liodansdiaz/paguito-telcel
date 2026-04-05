@@ -14,7 +14,7 @@ const VendorLayout = () => {
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <header className="bg-[primary-500] text-white shadow-md px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src="https://res.cloudinary.com/dq4mwiut5/image/upload/v1775375372/LOGO_AMIGO_PAGUITOS_azul_rgb_Horizontal2-2_akxj8i.webp" alt="Amigo Paguitos Telcel" className="h-8" />
+          <img src="/amigo_paguito_telcel.png" alt="Amigo Paguitos Telcel" className="h-8" />
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">

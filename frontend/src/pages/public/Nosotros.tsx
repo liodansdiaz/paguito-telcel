@@ -44,10 +44,9 @@ const Nosotros = () => {
     <div>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-br from-[secondary-500] to-[primary-500] text-white py-16 px-4">
+      <section className="bg-gradient-to-br from-secondary-500 to-primary-500 text-white py-16 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <img src="https://res.cloudinary.com/dq4mwiut5/image/upload/v1775375372/LOGO_AMIGO_PAGUITOS_azul_rgb_Horizontal2-2_akxj8i.webp" alt="Amigo Paguitos Telcel" className="w-16 h-16 mx-auto mb-4" />
-          <span className="bg-[accent-500] text-[secondary-500] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-4 inline-block">
+          <span className="bg-accent-500 text-secondary-500 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-4 inline-block">
             Nuestra historia
           </span>
           <h1 className="text-3xl md:text-4xl font-extrabold mb-3">
