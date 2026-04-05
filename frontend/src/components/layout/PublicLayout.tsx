@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { to: '/catalogo', label: 'Catálogo' },
   { to: '/nosotros', label: 'Quiénes somos' },
   { to: '/faq', label: 'Preguntas frecuentes' },
+  { to: '/donde-pagar', label: 'Dónde pagar' },
   { to: '/mi-reserva', label: 'Mi reserva' },
 ];
 
@@ -133,6 +134,7 @@ const PublicLayout = () => {
               <Link to="/catalogo" className="text-blue-300 text-sm hover:text-white transition-colors">Catálogo</Link>
               <Link to="/nosotros" className="text-blue-300 text-sm hover:text-white transition-colors">Quiénes somos</Link>
               <Link to="/faq" className="text-blue-300 text-sm hover:text-white transition-colors">Preguntas frecuentes</Link>
+              <Link to="/donde-pagar" className="text-blue-300 text-sm hover:text-white transition-colors">Dónde pagar</Link>
               <Link to="/mi-reserva" className="text-blue-300 text-sm hover:text-white transition-colors">Mi reserva</Link>
             </div>
             <p className="text-blue-300 text-sm md:self-end">© {new Date().getFullYear()} Todos los derechos reservados.</p>

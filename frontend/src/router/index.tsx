@@ -16,6 +16,7 @@ import CartCheckout from '../pages/public/CartCheckout';
 import ReservationSuccess from '../pages/public/ReservationSuccess';
 import FAQ from '../pages/public/FAQ';
 import Nosotros from '../pages/public/Nosotros';
+import DondePagar from '../pages/public/DondePagar';
 import MiReserva from '../pages/public/MiReserva';
 
 // Auth
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
       { path: '/reserva/exitosa', element: <ReservationSuccess /> },
       { path: '/faq', element: <FAQ /> },
       { path: '/nosotros', element: <Nosotros /> },
+      { path: '/donde-pagar', element: <DondePagar /> },
       { path: '/mi-reserva', element: <MiReserva /> },
     ],
   },
