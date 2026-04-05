@@ -190,7 +190,7 @@ const ProductDetail = () => {
             )}
             {imagenes.length > 0 ? (
               <img
-                src={toImageUrl(getImageForColor(imagenes, product.colores, selectedColor))}
+                src={toImageUrl(imagenes[activeImage])}
                 alt={product.nombre}
                 className="h-64 object-contain transition-opacity duration-200"
               />
