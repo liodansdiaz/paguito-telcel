@@ -70,24 +70,27 @@ const ProductDetail = () => {
   
   const { agregarAlCarrito, contarProductosCredito } = useCarritoStore();
 
-   const [colorInitialized, setColorInitialized] = useState(false);
-   
-   useEffect(() => {
-     if (!id) return;
-     setLoading(true);
-     api.get(`/products/${id}`)
-       .then((r) => {
-         setProduct(r.data.data);
-         setActiveImage(0);
-         // Seleccionar automáticamente el primer color disponible si no hay uno seleccionado
-         if (r.data.data.colores && r.data.data.colores.length > 0 && !selectedColor && !colorInitialized) {
-           setSelectedColor(r.data.data.colores[0]);
-           setColorInitialized(true);
-         }
-       })
-       .catch(() => navigate('/catalogo'))
-       .finally(() => setLoading(false));
-   }, [id]); // Eliminado selectedColor de dependencias para evitar bucles infinitos
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    api.get(`/products/${id}`)
+      .then((r) => {
+        const prod = r.data.data;
+        setProduct(prod);
+        
+        // Auto-seleccionar primer color si existe
+        if (prod.colores && prod.colores.length > 0) {
+          setSelectedColor(prod.colores[0]);
+        }
+        
+        // Auto-seleccionar primera memoria SI SOLO HAY UNA opción
+        if (prod.memorias && prod.memorias.length === 1) {
+          setSelectedMemoria(prod.memorias[0]);
+        }
+      })
+      .catch(() => navigate('/catalogo'))
+      .finally(() => setLoading(false));
+  }, [id, navigate]);
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(price);
@@ -210,16 +213,16 @@ const ProductDetail = () => {
                   <button
                     key={i}
                     onClick={() => {
-                      if (colorDeImagen && product.colores) {
+                      // Actualizar la imagen activa
+                      setActiveImage(i);
+                      // Si esta imagen tiene un color asociado, seleccionarlo
+                      if (colorDeImagen) {
                         setSelectedColor(colorDeImagen);
-                      } else {
-                        setActiveImage(i);
-                        setSelectedColor(null);
                       }
                     }}
                     className={`w-16 h-16 rounded-lg border-2 overflow-hidden flex-shrink-0 transition-all ${
                       isSelected
-                        ? 'border-[primary-500] shadow-md'
+                        ? 'border-primary-500 shadow-md'
                         : 'border-gray-200 hover:border-gray-400'
                     }`}
                   >
@@ -298,8 +301,17 @@ const ProductDetail = () => {
                     key={c}
                     type="button"
                     title={c}
-                    onClick={() => setSelectedColor(selectedColor === c ? null : c)}
-                    className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${selectedColor === c ? 'border-[primary-500] ring-2 ring-blue-300 scale-110' : 'border-gray-300'}`}
+                    onClick={() => {
+                      setSelectedColor(c);
+                      // Buscar la imagen que coincida con este color y seleccionarla
+                      const matchingImageIndex = imagenes.findIndex(img => 
+                        img.toLowerCase().includes(c.toLowerCase())
+                      );
+                      if (matchingImageIndex !== -1) {
+                        setActiveImage(matchingImageIndex);
+                      }
+                    }}
+                    className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${selectedColor === c ? 'border-primary-500 ring-2 ring-blue-300 scale-110' : 'border-gray-300'}`}
                     style={{ backgroundColor: getColorHex(c) }}
                   />
                 ))}
@@ -319,7 +331,7 @@ const ProductDetail = () => {
                     key={m}
                     type="button"
                     onClick={() => setSelectedMemoria(selectedMemoria === m ? null : m)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${selectedMemoria === m ? 'bg-primary-500 text-white border-[primary-500]' : 'bg-white text-gray-700 border-gray-300 hover:border-[primary-500]'}`}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${selectedMemoria === m ? 'bg-primary-500 text-white border-primary-500' : 'bg-white text-gray-700 border-gray-300 hover:border-primary-500'}`}
                   >
                     {m}
                   </button>
