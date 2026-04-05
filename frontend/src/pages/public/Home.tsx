@@ -47,28 +47,15 @@ const Home = () => {
             {/* Los 3 iconos con texto */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8 max-w-3xl mx-auto">
               <div className="bg-white/10 rounded-xl p-3 sm:p-4 text-center backdrop-blur">
-                {/* Icono dinero */}
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 text-white" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5"/>
-                  <path d="M8 12h8M12 8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
+                <img src="/iconos/Paguitos.png" alt="Paguitos" className="h-10 sm:h-12 mx-auto mb-2" />
                 <p className="text-xs sm:text-sm font-medium">Paguitos semanales</p>
               </div>
               <div className="bg-white/10 rounded-xl p-3 sm:p-4 text-center backdrop-blur">
-                {/* Icono escudo */}
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 text-white" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2l9 4v6c0 5.25-3.75 9.75-9 11-5.25-1.25-9-5.75-9-11V6l9-4z" stroke="currentColor" strokeWidth="1.5"/>
-                  <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                <img src="/iconos/Garantia.png" alt="Garantía" className="h-10 sm:h-12 mx-auto mb-2" />
                 <p className="text-xs sm:text-sm font-medium">Garantía Telcel</p>
               </div>
               <div className="bg-white/10 rounded-xl p-3 sm:p-4 text-center backdrop-blur">
-                {/* Icono celular */}
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 text-white" viewBox="0 0 24 24" fill="none">
-                  <rect x="6" y="2" width="12" height="20" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                  <rect x="8" y="6" width="8" height="12" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                  <circle cx="12" cy="18" r="1" fill="currentColor"/>
-                </svg>
+                <img src="/iconos/Dispositivos.png" alt="Dispositivos" className="h-10 sm:h-12 mx-auto mb-2" />
                 <p className="text-xs sm:text-sm font-medium">¡Los mejores smartphones!</p>
               </div>
             </div>
