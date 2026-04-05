@@ -378,10 +378,9 @@ const ProductDetail = () => {
                     : 'bg-white text-gray-700 border-gray-300 hover:border-[primary-500]'
                 }`}
               >
-                <div className="flex flex-col items-center gap-0.5 md:gap-1">
+                <div className="flex items-center justify-center gap-2">
                   <span className="text-lg">💵</span>
-                  <span>Contado</span>
-                  <span className="text-xs opacity-90">{formatPrice(product.precio)}</span>
+                  <span>Al Contado</span>
                 </div>
               </button>
               {product.disponibleCredito && (
@@ -396,14 +395,9 @@ const ProductDetail = () => {
                   disabled={contarProductosCredito() > 0}
                   title={contarProductosCredito() > 0 ? 'Ya tienes un producto a crédito en el carrito' : ''}
                 >
-                  <div className="flex flex-col items-center gap-0.5 md:gap-1">
+                  <div className="flex items-center justify-center gap-2">
                     <span className="text-lg">📊</span>
-                    <span>A crédito</span>
-                    {product.pagoSemanal && (
-                      <span className="text-xs opacity-90 whitespace-nowrap">
-                        {product.pagoSemanal}
-                      </span>
-                    )}
+                    <span>A Crédito</span>
                   </div>
                 </button>
               )}
