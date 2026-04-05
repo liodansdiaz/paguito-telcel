@@ -353,39 +353,39 @@ const CartCheckout = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
       {/* Breadcrumb */}
-      <nav className="text-sm text-gray-400 mb-6">
+      <nav className="text-xs sm:text-sm text-gray-400 mb-4 sm:mb-6">
         <Link to="/" className="hover:text-blue-600">Inicio</Link>
-        <span className="mx-2">/</span>
+        <span className="mx-1 sm:mx-2">/</span>
         <Link to="/catalogo" className="hover:text-blue-600">Catálogo</Link>
-        <span className="mx-2">/</span>
+        <span className="mx-1 sm:mx-2">/</span>
         <span className="text-gray-700">Carrito</span>
       </nav>
 
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">
         {step === 'cart' ? 'Tu carrito' : 'Datos de reserva'}
       </h1>
 
       {/* Progress bar */}
-      <div className="flex items-center justify-center mb-10">
-        <div className="flex items-center gap-4">
-          <div className={`flex items-center gap-2 ${step === 'cart' ? 'text-primary-500' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+      <div className="flex items-center justify-center mb-6 sm:mb-10">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className={`flex items-center gap-1 sm:gap-2 ${step === 'cart' ? 'text-primary-500' : 'text-gray-400'}`}>
+            <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm ${
               step === 'cart' ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-600'
             }`}>
               1
             </div>
-            <span className="font-medium hidden sm:inline">Carrito</span>
+            <span className="font-medium hidden sm:inline text-xs sm:text-sm">Carrito</span>
           </div>
-          <div className="w-16 h-0.5 bg-gray-300"></div>
-          <div className={`flex items-center gap-2 ${step === 'form' ? 'text-primary-500' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+          <div className="w-8 sm:w-16 h-0.5 bg-gray-300"></div>
+          <div className={`flex items-center gap-1 sm:gap-2 ${step === 'form' ? 'text-primary-500' : 'text-gray-400'}`}>
+            <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm ${
               step === 'form' ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-600'
             }`}>
               2
             </div>
-            <span className="font-medium hidden sm:inline">Datos</span>
+            <span className="font-medium hidden sm:inline text-xs sm:text-sm">Datos</span>
           </div>
         </div>
       </div>
@@ -485,36 +485,36 @@ const CartCheckout = () => {
             </div>
           ) : (
             /* PASO 2: Formulario de datos */
-            <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 space-y-5">
-              <div className="grid sm:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-3 sm:p-6 space-y-4 sm:space-y-5">
+              <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Nombre completo <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.nombreCompleto}
                     onChange={(e) => setFormData({ ...formData, nombreCompleto: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     placeholder="Juan Pérez García"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Teléfono <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
                     value={formData.telefono}
                     onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     placeholder="9611234567"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     CURP <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -522,26 +522,26 @@ const CartCheckout = () => {
                     maxLength={18}
                     value={formData.curp}
                     onChange={(e) => setFormData({ ...formData, curp: e.target.value.toUpperCase() })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase text-sm"
                     placeholder="PEGJ900101HCHRRS01"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Dirección completa <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     rows={2}
                     value={formData.direccion}
                     onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
                     placeholder="Calle, número, colonia, ciudad"
                   />
                 </div>
 
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Fecha preferida <span className="text-red-500">*</span>
                   </label>
                   
@@ -549,7 +549,7 @@ const CartCheckout = () => {
                   <button
                     type="button"
                     onClick={() => setShowCalendar(!showCalendar)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left bg-white flex items-center justify-between"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left bg-white flex items-center justify-between text-sm"
                   >
                     <span className={formData.fechaPreferida ? 'text-gray-900' : 'text-gray-400'}>
                       {formData.fechaPreferida 
@@ -562,7 +562,7 @@ const CartCheckout = () => {
                         : 'Selecciona una fecha'
                       }
                     </span>
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 sm:w-5 h-4 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </button>
@@ -600,13 +600,13 @@ const CartCheckout = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Horario preferido <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.horarioPreferido}
                     onChange={(e) => setFormData({ ...formData, horarioPreferido: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   >
                     <option value="10:00">10:00 AM</option>
                     <option value="11:00">11:00 AM</option>
@@ -619,14 +619,14 @@ const CartCheckout = () => {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Notas adicionales (opcional)
                   </label>
                   <textarea
                     rows={2}
                     value={formData.notas}
                     onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
                     placeholder="Alguna indicación especial para la visita..."
                   />
                 </div>
@@ -635,9 +635,9 @@ const CartCheckout = () => {
               {/* ── Sección mapa ─────────────────────────────────────────── */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700">
                     Ubicación en el mapa
-                    <span className="ml-2 text-xs font-normal text-gray-400">(opcional)</span>
+                    <span className="ml-1 sm:ml-2 text-xs font-normal text-gray-400">(opcional)</span>
                   </label>
                   {(geo.obtained || showMap) && (
                     <button type="button" onClick={handleResetPin} className="text-xs text-gray-400 hover:text-gray-600 underline">
@@ -689,7 +689,7 @@ const CartCheckout = () => {
                       </span>
                     </div>
 
-                    <div className="h-64 overflow-hidden" style={{ contain: 'layout style', maxWidth: '100%' }}>
+                    <div className="h-48 sm:h-64 overflow-hidden" style={{ contain: 'layout style', maxWidth: '100%' }}>
                       <MapContainer center={mapCenter} zoom={mapZoom} className="h-full w-full z-10" style={{ maxWidth: '100%', width: '100%' }}>
                         <TileLayer
                           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

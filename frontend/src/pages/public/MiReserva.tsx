@@ -216,22 +216,22 @@ const MiReserva = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-secondary-500 to-primary-500 text-white py-14 px-4">
+      <section className="bg-gradient-to-br from-secondary-500 to-primary-500 text-white py-10 sm:py-14 px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <span className="bg-accent-500 text-secondary-500 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-4 inline-block">
+          <span className="bg-accent-500 text-secondary-500 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-3 sm:mb-4 inline-block">
             Sin necesidad de cuenta
           </span>
-          <h1 className="text-3xl font-extrabold mb-2">Consulta tu reserva</h1>
-          <p className="text-blue-100 text-sm max-w-md mx-auto">
+          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2">Consulta tu reserva</h1>
+          <p className="text-blue-100 text-xs sm:text-sm max-w-md mx-auto">
             Ingresa tu número de folio o tu CURP para ver el estado de tu reserva y gestionar tus productos.
           </p>
         </div>
       </section>
 
       {/* Formulario de búsqueda */}
-      <section className="py-10 px-4">
+      <section className="py-6 sm:py-10 px-4">
         <div className="max-w-md mx-auto">
-          <form onSubmit={handleBuscar} className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+          <form onSubmit={handleBuscar} className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Folio o CURP
             </label>
@@ -240,12 +240,12 @@ const MiReserva = () => {
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Ej: A1B2C3D4 o PEGJ900101HCHRRS01"
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm uppercase"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm uppercase"
             />
             <button
               type="submit"
               disabled={loading || !busqueda.trim()}
-              className="w-full mt-4 bg-primary-500 text-white py-3 rounded-xl font-bold hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-3 sm:mt-4 bg-primary-500 text-white py-2.5 sm:py-3 rounded-xl font-bold hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             >
               {loading ? 'Buscando...' : 'Buscar mi reserva'}
             </button>
@@ -334,18 +334,18 @@ const MiReserva = () => {
 
               {/* Botón cancelar reserva completa */}
               {puedeCancelarReserva && (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {!editando && (
                     <button
                       onClick={handleAbrirEdicion}
-                      className="w-full sm:w-auto border-2 border-[primary-500] text-[primary-500] px-6 py-2.5 rounded-lg font-medium hover:bg-blue-50 transition-colors mr-3"
+                      className="w-full sm:w-auto border-2 border-[primary-500] text-[primary-500] px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium hover:bg-blue-50 transition-colors mr-0 sm:mr-3 mb-2 sm:mb-0"
                     >
                       Modificar reserva
                     </button>
                   )}
                   <button
                     onClick={() => setShowConfirmReserva(true)}
-                    className="w-full sm:w-auto border-2 border-red-500 text-red-600 px-6 py-2.5 rounded-lg font-medium hover:bg-red-50 transition-colors"
+                    className="w-full sm:w-auto border-2 border-red-500 text-red-600 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium hover:bg-red-50 transition-colors"
                   >
                     Cancelar toda la reserva
                   </button>
