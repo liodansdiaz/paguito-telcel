@@ -40,7 +40,7 @@ const Home = () => {
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-accent-500 mb-4">
               Amigo Paguitos Tapachula
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-blue-100 mb-6 sm:mb-8">
+            <p className="text-lg sm:text-xl md:text-2xl text-blue-100 mb-6 sm:mb-8 font-medium">
               Ahora adquiere tu <strong>Amigo Kit a DOMICILIO!</strong>
             </p>
             
