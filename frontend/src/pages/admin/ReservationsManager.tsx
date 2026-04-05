@@ -587,7 +587,7 @@ const ReservationsManager = () => {
             </select>
             <div className="flex gap-3">
               <button onClick={() => setAssignModal({ open: false, reservation: null })} className="flex-1 border border-gray-300 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50">Cancelar</button>
-              <button onClick={handleAssign} disabled={!assignVendorId || actionLoading} className="flex-1 bg-primary-500 text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-primary-600">{actionLoading ? 'Asignando...' : 'Confirmar'}</button>
+              <button onClick={handleAssign} disabled={!assignVendorId || actionLoading} className="flex-1 bg-primary-500 text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50">{actionLoading ? 'Asignando...' : 'Confirmar'}</button>
             </div>
           </div>
         </div>
@@ -605,7 +605,7 @@ const ReservationsManager = () => {
             <textarea value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Notas (opcional)" rows={3} className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
             <div className="flex gap-3">
               <button onClick={() => setStatusModal({ open: false, reservation: null })} className="flex-1 border border-gray-300 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50">Cancelar</button>
-              <button onClick={handleStatusChange} disabled={actionLoading} className="flex-1 bg-primary-500 text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-primary-600">{actionLoading ? 'Guardando...' : 'Confirmar'}</button>
+              <button onClick={handleStatusChange} disabled={actionLoading} className="flex-1 bg-primary-500 text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50">{actionLoading ? 'Guardando...' : 'Confirmar'}</button>
             </div>
           </div>
         </div>

@@ -374,7 +374,7 @@ const AdminsManager = () => {
                 <button type="button" onClick={closeModal} className="flex-1 border border-gray-300 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50">
                   Cancelar
                 </button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 bg-primary-500 text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-primary-600">
+                <button type="submit" disabled={isSubmitting} className="flex-1 bg-primary-500 text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50">
                   {isSubmitting ? 'Guardando...' : editingAdmin ? 'Guardar cambios' : 'Crear administrador'}
                 </button>
               </div>

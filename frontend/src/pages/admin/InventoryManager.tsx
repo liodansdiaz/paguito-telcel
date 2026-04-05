@@ -972,7 +972,7 @@ const InventoryManager = () => {
                   Cancelar
                 </button>
                 <button type="submit" disabled={isSubmitting}
-                  className="flex-1 bg-primary-500 text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-primary-600">
+                  className="flex-1 bg-primary-500 text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50">
                   {isSubmitting ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Agregar producto'}
                 </button>
               </div>
