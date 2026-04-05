@@ -29,29 +29,51 @@ const Home = () => {
   return (
     <div className="min-h-screen">
       {/* ── HERO SECTION ───────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-br from-secondary-500 to-primary-500 text-white py-16 px-4">
-        <div className="max-w-5xl mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold mb-4 leading-tight">
-            Tu próximo celular a la puerta de tu casa
-          </h1>
-          <p className="text-lg sm:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Resérvalo ahora, un vendedor te visita en tu domicilio y lo tienes el mismo día. 
-            Crédito fácil sin buró.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/catalogo"
-              className="bg-accent-500 text-secondary-500 px-8 py-3 rounded-xl font-bold text-sm hover:bg-accent-400 transition-colors shadow-lg"
-            >
-              Ver catálogo
-            </Link>
-            <Link
-              to="/mi-reserva"
-              className="bg-white/10 backdrop-blur text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-white/20 transition-colors"
-            >
-              Consultar mi reserva
-            </Link>
+      <section className="bg-gradient-to-br from-secondary-500 to-primary-500 text-white py-12 sm:py-16 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          
+          {/* Texto Principal */}
+          <div className="text-center">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-4">
+              Bienvenido a <span className="text-accent-500">Amigo Paguito Tapachula</span>
+            </h1>
+            <p className="text-base sm:text-lg md:text-xl text-blue-100 mb-6 sm:mb-8">
+              Ahora adquirir tu <strong>Amigo Kit</strong> es mucho más fácil y rápido
+            </p>
+            
+            {/* Los 3 iconos con texto */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8 max-w-3xl mx-auto">
+              <div className="bg-white/10 rounded-xl p-3 sm:p-4 text-center backdrop-blur">
+                <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">💰</div>
+                <p className="text-xs sm:text-sm font-medium">Paguitos semanales</p>
+              </div>
+              <div className="bg-white/10 rounded-xl p-3 sm:p-4 text-center backdrop-blur">
+                <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">🛡️</div>
+                <p className="text-xs sm:text-sm font-medium">Garantía Telcel</p>
+              </div>
+              <div className="bg-white/10 rounded-xl p-3 sm:p-4 text-center backdrop-blur">
+                <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">📱</div>
+                <p className="text-xs sm:text-sm font-medium">¡Los mejores smartphones!</p>
+              </div>
+            </div>
+            
+            {/* Botones */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <Link
+                to="/catalogo"
+                className="bg-accent-500 text-secondary-500 px-6 sm:px-8 py-3 rounded-xl font-bold text-sm hover:bg-accent-400 transition-colors shadow-lg"
+              >
+                Ver catálogo
+              </Link>
+              <Link
+                to="/mi-reserva"
+                className="bg-white/10 backdrop-blur text-white px-6 sm:px-8 py-3 rounded-xl font-bold text-sm hover:bg-white/20 transition-colors"
+              >
+                Consultar mi reserva
+              </Link>
+            </div>
           </div>
+          
         </div>
       </section>
 
