@@ -26,9 +26,14 @@ const getImageForColor = (imagenes: string[], colores: string[] | undefined, col
   // Si hay un color seleccionado, buscar imagen que coincida con ese color
   if (color && imagenes.length > 0) {
     const colorLower = color.toLowerCase();
-    const matchingImage = imagenes.find(img => 
-      img.toLowerCase().includes(colorLower)
-    );
+    // Dividir el color en palabras (ej: "Azul Oscuro" -> ["azul", "oscuro"])
+    const colorWords = colorLower.split(/\s+/);
+    
+    // Buscar imagen que contenga CUALQUIER palabra del color
+    const matchingImage = imagenes.find(img => {
+      const imgLower = img.toLowerCase();
+      return colorWords.some(word => imgLower.includes(word));
+    });
     return matchingImage || imagenes[0]; // fallback a primera imagen
   }
   
@@ -36,9 +41,12 @@ const getImageForColor = (imagenes: string[], colores: string[] | undefined, col
   if (colores && colores.length > 0 && imagenes.length > 0) {
     const primerColor = colores[0];
     const colorLower = primerColor.toLowerCase();
-    const matchingImage = imagenes.find(img => 
-      img.toLowerCase().includes(colorLower)
-    );
+    const colorWords = colorLower.split(/\s+/);
+    
+    const matchingImage = imagenes.find(img => {
+      const imgLower = img.toLowerCase();
+      return colorWords.some(word => imgLower.includes(word));
+    });
     return matchingImage || imagenes[0]; // fallback a primera imagen
   }
   
@@ -203,8 +211,8 @@ const ProductDetail = () => {
           {imagenes.length > 1 && (
             <div className="flex gap-2 overflow-x-auto pb-2">
               {imagenes.map((img, i) => {
-                // Detectar el color de esta imagen si hay colores disponibles
-                const colorDeImagen = product.colores ? detectColorFromImage(img, product.colores) : null;
+                // Usar imagenesColores para obtener el color de esta imagen
+                const colorDeImagen = product.imagenesColores?.[i] || null;
                 const isSelected = selectedColor 
                   ? colorDeImagen === selectedColor 
                   : activeImage === i;
@@ -303,12 +311,12 @@ const ProductDetail = () => {
                     title={c}
                     onClick={() => {
                       setSelectedColor(c);
-                      // Buscar la imagen que coincida con este color y seleccionarla
-                      const matchingImageIndex = imagenes.findIndex(img => 
-                        img.toLowerCase().includes(c.toLowerCase())
-                      );
-                      if (matchingImageIndex !== -1) {
-                        setActiveImage(matchingImageIndex);
+                      // Buscar la imagen que corresponde a este color usando imagenesColores
+                      if (product.imagenesColores && product.imagenesColores.length > 0) {
+                        const matchingImageIndex = product.imagenesColores.findIndex(color => color === c);
+                        if (matchingImageIndex !== -1) {
+                          setActiveImage(matchingImageIndex);
+                        }
                       }
                     }}
                     className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${selectedColor === c ? 'border-primary-500 ring-2 ring-blue-300 scale-110' : 'border-gray-300'}`}

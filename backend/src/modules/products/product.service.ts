@@ -75,6 +75,7 @@ export class ProductService {
     stock: number;
     stockMinimo?: number;
     imagenes?: string[];
+    imagenesColores?: string[];
     colores?: string[];
     memorias?: string[];
     badge?: string;
@@ -93,6 +94,7 @@ export class ProductService {
       stock: data.stock,
       stockMinimo: data.stockMinimo || 5,
       imagenes: data.imagenes ?? [],
+      imagenesColores: data.imagenesColores ?? [],
       colores: data.colores ?? [],
       memorias: data.memorias ?? [],
       badge: data.badge,
@@ -119,6 +121,7 @@ export class ProductService {
     stock: number;
     stockMinimo: number;
     imagenes: string[];
+    imagenesColores: string[];
     colores: string[];
     memorias: string[];
     badge: string;

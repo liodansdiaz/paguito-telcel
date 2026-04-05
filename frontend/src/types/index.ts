@@ -29,6 +29,7 @@ export interface Product {
   stockMinimo: number;
   isActive: boolean;
   imagenes: string[];
+  imagenesColores: string[];
   colores: string[];
   memorias: string[];
   badge?: string;

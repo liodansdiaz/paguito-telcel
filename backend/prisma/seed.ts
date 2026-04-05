@@ -52,6 +52,10 @@ async function main() {
       disponibleCredito: true, pagosSemanales: '580',
       badge: 'Más Vendido',
       especificaciones: { pantalla: '6.7" Super Retina XDR', camara: '48MP', chip: 'A16 Bionic', bateria: '4323 mAh', conectividad: '5G' },
+      imagenes: ['iphone14-promax-negro.jpg', 'iphone14-promax-blanco.jpg', 'iphone14-promax-azul.jpg', 'iphone14-promax-morado.jpg'],
+      imagenesColores: ['Negro', 'Blanco', 'Azul Oscuro', 'Morado'],
+      colores: ['Negro', 'Blanco', 'Azul Oscuro', 'Morado'],
+      memorias: ['256GB', '512GB', '1TB'],
     },
     {
       sku: 'SAM-S23U-512', nombre: 'Samsung Galaxy S23 Ultra', marca: 'Samsung',
@@ -60,6 +64,10 @@ async function main() {
       disponibleCredito: true, pagosSemanales: '530',
       badge: 'Oferta',
       especificaciones: { pantalla: '6.8" Dynamic AMOLED', camara: '200MP', chip: 'Snapdragon 8 Gen 2', bateria: '5000 mAh', conectividad: '5G' },
+      imagenes: ['samsung-s23ultra-negro.jpg', 'samsung-s23ultra-cream.jpg', 'samsung-s23ultra-verde.jpg'],
+      imagenesColores: ['Negro', 'Cream', 'Verde'],
+      colores: ['Negro', 'Cream', 'Verde'],
+      memorias: ['512GB', '1TB'],
     },
     {
       sku: 'XIA-RN12-128', nombre: 'Xiaomi Redmi Note 12', marca: 'Xiaomi',
@@ -68,6 +76,10 @@ async function main() {
       disponibleCredito: true, pagosSemanales: '92',
       badge: 'Nuevo Ingreso',
       especificaciones: { pantalla: '6.67" AMOLED', camara: '50MP', chip: 'Snapdragon 685', bateria: '5000 mAh', conectividad: '4G' },
+      imagenes: ['xiaomi-rn12-gris.jpg', 'xiaomi-rn12-azul.jpg', 'xiaomi-rn12-verde.jpg'],
+      imagenesColores: ['Gris', 'Azul', 'Verde'],
+      colores: ['Gris', 'Azul', 'Verde'],
+      memorias: ['128GB', '256GB'],
     },
     {
       sku: 'MOT-ED40-256', nombre: 'Motorola Edge 40', marca: 'Motorola',
@@ -76,6 +88,10 @@ async function main() {
       disponibleCredito: true, pagosSemanales: '200',
       badge: null,
       especificaciones: { pantalla: '6.55" pOLED 144Hz', camara: '50MP', chip: 'Dimensity 8020', bateria: '4400 mAh', conectividad: '5G' },
+      imagenes: ['motorola-edge40-negro.jpg', 'motorola-edge40-verde.jpg'],
+      imagenesColores: ['Negro', 'Verde Menta'],
+      colores: ['Negro', 'Verde Menta'],
+      memorias: ['256GB'],
     },
     {
       sku: 'APL-13MN-128', nombre: 'iPhone 13 Mini', marca: 'Apple',
@@ -84,6 +100,10 @@ async function main() {
       disponibleCredito: true, pagosSemanales: '300',
       badge: null,
       especificaciones: { pantalla: '5.4" Super Retina XDR', camara: '12MP Dual', chip: 'A15 Bionic', bateria: '2438 mAh', conectividad: '5G' },
+      imagenes: ['iphone13mini-azul.jpg', 'iphone13mini-blanco.jpg', 'iphone13mini-negro.jpg', 'iphone13mini-rosa.jpg'],
+      imagenesColores: ['Azul', 'Blanco', 'Negro', 'Rosa'],
+      colores: ['Azul', 'Blanco', 'Negro', 'Rosa'],
+      memorias: ['128GB', '256GB'],
     },
     {
       sku: 'SAM-A54-256', nombre: 'Samsung Galaxy A54 5G', marca: 'Samsung',
@@ -92,6 +112,10 @@ async function main() {
       disponibleCredito: true, pagosSemanales: '180',
       badge: null,
       especificaciones: { pantalla: '6.4" Super AMOLED', camara: '50MP OIS', chip: 'Exynos 1380', bateria: '5000 mAh', conectividad: '5G' },
+      imagenes: ['samsung-a54-negro.jpg', 'samsung-a54-blanco.jpg', 'samsung-a54-lavanda.jpg'],
+      imagenesColores: ['Negro', 'Blanco', 'Lavanda'],
+      colores: ['Negro', 'Blanco', 'Lavanda'],
+      memorias: ['128GB', '256GB'],
     },
     {
       sku: 'HON-M5L-256', nombre: 'Honor Magic5 Lite', marca: 'Honor',
@@ -100,6 +124,10 @@ async function main() {
       disponibleCredito: true, pagosSemanales: '130',
       badge: null,
       especificaciones: { pantalla: '6.67" AMOLED 120Hz', camara: '64MP', chip: 'Snapdragon 695', bateria: '5100 mAh', conectividad: '5G' },
+      imagenes: ['honor-m5lite-verde.jpg', 'honor-m5lite-plata.jpg', 'honor-m5lite-negro.jpg'],
+      imagenesColores: ['Verde', 'Plata', 'Negro'],
+      colores: ['Verde', 'Plata', 'Negro'],
+      memorias: ['256GB'],
     },
     {
       sku: 'OPP-RN10-256', nombre: 'OPPO Reno 10 5G', marca: 'OPPO',
@@ -108,6 +136,10 @@ async function main() {
       disponibleCredito: true, pagosSemanales: '200',
       badge: null,
       especificaciones: { pantalla: '6.7" AMOLED 120Hz', camara: '64MP + 32MP Telefoto', chip: 'Snapdragon 778G', bateria: '5000 mAh', conectividad: '5G' },
+      imagenes: ['oppo-rn10-azul.jpg', 'oppo-rn10-gris.jpg'],
+      imagenesColores: ['Azul', 'Gris'],
+      colores: ['Azul', 'Gris'],
+      memorias: ['256GB'],
     },
   ];
 

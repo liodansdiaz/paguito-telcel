@@ -15,6 +15,10 @@ const createProductSchema = z.object({
   precioAnterior: z.number().positive().nullable().optional(),
   stock: z.number().int().min(0),
   stockMinimo: z.number().int().min(0).optional(),
+  imagenes: z.array(z.string()).optional(),
+  imagenesColores: z.array(z.string()).optional(),
+  colores: z.array(z.string()).optional(),
+  memorias: z.array(z.string()).optional(),
   badge: z.string().optional(),
   disponibleCredito: z.boolean().optional(),
   enganche: z.string().optional(),
@@ -152,6 +156,15 @@ export class ProductController {
           memorias = body.memorias;
         }
       }
+      // imagenesColores: mapeo de cada imagen a su color
+      let imagenesColores: string[] = [];
+      if (body.imagenesColores) {
+        if (typeof body.imagenesColores === 'string') {
+          try { imagenesColores = JSON.parse(body.imagenesColores); } catch { imagenesColores = body.imagenesColores.split(',').map((c: string) => c.trim()).filter(Boolean); }
+        } else if (Array.isArray(body.imagenesColores)) {
+          imagenesColores = body.imagenesColores;
+        }
+      }
 
       const data = createProductSchema.parse(body);
 
@@ -164,7 +177,7 @@ export class ProductController {
         );
       }
 
-      const product = await productService.createProduct({ ...data, imagenes, colores, memorias });
+      const product = await productService.createProduct({ ...data, imagenes, colores, memorias, imagenesColores });
       sendSuccess(res, product, 'Producto creado exitosamente', 201);
     } catch (err) {
       next(err);
@@ -201,6 +214,14 @@ export class ProductController {
           try { memorias = JSON.parse(body.memorias); } catch { memorias = body.memorias.split(',').map((c: string) => c.trim()).filter(Boolean); }
         } else if (Array.isArray(body.memorias)) {
           memorias = body.memorias;
+        }
+      }
+      let imagenesColores: string[] | undefined;
+      if (body.imagenesColores !== undefined) {
+        if (typeof body.imagenesColores === 'string') {
+          try { imagenesColores = JSON.parse(body.imagenesColores); } catch { imagenesColores = body.imagenesColores.split(',').map((c: string) => c.trim()).filter(Boolean); }
+        } else if (Array.isArray(body.imagenesColores)) {
+          imagenesColores = body.imagenesColores;
         }
       }
 
@@ -255,6 +276,7 @@ export class ProductController {
           imagenes,
           ...(colores !== undefined ? { colores } : {}),
           ...(memorias !== undefined ? { memorias } : {}),
+          ...(imagenesColores !== undefined ? { imagenesColores } : {}),
         }
       );
       sendSuccess(res, product, 'Producto actualizado');

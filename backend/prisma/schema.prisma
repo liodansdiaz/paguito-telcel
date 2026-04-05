@@ -86,6 +86,7 @@ model Product {
   stockMinimo     Int       @default(5)
   isActive        Boolean   @default(true)
   imagenes        String[]  @default([])
+  imagenesColores String[]  @default([])  // Mapeo: qué color corresponde a cada imagen
   colores         String[]  @default([])
   memorias        String[]  @default([])
   badge           String?
