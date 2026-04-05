@@ -212,7 +212,16 @@ const ProductDetail = () => {
             <div className="flex gap-2 overflow-x-auto pb-2">
               {imagenes.map((img, i) => {
                 // Usar imagenesColores para obtener el color de esta imagen
-                const colorDeImagen = product.imagenesColores?.[i] || null;
+                let colorDeImagen: string | null = null;
+                
+                if (product.imagenesColores && product.imagenesColores.length > 0) {
+                  // Usar mapeo directo
+                  colorDeImagen = product.imagenesColores[i] || null;
+                } else if (product.colores && product.colores.length > i) {
+                  // Fallback: usar índice
+                  colorDeImagen = product.colores[i];
+                }
+                
                 const isSelected = selectedColor 
                   ? colorDeImagen === selectedColor 
                   : activeImage === i;
@@ -311,11 +320,19 @@ const ProductDetail = () => {
                     title={c}
                     onClick={() => {
                       setSelectedColor(c);
-                      // Buscar la imagen que corresponde a este color usando imagenesColores
-                      if (product.imagenesColores && product.imagenesColores.length > 0) {
-                        const matchingImageIndex = product.imagenesColores.findIndex(color => color === c);
+                      // Buscar la imagen que corresponde a este color
+                      const coloresMap = product.imagenesColores;
+                      if (coloresMap && coloresMap.length > 0) {
+                        // Usar mapeo directo imagenesColores
+                        const matchingImageIndex = coloresMap.findIndex(color => color === c);
                         if (matchingImageIndex !== -1) {
                           setActiveImage(matchingImageIndex);
+                        }
+                      } else if (product.colores && imagenes.length > 0) {
+                        // Fallback: usar índice - assumes imagenes[0] = colores[0], etc.
+                        const colorIndex = product.colores.indexOf(c);
+                        if (colorIndex !== -1 && colorIndex < imagenes.length) {
+                          setActiveImage(colorIndex);
                         }
                       }
                     }}

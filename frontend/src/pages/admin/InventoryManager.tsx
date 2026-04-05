@@ -60,6 +60,7 @@ const InventoryManager = () => {
   const [selectedColores, setSelectedColores] = useState<string[]>([]);
   const [selectedMemorias, setSelectedMemorias] = useState<string[]>([]);
   const [especificaciones, setEspecificaciones] = useState<Record<string, string>>({});
+  const [imagenesColores, setImagenesColores] = useState<string[]>([]); // Mapeo: qué color corresponde a cada imagen
 
   // Modal eliminar
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
@@ -187,6 +188,16 @@ const InventoryManager = () => {
         ? Object.fromEntries(Object.entries(product.especificaciones).map(([k, v]) => [k, String(v)]))
         : {}
     );
+    // Usar imagenesColores existente o crear mapeo por índice
+    if (product.imagenesColores && product.imagenesColores.length > 0) {
+      setImagenesColores(product.imagenesColores);
+    } else if (product.colores && product.imagenes) {
+      // Fallback: crear mapeo por índice
+      const mapeo = product.imagenes.map((_, i) => product.colores[i] || '');
+      setImagenesColores(mapeo);
+    } else {
+      setImagenesColores([]);
+    }
     setValue('sku', product.sku);
     setValue('nombre', product.nombre);
     setValue('marca', product.marca);
@@ -209,6 +220,7 @@ const InventoryManager = () => {
     setSelectedColores([]);
     setSelectedMemorias([]);
     setEspecificaciones({});
+    setImagenesColores([]); // Resetear mapeo de colores
     reset({
       sku: '',
       nombre: '',
@@ -229,25 +241,12 @@ const InventoryManager = () => {
   const closeForm = () => {
     setShowForm(false);
     setEditingProduct(null);
-    reset({
-      sku: '',
-      nombre: '',
-      marca: '',
-      descripcion: '',
-      precio: 0,
-      precioAnterior: undefined,
-      stock: 0,
-      stockMinimo: 5,
-      badge: '',
-      disponibleCredito: true,
-      enganche: '',
-      pagoSemanal: '',
-    });
-    setImageFiles([]);
     setExistingImageUrls([]);
+    setImageFiles([]);
     setSelectedColores([]);
     setSelectedMemorias([]);
     setEspecificaciones({});
+    setImagenesColores([]); // Resetear mapeo de colores
   };
 
   const onSubmit = async (data: ProductForm) => {
@@ -267,6 +266,7 @@ const InventoryManager = () => {
       imageFiles.forEach((file) => formData.append('imagenes', file));
       formData.append('colores', JSON.stringify(selectedColores));
       formData.append('memorias', JSON.stringify(selectedMemorias));
+      formData.append('imagenesColores', JSON.stringify(imagenesColores));
       if (Object.keys(especificaciones).length > 0) {
         formData.append('especificaciones', JSON.stringify(especificaciones));
       }
@@ -913,6 +913,58 @@ const InventoryManager = () => {
                 <p className="text-xs text-gray-500 mt-2">
                   {existingImageUrls.length + imageFiles.length} de 3 imágenes
                 </p>
+
+                {/* Mapeo de imagen a color */}
+                {(existingImageUrls.length + imageFiles.length) > 0 && selectedColores.length > 0 && (
+                  <div className="mt-4 pt-4 border-t">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Asignar color a cada imagen
+                    </label>
+                    <p className="text-xs text-gray-500 mb-3">Selecciona el color que corresponde a cada imagen</p>
+                    <div className="space-y-2">
+                      {/* Imágenes existentes */}
+                      {existingImageUrls.map((url, idx) => (
+                        <div key={`existing-${idx}`} className="flex items-center gap-3">
+                          <img src={toImageUrl(url)} alt={`Imagen ${idx + 1}`} className="w-10 h-10 object-contain rounded border border-gray-200" />
+                          <select
+                            value={imagenesColores[idx] || ''}
+                            onChange={(e) => {
+                              const newMapeo = [...imagenesColores];
+                              newMapeo[idx] = e.target.value;
+                              setImagenesColores(newMapeo);
+                            }}
+                            className="flex-1 text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          >
+                            <option value="">Seleccionar color</option>
+                            {selectedColores.map((color) => (
+                              <option key={color} value={color}>{color}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                      {/* Nuevas imágenes */}
+                      {imageFiles.map((file, idx) => (
+                        <div key={`new-${idx}`} className="flex items-center gap-3">
+                          <img src={URL.createObjectURL(file)} alt={`Nueva ${idx + 1}`} className="w-10 h-10 object-contain rounded border border-gray-200" />
+                          <select
+                            value={imagenesColores[existingImageUrls.length + idx] || ''}
+                            onChange={(e) => {
+                              const newMapeo = [...imagenesColores];
+                              newMapeo[existingImageUrls.length + idx] = e.target.value;
+                              setImagenesColores(newMapeo);
+                            }}
+                            className="flex-1 text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          >
+                            <option value="">Seleccionar color</option>
+                            {selectedColores.map((color) => (
+                              <option key={color} value={color}>{color}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="flex gap-3 pt-2">
