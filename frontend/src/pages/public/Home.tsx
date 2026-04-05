@@ -38,7 +38,7 @@ const Home = () => {
               Bienvenido a <span className="text-accent-500">Amigo Paguito Tapachula</span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-blue-100 mb-6 sm:mb-8">
-              Ahora adquirir tu <strong>Amigo Kit</strong> es mucho más fácil y rápido
+              Ahora adquiere tu <strong>Amigo Kit a DOMICILIO!</strong>
             </p>
             
             {/* Los 3 iconos con texto */}
