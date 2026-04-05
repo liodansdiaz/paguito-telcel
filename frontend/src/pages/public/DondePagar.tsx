@@ -1,161 +1,5 @@
 import { Link } from 'react-router-dom';
 
-// Logo BBVA
-const LogoBBVA = ({ className = "h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M10 5h80v30H10z" fill="#004731"/>
-    <path d="M15 10h70v20H15z" fill="#fff"/>
-    <path d="M18 14l8 12h-5l-4-6h-2l-4 6h-5z" fill="#fff"/>
-    <path d="M30 14l8 12h-5l-4-6h-2l-4 6h-5z" fill="#fff"/>
-    <path d="M42 14l8 12h-5l-4-6h-2l-4 6h-5z" fill="#fff"/>
-    <path d="M55 14l8 12h-5l-4-6h-2l-4 6h-5z" fill="#fff"/>
-    <path d="M67 14l8 12h-5l-4-6h-2l-4 6h-5z" fill="#fff"/>
-  </svg>
-);
-
-// Logo OXXO
-const LogoOXXO = ({ className = "h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="20" cy="20" r="15" fill="#E30613"/>
-    <path d="M12 15c2-2 5-2 7 0 2 2 2 5 0 7-2 2-5 2-7 0-2-2-2-5 0-7z" fill="#fff"/>
-    <path d="M20 10l5 10h-10l5-10z" fill="#fff"/>
-    <path d="M50 12h30v5H50z" fill="#E30613"/>
-    <path d="M50 18h30v5H50z" fill="#E30613"/>
-    <path d="M50 24h30v5H50z" fill="#E30613"/>
-    <path d="M50 30h30v5H50z" fill="#E30613"/>
-  </svg>
-);
-
-// Logo Telcel
-const LogoTelcel = ({ className = "h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="40" fill="#fff"/>
-    <circle cx="20" cy="20" r="12" fill="#DA291C"/>
-    <path d="M14 20a6 6 0 1112 0" fill="#fff"/>
-    <path d="M20 14v12" stroke="#fff" strokeWidth="2"/>
-    <path d="M14 20h12" stroke="#fff" strokeWidth="2"/>
-    <path d="M45 12h40v16H45z" fill="#DA291C"/>
-    <path d="M50 18h30v4H50z" fill="#fff"/>
-  </svg>
-);
-
-// Logo Walmart
-const LogoWalmart = ({ className = "h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="40" fill="#fff"/>
-    <path d="M10 10h15v20H10z" fill="#0071CE"/>
-    <path d="M30 10h15v20H30z" fill="#0071CE"/>
-    <path d="M50 10h15v20H50z" fill="#0071CE"/>
-    <path d="M70 10h15v20H70z" fill="#0071CE"/>
-  </svg>
-);
-
-// Logo Chedraui
-const LogoChedraui = ({ className = "h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="40" fill="#fff"/>
-    <circle cx="25" cy="20" r="12" fill="#E40046"/>
-    <path d="M20 20l5-5v10z" fill="#fff"/>
-    <path d="M45 10h30v5H45z" fill="#E40046"/>
-    <path d="M45 18h30v5H45z" fill="#E40046"/>
-    <path d="M45 26h30v5H45z" fill="#E40046"/>
-  </svg>
-);
-
-// Logo Soriana
-const LogoSoriana = ({ className = "h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="40" fill="#fff"/>
-    <path d="M10 10h20v20H10z" fill="#F58220"/>
-    <path d="M35 10h20v20H35z" fill="#F58220"/>
-    <path d="M60 10h20v20H60z" fill="#F58220"/>
-  </svg>
-);
-
-// Logo Banorte
-const LogoBanorte = ({ className = "h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="40" fill="#fff"/>
-    <path d="M10 15h30v10H10z" fill="#E61842"/>
-    <path d="M45 15h30v10H45z" fill="#000"/>
-    <path d="M80 15h10v10H80z" fill="#E61842"/>
-  </svg>
-);
-
-// Logo Santander
-const LogoSantander = ({ className = "h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="40" fill="#fff"/>
-    <circle cx="50" cy="20" r="15" fill="#EC0000"/>
-    <path d="M40 15h20v10H40z" fill="#fff"/>
-  </svg>
-);
-
-// Logo Citibanamex
-const LogoCitibanamex = ({ className = "h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="40" fill="#fff"/>
-    <circle cx="25" cy="20" r="12" fill="#003B5C"/>
-    <path d="M18 15l7 5-7 5z" fill="#fff"/>
-    <path d="M45 10h30v20H45z" fill="#003B5C"/>
-    <path d="M50 15h20v5H50z" fill="#fff"/>
-  </svg>
-);
-
-// Logo Extra
-const LogoExtra = ({ className = "h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="40" fill="#fff"/>
-    <circle cx="20" cy="20" r="10" fill="#E30613"/>
-    <path d="M15 20h10" stroke="#fff" strokeWidth="2"/>
-    <path d="M45 10h30v5H45z" fill="#E30613"/>
-    <path d="M45 18h30v5H45z" fill="#E30613"/>
-    <path d="M45 26h30v5H45z" fill="#E30613"/>
-  </svg>
-);
-
-// Logo Mercado Pago
-const LogoMercadoPago = ({ className = "h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="40" fill="#fff"/>
-    <circle cx="30" cy="20" r="12" fill="#009EE3"/>
-    <path d="M22 20h16" stroke="#fff" strokeWidth="2"/>
-    <path d="M50 10h30v20H50z" fill="#009EE3"/>
-    <path d="M55 15h20v3H55z" fill="#fff"/>
-    <path d="M55 21h20v3H55z" fill="#fff"/>
-  </svg>
-);
-
-// Logo Cajero ATM
-const LogoATM = ({ className = "h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="40" rx="5" fill="#2D3748"/>
-    <rect x="10" y="8" width="80" height="24" rx="3" fill="#4A5568"/>
-    <rect x="20" y="15" width="15" height="10" rx="1" fill="#48BB78"/>
-    <rect x="40" y="15" width="15" height="10" rx="1" fill="#48BB78"/>
-    <rect x="60" y="15" width="15" height="10" rx="1" fill="#48BB78"/>
-  </svg>
-);
-
-// Mapeo de logos por nombre
-const getLogoComponent = (nombre: string) => {
-  const logos: Record<string, React.FC<{ className?: string }>> = {
-    'BBVA': LogoBBVA,
-    'OXXO': LogoOXXO,
-    'Telcel': LogoTelcel,
-    'Walmart': LogoWalmart,
-    'Chedraui': LogoChedraui,
-    'Soriana': LogoSoriana,
-    'Banorte': LogoBanorte,
-    'Santander': LogoSantander,
-    'Citibanamex': LogoCitibanamex,
-    'Extra': LogoExtra,
-    'Mercado Pago': LogoMercadoPago,
-    'Cajeros ATM': LogoATM,
-  };
-  return logos[nombre] || null;
-};
-
 const mediosPago = [
   {
     titulo: 'Pago en línea',
@@ -195,19 +39,39 @@ const mediosPago = [
   },
 ];
 
+// Mapeo de logos locales por nombre
+const getLogoSrc = (nombre: string): string | null => {
+  const logos: Record<string, string> = {
+    'Scotiabank': '/logos/Frame.webp',
+    'Santander': '/logos/Frame-1.webp',
+    'OXXO': '/logos/Oxxo.png',
+    'Banorte': '/logos/Frame-3.webp',
+    'Liverpool': '/logos/Frame-5.webp',
+    'Palacio de Hierro': '/logos/Frame-6.webp',
+    'BBVA': '/logos/Frame-7.webp',
+    'Telmex': '/logos/Frame-13.webp',
+    'Elektra': '/logos/Frame-10.webp',
+    'Claro': '/logos/Frame-12.webp',
+    'Mercado Pago': '/logos/version-horizontal-large-logo-mercado-pago.webp',
+    'Telcel': '/logos/Frame-1.webp',
+    'Cajeros ATM': '/logos/Frame-1.webp',
+  };
+  return logos[nombre] || null;
+};
+
+// Lista de bancos y tiendas (ordenados como en la página original)
 const bancosYTiendas = [
-  { nombre: 'BBVA' },
-  { nombre: 'Santander' },
-  { nombre: 'Banorte' },
-  { nombre: 'Citibanamex' },
-  { nombre: 'OXXO' },
-  { nombre: 'Extra' },
-  { nombre: 'Chedraui' },
-  { nombre: 'Soriana' },
-  { nombre: 'Walmart' },
-  { nombre: 'Mercado Pago' },
-  { nombre: 'Telcel' },
-  { nombre: 'Cajeros ATM' },
+  { nombre: 'Scotiabank', label: 'Scotiabank' },
+  { nombre: 'Santander', label: 'Santander' },
+  { nombre: 'OXXO', label: 'OXXO' },
+  { nombre: 'Banorte', label: 'Banorte' },
+  { nombre: 'Liverpool', label: 'Liverpool' },
+  { nombre: 'Palacio de Hierro', label: 'Palacio de Hierro' },
+  { nombre: 'BBVA', label: 'BBVA' },
+  { nombre: 'Telmex', label: 'Telmex' },
+  { nombre: 'Elektra', label: 'Elektra' },
+  { nombre: 'Claro', label: 'Claro' },
+  { nombre: 'Mercado Pago', label: 'Mercado Pago' },
 ];
 
 const DondePagar = () => {
@@ -264,28 +128,46 @@ const DondePagar = () => {
 
       {/* ── Bancos y tiendas ──────────────────────────────────────────────────── */}
       <section className="py-12 sm:py-16 px-4 bg-blue-50">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-8">
             <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-1">Red de cobro</p>
             <h2 className="text-2xl font-bold text-gray-900">Bancos y tiendas autorizadas</h2>
-            <p className="text-gray-500 text-sm mt-2">
-              Puedes pagar en cualquiera de estos establecimientos
-            </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {/* Grid de logos */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
             {bancosYTiendas.map((lugar) => {
-              const LogoComponent = getLogoComponent(lugar.nombre);
+              const logoSrc = getLogoSrc(lugar.nombre);
               return (
-                <div key={lugar.nombre} className="bg-white rounded-xl p-4 flex items-center justify-center border border-gray-100 hover:shadow-md transition-shadow h-20">
-                  {LogoComponent ? (
-                    <LogoComponent className="h-10 max-w-full" />
+                <div key={lugar.nombre} className="bg-white rounded-xl p-4 flex items-center justify-center border border-gray-100 hover:shadow-md transition-shadow h-24">
+                  {logoSrc ? (
+                    <img 
+                      src={logoSrc} 
+                      alt={lugar.label} 
+                      className="max-h-16 max-w-full object-contain grayscale hover:grayscale-0 transition-all"
+                    />
                   ) : (
-                    <span className="text-sm font-medium text-gray-700">{lugar.nombre}</span>
+                    <span className="text-sm font-medium text-gray-700">{lugar.label}</span>
                   )}
                 </div>
               );
             })}
+          </div>
+
+          {/* Etiquetas adicionales */}
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white rounded-xl p-4 text-center border border-gray-100">
+              <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-2">CACs, DATS, CVTs Telcel</p>
+              <p className="text-sm text-gray-600">y Cadenas Comerciales</p>
+            </div>
+            <div className="bg-white rounded-xl p-4 text-center border border-gray-100">
+              <img src="/logos/Frame-1.webp" alt="Telcel" className="h-8 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">telcel.com</p>
+            </div>
+            <div className="bg-white rounded-xl p-4 text-center border border-gray-100">
+              <img src="/logos/Frame-1.webp" alt="Cajeros" className="h-8 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">Cajeros ATM</p>
+            </div>
           </div>
 
           <div className="mt-8 bg-white rounded-xl p-5 border border-gray-100">
