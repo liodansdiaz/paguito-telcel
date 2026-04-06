@@ -83,13 +83,19 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </span>
         ) : null}
         {imagen ? (
-          <img src={imagen} alt={product.nombre} className="h-36 w-36 object-contain group-hover:scale-105 transition-transform" />
+          <Link to={`/producto/${product.id}`} className="cursor-pointer">
+            <img src={imagen} alt={product.nombre} className="h-36 w-36 object-contain group-hover:scale-105 transition-transform" />
+          </Link>
         ) : (
-          <span className="text-5xl">📱</span>
+          <Link to={`/producto/${product.id}`} className="cursor-pointer">
+            <span className="text-5xl">📱</span>
+          </Link>
         )}
       </div>
       <div className="p-3">
-        <h3 className="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 min-h-[2.5rem]">{product.nombre}</h3>
+        <Link to={`/producto/${product.id}`} className="font-bold text-gray-900 text-sm leading-tight mb-2 line-clamp-2 min-h-[2.5rem] block hover:text-primary-500">
+          {product.nombre}
+        </Link>
         
         <div className="mb-1">
           <div className="flex items-baseline gap-1.5 flex-wrap">
