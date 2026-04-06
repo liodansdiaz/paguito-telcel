@@ -688,14 +688,18 @@ const Catalog = () => {
                           </span>
                         ) : null}
                         {product.imagenes && product.imagenes.length > 0 ? (
-                          <img
-                            src={toImageUrl(product.imagenes[0])}
-                            alt={product.nombre}
-                            className="h-24 w-24 sm:h-36 sm:w-36 object-contain group-hover:scale-105 transition-transform"
-                            loading="lazy"
-                          />
+                          <Link to={`/producto/${product.id}`} className="cursor-pointer">
+                            <img
+                              src={toImageUrl(product.imagenes[0])}
+                              alt={product.nombre}
+                              className="h-24 w-24 sm:h-36 sm:w-36 object-contain group-hover:scale-105 transition-transform"
+                              loading="lazy"
+                            />
+                          </Link>
                         ) : (
-                          <span className="text-4xl sm:text-5xl">📱</span>
+                          <Link to={`/producto/${product.id}`} className="cursor-pointer">
+                            <span className="text-4xl sm:text-5xl">📱</span>
+                          </Link>
                         )}
                         {unavailable && (
                           <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
@@ -707,9 +711,9 @@ const Catalog = () => {
                       {/* Contenido de la tarjeta */}
                       <div className="p-2 sm:p-3 flex flex-col flex-1">
                         {/* Título del producto */}
-                        <h3 className="font-bold text-gray-900 text-xs sm:text-sm leading-tight mb-1 sm:mb-2 line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem]">
+                        <Link to={`/producto/${product.id}`} className="font-bold text-gray-900 text-xs sm:text-sm leading-tight mb-1 sm:mb-2 line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] block hover:text-primary-500">
                           {product.nombre}
-                        </h3>
+                        </Link>
 
                         {/* Precio */}
                         <div className="mb-1">
