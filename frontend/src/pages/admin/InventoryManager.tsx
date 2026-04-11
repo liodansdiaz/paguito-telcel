@@ -291,7 +291,21 @@ const InventoryManager = () => {
       showSuccess(isEditing ? 'Producto actualizado correctamente' : 'Producto creado correctamente');
       closeForm();
       fetchProducts(page, limit);
-    } catch (err: any) { showError(err.response?.data?.message || 'Error al guardar'); }
+    } catch (err: any) { 
+      console.error('Error al guardar producto:', err);
+      const errorData = err.response?.data;
+      if (errorData?.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+        // Mostrar errores de validación específicos
+        const mensajes = errorData.errors.map((e: any) => `${e.field}: ${e.message}`).join('\n');
+        showError(mensajes);
+      } else if (errorData?.message) {
+        showError(errorData.message);
+      } else if (errorData) {
+        showError(JSON.stringify(errorData));
+      } else {
+        showError('Error al guardar producto. Revisa la consola para más detalles.');
+      }
+    }
   };
 
   const handleToggle = async (id: string) => {

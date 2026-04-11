@@ -3,82 +3,16 @@ import { z } from 'zod';
 import { reservationService } from './reservation.service';
 import { sendSuccess, sendPaginated } from '../../shared/utils/response.helper';
 import { EstadoReserva, EstadoReservaItem } from '@prisma/client';
-import { isValidCURP, isValidPhoneMX, formatCURP, cleanPhoneMX, validationMessages } from '../../shared/utils/validators';
-
-/**
- * Schema para un item del carrito
- */
-const reservationItemSchema = z.object({
-  productId: z.string().uuid('ID de producto inválido'),
-  color: z.string().optional(),
-  memoria: z.string().optional(),
-  tipoPago: z.enum(['CONTADO', 'CREDITO']),
-});
-
-/**
- * Schema para crear reserva con carrito multi-producto
- */
-const createReservationSchema = z.object({
-  items: z.array(reservationItemSchema).min(1, 'Debes agregar al menos un producto'),
-  nombreCompleto: z.string().min(3, 'Nombre completo requerido'),
-  telefono: z.string()
-    .min(1, validationMessages.phone.required)
-    .transform((val) => cleanPhoneMX(val))
-    .refine((val) => isValidPhoneMX(val), {
-      message: validationMessages.phone.invalid,
-    }),
-  curp: z.string()
-    .min(1, validationMessages.curp.required)
-    .transform((val) => formatCURP(val))
-    .refine((val) => val.length === 18, {
-      message: validationMessages.curp.length,
-    })
-    .refine((val) => isValidCURP(val), {
-      message: validationMessages.curp.invalid,
-    }),
-  direccion: z.string().min(10, 'Dirección completa requerida'),
-  fechaPreferida: z.string().transform((val) => new Date(val)),
-  horarioPreferido: z.string().regex(/^\d{1,2}:\d{2}$/, 'Formato de horario inválido (HH:MM)'),
-  latitude: z.number().min(-90).max(90, 'Latitud inválida').nullable().optional(),
-  longitude: z.number().min(-180).max(180, 'Longitud inválida').nullable().optional(),
-  notas: z.string().optional(),
-});
-
-/**
- * Schema para actualizar estado de reserva
- */
-const updateStatusSchema = z.object({
-  estado: z.nativeEnum(EstadoReserva),
-  notas: z.string().optional(),
-});
-
-/**
- * Schema para actualizar estado de item
- */
-const updateItemStatusSchema = z.object({
-  estado: z.nativeEnum(EstadoReservaItem),
-  notas: z.string().optional(),
-});
-
-/**
- * Schema para cancelar item o reserva desde página pública
- */
-const cancelarPorClienteSchema = z.object({
-  busqueda: z.string().min(8, 'Folio o CURP requerido'),
-  itemId: z.string().uuid().optional(), // Si se proporciona, cancela solo ese item
-});
-
-/**
- * Schema para modificar reserva desde página pública
- */
-const modificarReservaSchema = z.object({
-  busqueda: z.string().min(8, 'Folio o CURP requerido'),
-  fechaPreferida: z.string().transform((val) => new Date(val)).optional(),
-  horarioPreferido: z.string().regex(/^\d{1,2}:\d{2}$/, 'Formato de horario inválido (HH:MM)').optional(),
-  direccion: z.string().min(10, 'Dirección completa requerida').optional(),
-  latitude: z.number().min(-90).max(90).nullable().optional(),
-  longitude: z.number().min(-180).max(180).nullable().optional(),
-});
+// Importar DTOs
+import { 
+  createReservationSchema,
+  consultaReservaSchema,
+  cancelarReservaSchema as schemaCancelar,
+  modificarReservaSchema,
+  updateStatusSchema,
+  updateItemStatusSchema,
+  assignVendorSchema,
+} from '../../dtos';
 
 export class ReservationController {
   /**
@@ -297,7 +231,7 @@ export class ReservationController {
    */
   async cancelarPorCliente(req: Request, res: Response, next: NextFunction) {
     try {
-      const { busqueda, itemId } = cancelarPorClienteSchema.parse(req.body);
+      const { busqueda, itemId } = schemaCancelar.parse(req.body);
       await reservationService.cancelarPorCliente(busqueda, itemId);
       
       const mensaje = itemId 

@@ -33,6 +33,7 @@ import VendorsManager from '../pages/admin/VendorsManager';
 import AdminsManager from '../pages/admin/AdminsManager';
 import InventoryManager from '../pages/admin/InventoryManager';
 import SystemDashboard from '../pages/admin/SystemDashboard';
+import Configuracion from '../pages/admin/Configuracion';
 
 // Vendor
 import VendorDashboard from '../pages/vendor/VendorDashboard';
@@ -83,6 +84,7 @@ export const router = createBrowserRouter([
       { path: 'administradores', element: <AdminsManager /> },
       { path: 'inventario', element: <InventoryManager /> },
       { path: 'sistema', element: <SystemDashboard /> },
+      { path: 'configuracion', element: <Configuracion /> },
     ],
   },
   // Vendedor

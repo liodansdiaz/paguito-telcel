@@ -50,7 +50,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       toast.success(
         (t) => (
           <div className="flex items-center gap-3">
-            <span>✅ {product.nombre} agregado al carrito</span>
+            <span>✅ {product.nombre} reservado</span>
             <button
               onClick={() => {
                 toast.dismiss(t.id);
@@ -58,7 +58,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               }}
               className="bg-primary-500 text-white px-3 py-1 rounded text-sm font-medium hover:bg-secondary-600 transition-colors"
             >
-              Ver carrito
+              Ver mi reserva
             </button>
           </div>
         ),

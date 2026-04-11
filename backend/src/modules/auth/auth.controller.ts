@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
 import { authService } from './auth.service';
 import { sendSuccess } from '../../shared/utils/response.helper';
-
-const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(1, 'Contraseña requerida'),
-});
+import { 
+  loginSchema, 
+  refreshTokenSchema, 
+  logoutSchema, 
+  forgotPasswordSchema,
+  resetPasswordSchema 
+} from '../../dtos';
 
 export class AuthController {
   async login(req: Request, res: Response, next: NextFunction) {
@@ -24,8 +25,8 @@ export class AuthController {
 
   async refresh(req: Request, res: Response, next: NextFunction) {
     try {
-      const { refreshToken } = z.object({ refreshToken: z.string() }).parse(req.body);
-      const result = await authService.refresh(refreshToken);
+      const { refreshToken } = refreshTokenSchema.parse(req.body);
+      const result = await authService.refresh(refreshToken ?? '');
       sendSuccess(res, result, 'Token renovado');
     } catch (err) {
       next(err);
@@ -34,8 +35,9 @@ export class AuthController {
 
   async logout(req: Request, res: Response, next: NextFunction) {
     try {
-      const { refreshToken } = z.object({ refreshToken: z.string() }).parse(req.body);
-      await authService.logout(refreshToken);
+      const { refreshToken } = logoutSchema.parse(req.body);
+      const userEmail = req.user?.email;
+      await authService.logout(refreshToken ?? '', userEmail);
       sendSuccess(res, null, 'Sesión cerrada correctamente');
     } catch (err) {
       next(err);
@@ -53,7 +55,7 @@ export class AuthController {
 
   async forgotPassword(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email } = z.object({ email: z.string().email() }).parse(req.body);
+      const { email } = forgotPasswordSchema.parse(req.body);
       const result = await authService.forgotPassword(email);
       sendSuccess(res, result);
     } catch (err) {
@@ -63,11 +65,8 @@ export class AuthController {
 
   async resetPassword(req: Request, res: Response, next: NextFunction) {
     try {
-      const { token, password } = z.object({
-        token: z.string().min(1, 'Token requerido'),
-        password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
-      }).parse(req.body);
-      const result = await authService.resetPassword(token, password);
+      const { token, newPassword } = resetPasswordSchema.parse(req.body);
+      const result = await authService.resetPassword(token, newPassword);
       sendSuccess(res, result);
     } catch (err) {
       next(err);

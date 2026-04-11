@@ -1,7 +1,8 @@
 import { prisma } from '../../config/database';
 import { emailService } from './email.service';
 import { logger } from '../utils/logger';
-import { NOTIFICATIONS_CONFIG } from '../../config/notifications';
+import { systemConfigService } from '../../modules/system-config/system-config.service';
+import { CONFIG_KEYS } from '../../modules/system-config/system-config.service';
 
 interface DailyMetrics {
   reservasHoy: number;
@@ -82,25 +83,40 @@ export class DailySummaryService {
   }
 
   /**
-   * Envía el resumen diario por email a todos los administradores.
+   * Envía el resumen diario por email a los administradores configurados.
    */
   static async sendDailySummary(): Promise<void> {
-    if (!NOTIFICATIONS_CONFIG.email) {
-      logger.info('DailySummary: email deshabilitado, saltando envío');
+    // Leer configuración de la base de datos
+    const resumenConfig = await systemConfigService.getResumenConfig();
+
+    if (!resumenConfig.habilitado) {
+      logger.info('DailySummary: resumen deshabilitado, saltando envío');
+      return;
+    }
+
+    // Verificar si debemos enviar hoy según la frecuencia
+    const shouldSendToday = await this.shouldSendToday(resumenConfig.frecuencia, resumenConfig.diaSemana);
+    if (!shouldSendToday) {
+      logger.info(`DailySummary: no corresponde enviar hoy (frecuencia: ${resumenConfig.frecuencia})`);
       return;
     }
 
     try {
       const metrics = await this.getDailyMetrics();
 
-      // Obtener admins activos
-      const admins = await prisma.user.findMany({
+      // Obtener admins seleccionados o todos los activos si no hay selección
+      let admins = await prisma.user.findMany({
         where: { isActive: true, rol: 'ADMIN' },
-        select: { nombre: true, email: true },
+        select: { id: true, nombre: true, email: true },
       });
 
+      // Filtrar solo los admins seleccionados si hay lista específica
+      if (resumenConfig.adminIds && resumenConfig.adminIds.length > 0) {
+        admins = admins.filter(admin => resumenConfig.adminIds.includes(admin.id));
+      }
+
       if (admins.length === 0) {
-        logger.warn('DailySummary: no hay administradores activos para enviar resumen');
+        logger.warn('DailySummary: no hay administradores configurados para enviar resumen');
         return;
       }
 
@@ -111,7 +127,7 @@ export class DailySummaryService {
         day: 'numeric',
       });
 
-      const subject = `📊 Resumen diario — ${fecha}`;
+      const subject = `Resumen diario — ${fecha}`;
       const html = this.buildSummaryHtml(fecha, metrics);
 
       // Enviar a cada admin
@@ -133,6 +149,31 @@ export class DailySummaryService {
   }
 
   /**
+   * Determina si debemos enviar el resumen hoy según la frecuencia configurada.
+   */
+  private static async shouldSendToday(frecuencia: string, diaSemana: number): Promise<boolean> {
+    const now = new Date();
+    const diaActual = now.getDay() === 0 ? 7 : now.getDay(); // Convertir domingo=0 a domingo=7
+
+    switch (frecuencia) {
+      case 'diario':
+        return true;
+
+      case 'cada_2_dias':
+        // Calcular días desde el 1 de enero
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        const diasTranscurridos = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+        return diasTranscurridos % 2 === 0;
+
+      case 'semanal':
+        return diaActual === diaSemana;
+
+      default:
+        return true;
+    }
+  }
+
+  /**
    * Construye el HTML del email de resumen diario.
    */
   private static buildSummaryHtml(fecha: string, metrics: DailyMetrics): string {
@@ -149,7 +190,7 @@ export class DailySummaryService {
 <body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:20px;">
   <div style="background:#fff;border-radius:8px;max-width:600px;margin:0 auto;padding:30px;">
     <div style="background:#0f49bd;color:#fff;padding:20px;border-radius:8px 8px 0 0;text-align:center;margin:-30px -30px 20px;">
-      <h2 style="margin:0;">📊 Resumen Diario</h2>
+      <h2 style="margin:0;">Resumen Diario</h2>
       <p style="margin:5px 0 0;opacity:0.9;">${fecha}</p>
     </div>
 
@@ -190,7 +231,7 @@ export class DailySummaryService {
 
     <!-- Productos sin stock -->
     <div style="background:#fef2f2;border-radius:8px;padding:16px;margin-bottom:20px;">
-      <h3 style="margin:0 0 12px;color:#dc2626;">⚠️ Productos sin stock</h3>
+      <h3 style="margin:0 0 12px;color:#dc2626;">Productos sin stock</h3>
       <ul style="margin:0;padding-left:20px;">${sinStockHtml}</ul>
     </div>
 

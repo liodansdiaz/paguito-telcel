@@ -75,11 +75,95 @@ const statusColors: Record<string, string> = {
   PENDING: 'text-yellow-600 bg-yellow-50 border-yellow-200',
 };
 
+// Interfaz para logs parseados
+interface ParsedLog {
+  fecha: string;
+  nivel: string;
+  mensaje: string;
+  detalle?: string;
+  original: string;
+}
+
 const getLevel = (line: string): string => {
-  if (line.toLowerCase().includes('[error]')) return 'error';
-  if (line.toLowerCase().includes('[warn]')) return 'warn';
+  if (line.toLowerCase().includes('[error]') || line.toLowerCase().includes('error:')) return 'error';
+  if (line.toLowerCase().includes('[warn]') || line.toLowerCase().includes('warn:')) return 'warn';
   if (line.toLowerCase().includes('[debug]')) return 'debug';
   return 'info';
+};
+
+// Función para parsear una línea de log y hacer más legible el mensaje
+const parseLogLine = (line: string): ParsedLog => {
+  const nivel = getLevel(line);
+  
+  // Intentar extraer fecha y hora del formato estándar de winston
+  // Formato típico: "2026-04-08T12:34:56.789Z  info [mensaje]" o "2026-04-08 12:34:56"
+  const fechaMatch = line.match(/^(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})/);
+  let fecha = '';
+  
+  if (fechaMatch) {
+    try {
+      const fechaDate = new Date(fechaMatch[1].replace(' ', 'T'));
+      fecha = fechaDate.toLocaleString('es-MX', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      fecha = fechaMatch[1];
+    }
+  }
+  
+  // Limpiar el mensaje para hacerlo más legible
+  let mensaje = line
+    // Eliminar timestamps al inicio (varios formatos)
+    .replace(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[.\d]*Z?\s*/, '')
+    // Eliminar nivel entre corchetes
+    .replace(/^\[(?:error|warn|info|debug)\]\s*/i, '')
+    // Eliminar nivel sin corchetes
+    .replace(/^(?:error|warn|info|debug)\s+/i, '')
+    // Reemplazar barras bajas con espacios (solo en palabras compuestas)
+    .replace(/(?<=[\w])_(?=[\w])/g, ' ');
+  
+  // Si el mensaje es muy largo,截取 y mostrar detalle completo en tooltip
+  const detalle = mensaje.length > 100 ? mensaje : undefined;
+  if (detalle) {
+    mensaje = mensaje.substring(0, 100) + '...';
+  }
+  
+  // Traducir mensajes comunes a español más entendible
+  const mensajesTraducidos: Record<string, string> = {
+    'Conexión a la base de datos establecida': '🔌 Base de datos conectada',
+    'Servidor corriendo en': '🚀 Servidor iniciado en',
+    'Ambiente:': '⚙️ Ambiente:',
+    'DailySummary enviado a': '📧 Resumen diario enviado a',
+    'DailySummary:': '📧 Resumen diario:',
+    'WhatsApp enviado al vendedor': '📱 WhatsApp enviado al vendedor',
+    'WhatsApp enviado al cliente': '📱 WhatsApp enviado al cliente',
+    'Error enviando': '❌ Error al enviar',
+    'Reserva creada': '✅ Reserva creada',
+    'Reserva actualizada': '✏️ Reserva actualizada',
+    'Reserva cancelada': '❌ Reserva cancelada',
+    'SummaryScheduler': '📅 Programador de resúmenes:',
+    'Configuración actualizada': '⚙️ Configuración actualizada',
+    'InvalidateNotificacionesCache': '🔄 Caché de notificaciones invalidated',
+  };
+  
+  for (const [ingles, espanol] of Object.entries(mensajesTraducidos)) {
+    if (mensaje.toLowerCase().includes(ingles.toLowerCase())) {
+      mensaje = mensaje.replace(new RegExp(ingles, 'gi'), espanol);
+      break;
+    }
+  }
+  
+  return {
+    fecha,
+    nivel,
+    mensaje,
+    detalle,
+    original: line,
+  };
 };
 
 const formatDate = (dateStr: string) => {
@@ -154,8 +238,21 @@ const LogsTab = () => {
     fetchStats();
   }, []);
 
+  // Cuando se cargan los archivos, seleccionar automáticamente el de hoy
   useEffect(() => {
-    fetchLogs();
+    if (files.length > 0 && !filters.fecha) {
+      // Buscar el archivo "combined.log" (el actual) o el de hoy
+      const todayFile = files.find(f => f.name === 'combined.log') || files[0];
+      if (todayFile) {
+        setFilters(prev => ({ ...prev, fecha: todayFile.date }));
+      }
+    }
+  }, [files]);
+
+  useEffect(() => {
+    if (filters.fecha) {
+      fetchLogs();
+    }
   }, [filters]);
 
    const handleDownload = async (filename: string) => {
@@ -348,21 +445,35 @@ const LogsTab = () => {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50">
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-24">Nivel</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-20">Tipo</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-32">Fecha y Hora</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Mensaje</th>
                 </tr>
               </thead>
               <tbody>
                 {logs.map((line, i) => {
-                  const level = getLevel(line);
+                  const parsed = parseLogLine(line);
                   return (
                     <tr key={i} className="border-t border-gray-100 hover:bg-gray-50">
+                      {/* Columna Tipo (Nivel) */}
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium border ${levelColors[level]}`}>
-                          {level.toUpperCase()}
+                        <span className={`px-2 py-1 rounded text-xs font-medium border ${levelColors[parsed.nivel]}`}>
+                          {parsed.nivel.toUpperCase()}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-mono text-sm whitespace-pre-wrap text-gray-700">{line}</td>
+                      {/* Columna Fecha */}
+                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                        {parsed.fecha || '-'}
+                      </td>
+                      {/* Columna Mensaje */}
+                      <td className="px-4 py-3">
+                        <span 
+                          className={`text-sm ${parsed.nivel === 'error' ? 'text-red-700 font-medium' : 'text-gray-700'}`}
+                          title={parsed.original}
+                        >
+                          {parsed.mensaje || line}
+                        </span>
+                      </td>
                     </tr>
                   );
                 })}

@@ -1,12 +1,20 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 import { prisma } from '../../config/database';
 import { jwtConfig } from '../../config/jwt';
 import { AppError } from '../../shared/middleware/error.middleware';
 import { AuthPayload } from '../../shared/middleware/auth.middleware';
 import { emailService } from '../../shared/services/email.service';
 import { logger } from '../../shared/utils/logger';
+
+/**
+ * Hashea un token de recuperación usando SHA-256.
+ * El token original se envía al email, el hash se guarda en BD.
+ */
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -24,7 +32,13 @@ export class AuthService {
   async login(email: string, password: string) {
     const user = await prisma.user.findUnique({ where: { email } });
 
+    // ❌ IMPORTANTE: No revelar si el usuario existe o la contraseña es incorrecta
+    // Mismo mensaje para evitar enumeración de usuarios
     if (!user || !user.isActive) {
+      // NOTA: Por seguridad, NO loggeamos intentos fallidos con emails
+      // porque permitiría verificar qué emails están registrados
+      // Los logs de intentos fallen pueden habilitarse en producción
+      // con un sistema de detección de abuso separado
       throw new AppError('Credenciales inválidas o cuenta inactiva.', 401);
     }
 
@@ -48,6 +62,9 @@ export class AuthService {
     await prisma.refreshToken.create({
       data: { token: refreshToken, userId: user.id, expiresAt },
     });
+
+    // ✓ Solo loggeamos logins exitosos (no exponen información sensible)
+    logger.info(`🔐 Login exitoso: userId=${user.id}, rol=${user.rol}`);
 
     return {
       accessToken,
@@ -97,12 +114,17 @@ export class AuthService {
     return { accessToken };
   }
 
-  async logout(refreshToken: string) {
+  async logout(refreshToken: string, userEmail?: string) {
     // Marcar el token como revocado — si no existe simplemente ignoramos
     await prisma.refreshToken.updateMany({
       where: { token: refreshToken, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+    
+    // ✓ Loggear sin email - solo indica que hubo logout
+    if (userEmail) {
+      logger.info(`🔐 Logout exitoso`);
+    }
   }
 
   async me(userId: string) {
@@ -134,16 +156,18 @@ export class AuthService {
     }
 
     // Generar token de recuperación (válido 1 hora)
-    const token = randomBytes(32).toString('hex');
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = hashToken(rawToken); // Hashear antes de guardar
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
 
+    // Guardar el HASH del token, NO el token original
     await prisma.passwordResetToken.create({
-      data: { token, userId: user.id, expiresAt },
+      data: { token: tokenHash, userId: user.id, expiresAt },
     });
 
-    // Construir URL de recuperación
+    // Construir URL de recuperación (enviar el token ORIGINAL al email)
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+    const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
 
     // Enviar email
     const html = `
@@ -193,9 +217,12 @@ export class AuthService {
   }
 
   async resetPassword(token: string, newPassword: string) {
-    // Buscar token válido (no usado, no expirado)
+    // Hashear el token antes de buscar en BD
+    const tokenHash = hashToken(token);
+
+    // Buscar token por el HASH (no por el token original)
     const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { token },
+      where: { token: tokenHash },
       include: { user: true },
     });
 

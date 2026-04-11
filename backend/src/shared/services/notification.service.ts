@@ -4,6 +4,7 @@ import { emailService } from './email.service';
 import { whatsappService } from './whatsapp.service';
 import { logger } from '../utils/logger';
 import { CanalNotificacion, EstadoNotificacion } from '@prisma/client';
+import { isWhatsappClienteEnabled, isWhatsappVendedorEnabled, getNotificacionesConfig } from './notificaciones-config.service';
 
 interface StockAgotadoAlertData {
   reservationId: string;
@@ -27,7 +28,7 @@ interface ReservationNotificationData {
   vendorTelefono?: string;
   clienteNombre: string;
   clienteTelefono: string;
-  clienteCurp: string;
+  clienteCurp?: string;
   productoNombre: string;
   itemsDetalle: ItemDetalle[];
   tipoPago: string;
@@ -86,17 +87,18 @@ export class NotificationService {
    * pero NO se revierte la reserva.
    */
   static async sendReservationNotification(data: ReservationNotificationData): Promise<void> {
+    const notifConfig = await getNotificacionesConfig();
     const tasks: Promise<void>[] = [];
 
-    if (NOTIFICATIONS_CONFIG.email) {
+    if (notifConfig.email) {
       tasks.push(this.sendEmailNotification(data));
     }
 
-    if (NOTIFICATIONS_CONFIG.whatsapp) {
+    if (notifConfig.whatsappCliente || notifConfig.whatsappVendedor) {
       tasks.push(this.sendWhatsAppNotification(data));
     }
 
-    if (NOTIFICATIONS_CONFIG.internal) {
+    if (notifConfig.internal) {
       tasks.push(this.saveInternalNotification(data));
     }
 
@@ -113,7 +115,10 @@ export class NotificationService {
    * Notifica al vendedor y al cliente que una reserva fue cancelada.
    */
   static async sendCancellationNotification(data: ReservationCancellationData): Promise<void> {
-    if (!NOTIFICATIONS_CONFIG.whatsapp) return;
+    const waVendedorEnabled = await isWhatsappVendedorEnabled();
+    const waClienteEnabled = await isWhatsappClienteEnabled();
+
+    if (!waVendedorEnabled && !waClienteEnabled) return;
 
     const folio = data.reservationId.slice(0, 8).toUpperCase();
     const itemsFormateados = this.formatItems(data.itemsDetalle);
@@ -172,7 +177,10 @@ export class NotificationService {
    * Notifica al vendedor y al cliente que una reserva fue modificada.
    */
   static async sendModificationNotification(data: ReservationModificationData): Promise<void> {
-    if (!NOTIFICATIONS_CONFIG.whatsapp) return;
+    const waVendedorEnabled = await isWhatsappVendedorEnabled();
+    const waClienteEnabled = await isWhatsappClienteEnabled();
+
+    if (!waVendedorEnabled && !waClienteEnabled) return;
 
     const folio = data.reservationId.slice(0, 8).toUpperCase();
     const fmtFecha = (d: Date) => new Date(d).toLocaleDateString('es-MX', {
@@ -331,7 +339,7 @@ export class NotificationService {
 
     <div class="field"><strong>Cliente:</strong> ${data.clienteNombre}</div>
     <div class="field"><strong>Teléfono:</strong> ${data.clienteTelefono}</div>
-    <div class="field"><strong>CURP:</strong> ${data.clienteCurp}</div>
+    ${data.clienteCurp ? `<div class="field"><strong>CURP:</strong> ${data.clienteCurp}</div>` : ''}
     <div class="field"><strong>Modelo:</strong> ${data.productoNombre}</div>
     <div class="field"><strong>Tipo de pago:</strong> ${data.tipoPago === 'CONTADO' ? 'Contado' : 'Crédito'}</div>
     <div class="field"><strong>Dirección:</strong> ${data.direccion}</div>
@@ -398,7 +406,24 @@ export class NotificationService {
     }
   }
 
+  /**
+   * Envía WhatsApp a vendedor y cliente según la configuración.
+   * Este método lee la configuración cada vez para tomar decisiones en tiempo real.
+   */
   private static async sendWhatsAppNotification(data: ReservationNotificationData): Promise<void> {
+    // Leer configuración actualizada desde DB
+    const config = await getNotificacionesConfig();
+    const enviarAVendedor = config.whatsappVendedor;
+    const enviarACliente = config.whatsappCliente;
+
+    console.log('📱 sendWhatsAppNotification - Config:', { enviarAVendedor, enviarACliente });
+
+    // Si ambos están deshabilitados, salir temprano
+    if (!enviarAVendedor && !enviarACliente) {
+      console.log('📱 WhatsApp deshabilitado para ambos - no se envía');
+      return;
+    }
+
     const fecha = new Date(data.fechaPreferida).toLocaleDateString('es-MX', {
       weekday: 'long',
       year: 'numeric',
@@ -415,52 +440,52 @@ export class NotificationService {
     const itemsFormateados = this.formatItems(data.itemsDetalle);
 
     const mensajeVendedor = [
-      `🔔 *NUEVA RESERVA ASIGNADA*`,
+      `*NUEVA RESERVA ASIGNADA*`,
       ``,
       `Hola ${data.vendorNombre}, se te ha asignado una nueva reserva.`,
       ``,
       `*Folio:* #${folio}`,
       ``,
-      `📋 *DATOS DEL CLIENTE:*`,
-      `• *Nombre:* ${data.clienteNombre}`,
-      `• *Teléfono:* ${data.clienteTelefono}`,
-      `• *CURP:* ${data.clienteCurp}`,
-      `• *Dirección:* ${data.direccion}`,
+      `*DATOS DEL CLIENTE:*`,
+      `* Nombre:* ${data.clienteNombre}`,
+      `* Telefono:* ${data.clienteTelefono}`,
+      data.clienteCurp ? `* CURP:* ${data.clienteCurp}` : null,
+      `* Direccion:* ${data.direccion}`,
       ``,
-      `📦 *PRODUCTO(S):*`,
+      `*PRODUCTO(S):*`,
       itemsFormateados,
       ``,
-      `📅 *FECHA PREFERIDA:* ${fecha}`,
-      `🕐 *HORARIO:* ${data.horarioPreferido}`,
-      mapsUrl ? `\n🗺️ *UBICACIÓN GPS:* ${mapsUrl}` : '',
+      `*FECHA PREFERIDA:* ${fecha}`,
+      `*HORARIO:* ${data.horarioPreferido}`,
+      mapsUrl ? `\n*UBICACION GPS:* ${mapsUrl}` : '',
       ``,
-      `Ingresa al sistema para ver más detalles.`,
+      `Ingresa al sistema para ver mas detalles.`,
     ].filter(line => line !== null).join('\n');
 
     // --- Mensaje para el CLIENTE ---
     const mensajeCliente = [
-      `✅ *RESERVA CONFIRMADA*`,
+      `*RESERVA CONFIRMADA*`,
       ``,
-      `Hola ${data.clienteNombre}, tu reserva se realizó con éxito.`,
+      `Hola ${data.clienteNombre}, tu reserva se realizo con exito.`,
       ``,
       `*Folio:* #${folio}`,
       ``,
-      `📦 *PRODUCTO(S) RESERVADO(S):*`,
+      `*PRODUCTO(S) RESERVADO(S):*`,
       itemsFormateados,
       ``,
-      `📅 *FECHA PREFERIDA:* ${fecha}`,
-      `🕐 *HORARIO:* ${data.horarioPreferido}`,
+      `*FECHA PREFERIDA:* ${fecha}`,
+      `*HORARIO:* ${data.horarioPreferido}`,
       ``,
-      `Un vendedor se pondrá en contacto contigo pronto para confirmar tu visita.`,
+      `Un vendedor se pondra en contacto contigo pronto para confirmar tu visita.`,
       ``,
       `Si necesitas cancelar, ingresa al sistema con tu folio o CURP.`,
     ].join('\n');
 
-    // Enviar ambas notificaciones en paralelo
+    // Enviar notificaciones según configuración
     const tasks: Promise<void>[] = [];
 
-    // WhatsApp al vendedor
-    if (data.vendorTelefono) {
+    // WhatsApp al vendedor (solo si está habilitado)
+    if (enviarAVendedor && data.vendorTelefono) {
       const taskVendedor = (async () => {
         let logId: string | undefined;
         try {
@@ -498,48 +523,52 @@ export class NotificationService {
         }
       })();
       tasks.push(taskVendedor);
-    } else {
-      logger.warn(`Vendedor ${data.vendorNombre} no tiene teléfono configurado — WhatsApp no enviado`);
+    } else if (!enviarAVendedor) {
+      logger.info(`WhatsApp al vendedor deshabilitado - no se enviara para reserva ${data.reservationId}`);
     }
 
-    // WhatsApp al cliente
-    const taskCliente = (async () => {
-      let logId: string | undefined;
-      try {
-        const log = await prisma.notification.create({
-          data: {
-            reservationId: data.reservationId,
-            canal: CanalNotificacion.WHATSAPP,
-            status: EstadoNotificacion.PENDING,
-            mensaje: `WhatsApp a cliente ${data.clienteNombre} (${data.clienteTelefono})`,
-          },
-        });
-        logId = log.id;
+    // WhatsApp al cliente (solo si está habilitado)
+    if (enviarACliente) {
+      const taskCliente = (async () => {
+        let logId: string | undefined;
+        try {
+          const log = await prisma.notification.create({
+            data: {
+              reservationId: data.reservationId,
+              canal: CanalNotificacion.WHATSAPP,
+              status: EstadoNotificacion.PENDING,
+              mensaje: `WhatsApp a cliente ${data.clienteNombre} (${data.clienteTelefono})`,
+            },
+          });
+          logId = log.id;
 
-        await whatsappService.send({
-          numero: data.clienteTelefono,
-          mensaje: mensajeCliente,
-        });
+          await whatsappService.send({
+            numero: data.clienteTelefono,
+            mensaje: mensajeCliente,
+          });
 
-        await prisma.notification.update({
-          where: { id: logId },
-          data: { status: EstadoNotificacion.SENT, sentAt: new Date() },
-        });
-
-        logger.info(`WhatsApp enviado al cliente ${data.clienteNombre} para reserva ${data.reservationId}`);
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        if (logId) {
           await prisma.notification.update({
             where: { id: logId },
-            data: { status: EstadoNotificacion.FAILED, error: errorMsg },
-          }).catch(() => {});
+            data: { status: EstadoNotificacion.SENT, sentAt: new Date() },
+          });
+
+          logger.info(`WhatsApp enviado al cliente ${data.clienteNombre} para reserva ${data.reservationId}`);
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          if (logId) {
+            await prisma.notification.update({
+              where: { id: logId },
+              data: { status: EstadoNotificacion.FAILED, error: errorMsg },
+            }).catch(() => {});
+          }
+          logger.error(`Error enviando WhatsApp al cliente para reserva ${data.reservationId}:`, err);
+          throw err;
         }
-        logger.error(`Error enviando WhatsApp al cliente para reserva ${data.reservationId}:`, err);
-        throw err;
-      }
-    })();
-    tasks.push(taskCliente);
+      })();
+      tasks.push(taskCliente);
+    } else {
+      logger.info(`WhatsApp al cliente deshabilitado - no se enviara para reserva ${data.reservationId}`);
+    }
 
     await Promise.allSettled(tasks);
   }

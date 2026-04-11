@@ -255,10 +255,15 @@ const CartCheckout = () => {
     const vacios: string[] = [];
     if (!formData.nombreCompleto.trim()) vacios.push('Nombre completo');
     if (!formData.telefono.trim()) vacios.push('Teléfono');
-    if (!formData.curp.trim()) vacios.push('CURP');
     if (!formData.direccion.trim()) vacios.push('Dirección');
     if (!formData.fechaPreferida) vacios.push('Fecha preferida');
     if (!formData.horarioPreferido) vacios.push('Horario preferido');
+
+    // CURP requerida solo si hay productos a crédito
+    const tieneCredito = items.some(item => item.tipoPago === 'CREDITO');
+    if (tieneCredito && !formData.curp.trim()) {
+      vacios.push('CURP (es requerida para crédito)');
+    }
 
     if (vacios.length > 0) {
       const msg = vacios.length === 1
@@ -271,17 +276,19 @@ const CartCheckout = () => {
     setLoading(true);
 
     try {
-      // Preparar datos para el backend
-      const reservationData = {
-        items: items.map(item => ({
-          productId: item.productId,
-          color: item.color,
-          memoria: item.memoria,
-          tipoPago: item.tipoPago,
-        })),
+      // Preparar datos para el backend ( CURP opcional - enviar solo si tiene valor)
+      // CURP opcional - solo incluir si tiene valor
+      const dataItems = items.map(item => ({
+        productId: item.productId,
+        color: item.color,
+        memoria: item.memoria,
+        tipoPago: item.tipoPago,
+      }));
+
+      const reservationData: any = {
+        items: dataItems,
         nombreCompleto: formData.nombreCompleto,
         telefono: formData.telefono,
-        curp: formData.curp.toUpperCase(),
         direccion: formData.direccion,
         fechaPreferida: new Date(formData.fechaPreferida).toISOString(),
         horarioPreferido: formData.horarioPreferido,
@@ -289,6 +296,11 @@ const CartCheckout = () => {
         latitude: geo.obtained ? geo.latitude : null,
         longitude: geo.obtained ? geo.longitude : null,
       };
+
+      // Agregar CURP solo si tiene valor (es opcional)
+      if (formData.curp.trim()) {
+        reservationData.curp = formData.curp.toUpperCase();
+      }
 
       const { data } = await api.post('/reservations', reservationData);
       const reserva = data.data;
@@ -515,7 +527,7 @@ const CartCheckout = () => {
 
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                    CURP <span className="text-red-500">*</span>
+                    CURP <span className="text-gray-400 font-normal">(solo si eliges a crédito)</span>
                   </label>
                   <input
                     type="text"
@@ -525,6 +537,9 @@ const CartCheckout = () => {
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase text-sm"
                     placeholder="PEGJ900101HCHRRS01"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Necesitamos tu CURP solo si vas a comprar a crédito. Si vas a pagar de contado, puedes dejar este campo vacío.
+                  </p>
                 </div>
 
                 <div className="sm:col-span-2">

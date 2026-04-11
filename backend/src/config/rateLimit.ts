@@ -100,3 +100,29 @@ export const chatLimiter = rateLimit({
   legacyHeaders: false,
   store: redisStore,
 });
+
+/**
+ * Rate limiter para recuperación de contraseña.
+ * Máximo 3 solicitudes por IP cada hora (previene abuso de email).
+ */
+export const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  message: { success: false, message: 'Has solicitado demasiados restablecimientos de contraseña. Por favor espera una hora antes de intentar nuevamente.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: redisStore,
+});
+
+/**
+ * Rate limiter para intento de reset de contraseña (con token).
+ * Máximo 5 intentos por IP cada hora.
+ */
+export const resetPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { success: false, message: 'Has intentado restablecer tu contraseña demasiadas veces. Por favor espera una hora.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: redisStore,
+});

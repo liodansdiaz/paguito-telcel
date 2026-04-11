@@ -26,7 +26,7 @@ export interface CreateReservationInput {
   customerId: string;
   nombreCompleto: string;
   telefono: string;
-  curp: string;
+  curp?: string; // Opcional: solo requerido si hay productos a crédito
   direccion: string;
   latitude?: number;
   longitude?: number;

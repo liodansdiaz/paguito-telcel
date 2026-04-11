@@ -7,6 +7,7 @@ const router = Router();
 router.use(authenticate, requireRole('ADMIN'));
 
 router.get('/', userController.getAll.bind(userController));
+router.get('/admins', userController.getAdmins.bind(userController));
 router.get('/:id', userController.getById.bind(userController));
 router.post('/', userController.create.bind(userController));
 router.put('/:id', userController.update.bind(userController));

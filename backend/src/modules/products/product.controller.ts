@@ -166,6 +166,11 @@ export class ProductController {
         }
       }
 
+      // Reemplazar los campos en el body con los arrays parseados
+      if (colores.length > 0) body.colores = colores;
+      if (memorias.length > 0) body.memorias = memorias;
+      if (imagenesColores.length > 0) body.imagenesColores = imagenesColores;
+
       const data = createProductSchema.parse(body);
 
       // Subir imágenes a Cloudinary en paralelo (o guardar local como fallback)

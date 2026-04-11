@@ -26,7 +26,7 @@ export interface CreateReservationDTO {
   items: CreateReservationItemDTO[]; // Array de productos
   nombreCompleto: string;
   telefono: string;
-  curp: string;
+  curp?: string; // Opcional: solo requerido si hay productos a crédito
   direccion: string;
   fechaPreferida: Date;
   horarioPreferido: string;
@@ -51,30 +51,35 @@ export class ReservationService {
       throw new AppError('Debes agregar al menos un producto al carrito.', 400);
     }
 
-    const curpUpper = dto.curp.toUpperCase().trim();
-
     // 1. Validar horario de visita
     ScheduleValidatorService.validateOrThrow(dto.fechaPreferida, dto.horarioPreferido);
 
     // 2. Contar productos a crédito en el carrito
     const productosCredito = dto.items.filter(item => item.tipoPago === 'CREDITO');
 
-    // 3. VALIDACIÓN CRÍTICA: Solo 1 producto a crédito activo por CURP
+    // 3. VALIDACIÓN: CURP requerida solo si hay productos a crédito
+    let curpUpper: string | undefined;
     if (productosCredito.length > 0) {
-      const existingCreditItem = await reservationRepository.findActiveCreditItemByCustomer(curpUpper);
-      
-      if (existingCreditItem) {
-        throw new AppError(
-          `Ya tienes un producto a crédito en proceso (${existingCreditItem.product.nombre}). Solo puedes tener un celular a crédito a la vez.`,
-          409
-        );
+      // Si hay productos a crédito, CURP es OBLIGATORIA
+      if (!dto.curp || dto.curp.trim().length === 0) {
+        throw new AppError('La CURP es requerida cuando seleccionas productos a crédito.', 400);
       }
+      curpUpper = dto.curp.toUpperCase().trim();
 
-      // No permitir más de 1 producto a crédito en el mismo carrito
+      // Validar que solo hay 1 producto a crédito en el carrito
       if (productosCredito.length > 1) {
         throw new AppError(
           'Solo puedes agregar un producto a crédito por reserva. Los demás deben ser de contado.',
           400
+        );
+      }
+
+      // Verificar que no tiene otro crédito activo
+      const existingCreditItem = await reservationRepository.findActiveCreditItemByCustomer(curpUpper);
+      if (existingCreditItem) {
+        throw new AppError(
+          `Ya tienes un producto a crédito en proceso (${existingCreditItem.product.nombre}). Solo puedes tener un celular a crédito a la vez.`,
+          409
         );
       }
     }
@@ -102,7 +107,7 @@ export class ReservationService {
     const customer = await customerRepository.upsertByCurp({
       nombreCompleto: dto.nombreCompleto,
       telefono: dto.telefono,
-      curp: curpUpper,
+      curp: curpUpper, // Puede ser undefined si es todo de contado
       direccion: dto.direccion,
     });
 

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { userService } from './user.service';
-import { sendPaginated } from '../../shared/utils/response.helper';
+import { sendPaginated, sendSuccess } from '../../shared/utils/response.helper';
 
 const createUserSchema = z.object({
   nombre: z.string().min(2),
@@ -71,6 +71,25 @@ export class UserController {
     try {
       await userService.delete(req.params['id'] as string);
       sendSuccess(res, null, 'Vendedor eliminado');
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Obtiene solo los administradores activos (para selects de configuración)
+   */
+  async getAdmins(req: Request, res: Response, next: NextFunction) {
+    try {
+      const admins = await userService.getAll({ rol: 'ADMIN', isActive: true, limit: 100 });
+      const adminList = admins.data.map(user => ({
+        id: user.id,
+        nombre: user.nombre,
+        email: user.email,
+        rol: user.rol,
+        isActive: user.isActive,
+      }));
+      sendSuccess(res, adminList);
     } catch (err) {
       next(err);
     }

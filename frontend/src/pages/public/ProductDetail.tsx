@@ -404,35 +404,35 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          {/* CTA */}
+          {/* CTA - Botón de reservar */}
           <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
             <button
               onClick={handleAgregarAlCarrito}
               disabled={unavailable}
-              className={`py-2.5 sm:py-3.5 rounded-xl font-bold text-center text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 ${
+              className={`flex-1 py-2.5 sm:py-3.5 rounded-xl font-bold text-center text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 ${
                 unavailable
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   : 'bg-accent-500 text-secondary-500 hover:bg-green-400'
               }`}
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              {unavailable ? 'Sin disponibilidad' : 'Agregar al carrito'}
+              {unavailable ? 'Sin disponibilidad' : 'Reservar'}
             </button>
             <Link
               to="/carrito"
-              className="border-2 border-[primary-500] text-primary-500 px-4 py-2.5 sm:px-5 sm:py-3.5 rounded-xl font-medium hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
+              className="flex-1 border-2 border-[primary-500] text-primary-500 px-4 py-2.5 sm:px-5 sm:py-3.5 rounded-xl font-medium hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              Ver carrito
+              Ver mi reserva
             </Link>
           </div>
           
           <p className="mt-2 md:mt-3 text-xs text-gray-500 text-center">
-            💡 Puedes agregar más productos antes de confirmar tu reserva
+            Te visitamos en tu casa para que verfiques el equipo antes de pagar
           </p>
         </div>
       </div>
@@ -573,7 +573,7 @@ const ProductDetail = () => {
           {/* Imagen principal */}
           <div className="max-w-4xl max-h-[80vh] p-4">
             <img
-              src={toImageUrl(getImageForColor(imagenes, product.colores, selectedColor))}
+              src={toImageUrl(imagenes[activeImage])}
               alt={product.nombre}
               className="max-w-full max-h-[75vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
@@ -585,20 +585,18 @@ const ProductDetail = () => {
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 bg-black/50 p-2 rounded-xl">
               {imagenes.map((img, i) => {
                 const colorDeImagen = product.colores ? detectColorFromImage(img, product.colores) : null;
-                const isSelected = selectedColor 
-                  ? colorDeImagen === selectedColor 
-                  : activeImage === i;
+                const isSelected = activeImage === i;
                 
                 return (
                   <button
                     key={i}
                     onClick={(e) => {
                       e.stopPropagation();
+                      // Always update activeImage to show the clicked image in the modal
+                      setActiveImage(i);
+                      // Also update selectedColor if this image has a color
                       if (colorDeImagen && product.colores) {
                         setSelectedColor(colorDeImagen);
-                      } else {
-                        setActiveImage(i);
-                        setSelectedColor(null);
                       }
                     }}
                     className={`w-14 h-14 rounded-lg border-2 overflow-hidden flex-shrink-0 transition-all ${

@@ -18,10 +18,16 @@ declare global {
   }
 }
 
+/**
+ * Middleware de autenticación
+ * Valida el JWT y adjunta el usuario al request
+ */
 export const authenticate = (req: Request, _res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
+  
+  // ❌ NO usar throw en middleware Express - usar next(err)
   if (!authHeader?.startsWith('Bearer ')) {
-    throw new AppError('No autorizado. Token requerido.', 401);
+    return next(new AppError('No autorizado. Token requerido.', 401));
   }
 
   const token = authHeader.split(' ')[1];
@@ -30,15 +36,21 @@ export const authenticate = (req: Request, _res: Response, next: NextFunction) =
     req.user = payload;
     next();
   } catch {
-    throw new AppError('Token inválido o expirado.', 401);
+    return next(new AppError('Token inválido o expirado.', 401));
   }
 };
 
+/**
+ * Middleware de autorización
+ * Verifica que el usuario tenga el rol requerido
+ */
 export const requireRole = (...roles: Rol[]) => {
   return (req: Request, _res: Response, next: NextFunction) => {
-    if (!req.user) throw new AppError('No autorizado.', 401);
+    if (!req.user) {
+      return next(new AppError('No autorizado.', 401));
+    }
     if (!roles.includes(req.user.rol)) {
-      throw new AppError('Acceso denegado. Permisos insuficientes.', 403);
+      return next(new AppError('Acceso denegado. Permisos insuficientes.', 403));
     }
     next();
   };

@@ -63,11 +63,40 @@ export class CustomerRepository {
     return prisma.customer.findUnique({ where: { curp } });
   }
 
-  async upsertByCurp(data: Prisma.CustomerCreateInput) {
-    return prisma.customer.upsert({
-      where: { curp: data.curp },
-      create: data,
-      update: {
+  async upsertByCurp(data: { nombreCompleto: string; telefono: string; curp?: string; direccion: string }) {
+    // Si tiene CURP, usar upsert normal
+    if (data.curp) {
+      return prisma.customer.upsert({
+        where: { curp: data.curp },
+        create: data,
+        update: {
+          nombreCompleto: data.nombreCompleto,
+          telefono: data.telefono,
+          direccion: data.direccion,
+        },
+      });
+    }
+
+    // Si no tiene CURP, buscar por teléfono (primera opción) o crear nuevo
+    const existingByPhone = await prisma.customer.findFirst({
+      where: { telefono: data.telefono },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingByPhone) {
+      return prisma.customer.update({
+        where: { id: existingByPhone.id },
+        data: {
+          nombreCompleto: data.nombreCompleto,
+          telefono: data.telefono,
+          direccion: data.direccion,
+        },
+      });
+    }
+
+    // Crear nuevo cliente sin CURP
+    return prisma.customer.create({
+      data: {
         nombreCompleto: data.nombreCompleto,
         telefono: data.telefono,
         direccion: data.direccion,

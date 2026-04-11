@@ -109,7 +109,7 @@ model Customer {
   id              String        @id @default(uuid())
   nombreCompleto  String
   telefono        String
-  curp            String        @unique
+  curp            String?       @unique
   email           String?
   direccion       String?
   estado          EstadoCliente @default(ACTIVO)
@@ -132,7 +132,7 @@ model Reservation {
 
   nombreCompleto  String
   telefono        String
-  curp            String
+  curp            String?
   direccion       String
   fechaPreferida  DateTime
   horarioPreferido String
@@ -238,3 +238,15 @@ model PasswordResetToken {
 // RoundRobinState eliminado — el algoritmo de asignación round-robin
 // se implementa directamente con el campo lastAssignedAt del modelo User,
 // por lo que esta tabla era redundante y nunca se usaba en el código.
+
+model SystemConfig {
+  id            String    @id @default(uuid())
+  clave         String    @unique
+  valor         String
+  actualizadoPor String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("system_config")
+  @@index([clave])
+}

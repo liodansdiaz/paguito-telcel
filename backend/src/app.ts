@@ -13,6 +13,7 @@ import cron from 'node-cron';
 import { errorMiddleware } from './shared/middleware/error.middleware';
 import { logger } from './shared/utils/logger';
 import { DailySummaryService } from './shared/services/daily-summary.service';
+import { startSummaryScheduler } from './shared/services/summary-scheduler.service';
 import authRoutes from './modules/auth/auth.routes';
 import productRoutes from './modules/products/product.routes';
 import customerRoutes from './modules/customers/customer.routes';
@@ -22,6 +23,7 @@ import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import chatRoutes from './modules/chat/chat.routes';
 import adminLogsRoutes from './modules/admin/admin.logs.routes';
 import adminNotificationsRoutes from './modules/admin/admin.notifications.routes';
+import systemConfigRoutes from './modules/system-config/system-config.routes';
 import { prisma } from './config/database';
 import fs from 'fs';
 import path from 'path';
@@ -135,6 +137,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/admin/logs', adminLogsRoutes);
 app.use('/api/admin/notifications', adminNotificationsRoutes);
+app.use('/api/admin/config', systemConfigRoutes);
 
 // Ruta 404
 app.use((_req, res) => {
@@ -155,14 +158,8 @@ const startServer = async () => {
       logger.info(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
     });
 
-    // Cron job: resumen diario a administradores
-    const summaryHour = process.env.DAILY_SUMMARY_HOUR || '18';
-    const summaryCron = `0 ${summaryHour} * * *`; // Todos los días a la hora configurada
-    cron.schedule(summaryCron, async () => {
-      logger.info('Ejecutando resumen diario programado...');
-      await DailySummaryService.sendDailySummary();
-    });
-    logger.info(`Resumen diario programado a las ${summaryHour}:00 (timezone: America/Mexico_City)`);
+    // Iniciar scheduler del resumen diario
+    await startSummaryScheduler();
 
     // Graceful shutdown: cerrar conexiones limpiamente al recibir señales
     const shutdown = async (signal: string) => {
