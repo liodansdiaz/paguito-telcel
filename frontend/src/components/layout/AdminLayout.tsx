@@ -10,6 +10,7 @@ const navItems = [
   { label: 'Inventario', path: '/admin/inventario', icon: '📦' },
   { label: 'Sistema', path: '/admin/sistema', icon: '⚙️' },
   { label: 'Configuración', path: '/admin/configuracion', icon: '🎛️' },
+  { label: 'Config. Chat', path: '/admin/chat-config', icon: '🤖' },
 ];
 
 // Icono de home

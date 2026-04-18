@@ -23,6 +23,8 @@ import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import chatRoutes from './modules/chat/chat.routes';
 import adminLogsRoutes from './modules/admin/admin.logs.routes';
 import adminNotificationsRoutes from './modules/admin/admin.notifications.routes';
+import adminChatConfigRoutes from './modules/admin/admin.chat-config.routes';
+import adminChatMetricsRoutes from './modules/admin/admin.chat-metrics.routes';
 import systemConfigRoutes from './modules/system-config/system-config.routes';
 import { prisma } from './config/database';
 import fs from 'fs';
@@ -137,6 +139,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/admin/logs', adminLogsRoutes);
 app.use('/api/admin/notifications', adminNotificationsRoutes);
+app.use('/api/admin/chat-config', adminChatConfigRoutes);
+app.use('/api/admin/chat-metrics', adminChatMetricsRoutes);
 app.use('/api/admin/config', systemConfigRoutes);
 
 // Ruta 404

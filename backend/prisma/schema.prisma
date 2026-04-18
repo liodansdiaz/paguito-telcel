@@ -250,3 +250,18 @@ model SystemConfig {
   @@map("system_config")
   @@index([clave])
 }
+
+model ChatPromptSection {
+  id        Int      @id @default(autoincrement())
+  section   String   @unique // "general", "credito", "garantia", "formas_pago", "instrucciones"
+  title     String   // "INFORMACIÓN GENERAL", "CRÉDITO — CÓMO FUNCIONA"
+  content   String   @db.Text
+  order     Int      // Orden de aparición en el prompt
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("chat_prompt_sections")
+  @@index([isActive, order])
+  @@index([section])
+}

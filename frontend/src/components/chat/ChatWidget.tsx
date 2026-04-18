@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { getFingerprint } from '../../utils/fingerprint';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 interface Message {
@@ -35,6 +36,7 @@ export default function ChatWidget() {
   const [loading, setLoading] = useState(false);
   const [streamingText, setStreamingText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -43,9 +45,22 @@ export default function ChatWidget() {
     saveHistory(messages);
   }, [messages]);
 
-  // Scroll automático al último mensaje
+  // Scroll automático SOLO si el usuario está en el fondo
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    // Calcular si el usuario está cerca del fondo (dentro de 150px)
+    const scrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight;
+    const clientHeight = container.clientHeight;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    const isNearBottom = distanceFromBottom < 150;
+
+    // Solo hacer scroll si está cerca del fondo (no interrumpir si está leyendo arriba)
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, streamingText]);
 
   // Enfocar el input al abrir
@@ -60,7 +75,7 @@ export default function ChatWidget() {
     return () => { abortRef.current?.abort(); };
   }, []);
 
-  const sendMessage = async () => {
+  const sendMessage = async (retryCount = 0) => {
     const text = input.trim();
     if (!text || loading) return;
 
@@ -68,6 +83,11 @@ export default function ChatWidget() {
     const updatedMessages = [...messages, userMessage];
 
     setMessages(updatedMessages);
+    
+    // Cuando el usuario envía un mensaje, SIEMPRE scrollear al fondo
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
     setInput('');
     setLoading(true);
     setStreamingText('');
@@ -75,9 +95,15 @@ export default function ChatWidget() {
     abortRef.current = new AbortController();
 
     try {
+      // Obtener fingerprint único del navegador
+      const fingerprint = getFingerprint();
+
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Session-ID': fingerprint, // Enviar fingerprint al backend
+        },
         body: JSON.stringify({
           message: text,
           history: messages, // enviar historial previo (sin el mensaje actual)
@@ -87,7 +113,14 @@ export default function ChatWidget() {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || 'Error al conectar con el asistente.');
+        
+        // Crear error con metadata del backend
+        const error: any = new Error(err.error || 'Error al conectar con el asistente.');
+        error.errorType = err.errorType || 'UNKNOWN_ERROR';
+        error.errorCode = err.errorCode || 'GENERIC_ERROR';
+        error.statusCode = response.status;
+        
+        throw error;
       }
 
       const reader = response.body?.getReader();
@@ -111,13 +144,27 @@ export default function ChatWidget() {
 
           try {
             const parsed = JSON.parse(data);
-            if (parsed.error) throw new Error(parsed.error);
+            
+            // Si viene un error en el stream (después de empezar a streamear)
+            if (parsed.error) {
+              const error: any = new Error(parsed.error);
+              error.errorType = parsed.errorType || 'STREAMING_ERROR';
+              error.errorCode = parsed.errorCode || 'STREAM_ERROR';
+              throw error;
+            }
+            
             if (parsed.text) {
               fullText += parsed.text;
               setStreamingText(fullText);
             }
-          } catch {
-            // ignorar líneas mal formadas
+          } catch (parseError: any) {
+            // Si es un error de parseo (línea mal formada), ignorar
+            if (parseError instanceof SyntaxError) {
+              // ignorar líneas mal formadas del stream
+            } else {
+              // Si es un error real del asistente, propagarlo
+              throw parseError;
+            }
           }
         }
       }
@@ -127,11 +174,60 @@ export default function ChatWidget() {
       setStreamingText('');
     } catch (err: any) {
       if (err.name === 'AbortError') return;
+
+      // Determinar si el error es retryable (transitorio)
+      const isRetryable = 
+        err.errorCode === 'RATE_LIMIT' || 
+        err.errorCode === 'CONNECTION_FAILED' ||
+        err.statusCode === 502 || 
+        err.statusCode === 503 || 
+        err.statusCode === 504;
+
+      // Retry automático (máximo 1 intento)
+      if (isRetryable && retryCount < 1) {
+        console.log(`[CHAT] Reintentando... (intento ${retryCount + 1})`);
+        setTimeout(() => {
+          // Restaurar el input con el mensaje original para reintentar
+          setInput(text);
+          setLoading(false);
+          sendMessage(retryCount + 1);
+        }, 2000); // Esperar 2 segundos antes de reintentar
+        return;
+      }
+
+      // Si no es retryable o ya se agotaron los reintentos, mostrar error
+      let errorMessage = err.message || 'Ocurrió un error. Intenta de nuevo.';
+
+      // Mensajes específicos según el tipo de error
+      if (err.errorCode === 'MESSAGE_TOO_LONG') {
+        errorMessage = err.message; // Ya viene bien formateado del backend
+      } else if (err.errorCode === 'COOLDOWN_ACTIVE' || err.errorCode === 'BLOCKED' || err.errorCode === 'TOO_MANY_REQUESTS') {
+        // Rate limit por sesión (nuevo sistema robusto)
+        errorMessage = err.message; // Ya viene formateado del backend con el tiempo exacto
+      } else if (err.errorCode === 'RATE_LIMIT') {
+        errorMessage = 'El asistente está recibiendo muchas consultas. Por favor espera un momento e intenta de nuevo.';
+      } else if (err.errorCode === 'CONNECTION_FAILED') {
+        errorMessage = 'No pudimos conectar con el servidor. Verifica tu conexión a internet.';
+      } else if (err.errorCode === 'CONTEXT_TOO_LONG') {
+        errorMessage = 'La conversación es muy larga. Por favor limpia el historial (botón "Limpiar") y vuelve a preguntar.';
+      } else if (err.errorCode === 'INVALID_API_KEY') {
+        errorMessage = 'El servicio de chat no está configurado correctamente. Por favor contacta al administrador.';
+      } else if (err.statusCode === 400) {
+        errorMessage = err.message || 'Tu mensaje no es válido. Verifica que no esté vacío y no sea muy largo.';
+      } else if (err.statusCode >= 500) {
+        errorMessage = 'El servidor está experimentando problemas. Por favor intenta más tarde.';
+      }
+
+      // Agregar mensaje de fallback con info de contacto si el error es crítico
+      if (err.errorCode === 'INVALID_API_KEY' || err.statusCode >= 500) {
+        errorMessage += '\n\n📞 Mientras tanto, podés contactarnos directamente durante nuestro horario de atención (Lun-Vie 9:30-16:30, Sáb 9:30-14:30).';
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: err.message || 'Ocurrió un error. Intenta de nuevo.',
+          content: errorMessage,
         },
       ]);
       setStreamingText('');
@@ -201,7 +297,7 @@ export default function ChatWidget() {
           </div>
 
           {/* Mensajes */}
-          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-gray-50">
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-gray-50">
 
             {/* Mensaje de bienvenida */}
             {messages.length === 0 && !streamingText && (

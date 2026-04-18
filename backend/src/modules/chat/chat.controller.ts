@@ -2,71 +2,25 @@ import { Request, Response, NextFunction } from 'express';
 import Groq from 'groq-sdk';
 import { prisma } from '../../config/database';
 import { CacheService } from '../../shared/services/cache.service';
+import { chatConfigService } from '../../shared/services/chat-config.service';
+import { chatMetricsService } from '../../shared/services/chat-metrics.service';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SYSTEM PROMPT — Aquí defines todo lo que el asistente sabe del negocio.
+// SYSTEM PROMPT — AHORA SE CARGA DINÁMICAMENTE DESDE LA BASE DE DATOS
 //
-// CÓMO MODIFICARLO EN EL FUTURO:
-//   1. Abre este archivo: backend/src/modules/chat/chat.controller.ts
-//   2. Edita el texto dentro de la constante SYSTEM_PROMPT que está abajo.
-//   3. Guarda el archivo — el servidor se reinicia automáticamente (ts-node-dev).
+// CÓMO MODIFICARLO:
+//   1. Ve al panel de administración → Configuración del Chat
+//   2. Edita las secciones directamente desde el navegador
+//   3. Los cambios se aplican inmediatamente (el cache se invalida automáticamente)
 //
-// SECCIONES QUE PUEDES EDITAR:
-//   - "INFORMACIÓN GENERAL"  → nombre, ciudad, horarios, zona de servicio
-//   - "CRÉDITO"              → requisitos, plazos, enganche, proceso de venta
-//   - "GARANTÍA"             → duración y condiciones
-//   - "FORMAS DE PAGO"       → dónde y cómo pagar
-//   - "INSTRUCCIONES"        → cómo debe comportarse el asistente
+// NO NECESITAS TOCAR CÓDIGO NUNCA MÁS PARA CAMBIAR EL PROMPT.
 //
-// El catálogo de productos (precios, stock) se inserta automáticamente
-// desde la base de datos — no necesitas editarlo manualmente aquí.
+// El servicio chatConfigService.buildSystemPrompt() se encarga de:
+//   - Leer todas las secciones activas de la tabla 'chat_prompt_sections'
+//   - Ordenarlas por el campo 'order'
+//   - Juntarlas en un solo prompt
+//   - Cachear el resultado en Redis por 5 minutos
 // ─────────────────────────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `
-Eres el asistente virtual de Amigos Paguito Telcel, una tienda de celulares con crédito a domicilio.
-
-═══════════════════════════════
- INFORMACIÓN GENERAL
-═══════════════════════════════
-- Negocio: Amigos Paguito Telcel
-- Ubicación: Tapachula, Chiapas — también atendemos pueblos y comunidades cercanas
-- Horario de atención:
-    • Lunes a Viernes: 9:30 a.m. – 4:30 p.m.
-    • Sábados: 9:30 a.m. – 2:30 p.m.
-    • Domingos: cerrado
-
-═══════════════════════════════
- CRÉDITO — CÓMO FUNCIONA
-═══════════════════════════════
-- Vendemos celulares a crédito sin necesidad de que el cliente vaya a ninguna tienda.
-- Nuestro vendedor va hasta la puerta de tu casa para realizar todo el trámite.
-- Requisito único: presentar INE (credencial de elector) vigente.
-- Plazos disponibles: 13 semanas, 26 semanas o 39 semanas.
-- El enganche varía según el equipo que el cliente elija (consultar con el vendedor).
-- No se necesita buró de crédito ni historial bancario.
-
-═══════════════════════════════
- GARANTÍA
-═══════════════════════════════
-- Todos los equipos cuentan con 1 año de garantía oficial con Telcel.
-
-═══════════════════════════════
- FORMAS DE PAGO (pagos semanales)
-═══════════════════════════════
-- Oxxo
-- Bodega Aurrerá
-- Transferencia electrónica vía Mercado Pago
-
-═══════════════════════════════
- INSTRUCCIONES PARA EL ASISTENTE
-═══════════════════════════════
-- Responde siempre en español, de forma amable, clara y concisa.
-- Si el cliente pregunta por un equipo, menciona precio de contado, pago semanal estimado y disponibilidad de stock.
-- Si el cliente pregunta por crédito, explica el proceso: el vendedor va a domicilio, solo se necesita INE, plazos de 13, 26 o 39 semanas.
-- Si no sabes algo o el cliente necesita atención personalizada, invítalo a comunicarse durante el horario de atención.
-- No inventes precios, disponibilidad ni información que no esté en este prompt o en el catálogo proporcionado.
-- Nunca menciones a competidores ni hagas comparaciones con otras tiendas.
-- Sé proactivo: si el cliente muestra interés en un equipo, ofrécele información sobre crédito aunque no lo haya pedido.
-`.trim();
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -139,27 +93,50 @@ async function getProductContext(): Promise<string> {
 }
 
 export async function handleChat(req: Request, res: Response, next: NextFunction) {
+  // Variables para trackear tokens consumidos
+  let tokensInput = 0;
+  let tokensOutput = 0;
+  
   try {
     const { message, history = [] } = req.body as {
       message: string;
       history: ChatMessage[];
     };
 
+    // Obtener fingerprint del header
+    const fingerprint = (req.headers['x-session-id'] as string) || 'anonymous';
+
+    // Validación 1: Mensaje vacío
     if (!message || typeof message !== 'string' || message.trim() === '') {
-      res.status(400).json({ error: 'El mensaje no puede estar vacío.' });
+      res.status(400).json({ 
+        error: 'El mensaje no puede estar vacío.',
+        errorType: 'VALIDATION_ERROR',
+        errorCode: 'EMPTY_MESSAGE'
+      });
       return;
     }
 
-    if (message.trim().length > 500) {
-      res.status(400).json({ error: 'El mensaje es demasiado largo.' });
+    // Validación 2: Mensaje muy largo
+    const maxLength = 500;
+    if (message.trim().length > maxLength) {
+      res.status(400).json({ 
+        error: `Tu mensaje es demasiado largo (${message.trim().length} caracteres). El máximo permitido es ${maxLength}.`,
+        errorType: 'VALIDATION_ERROR',
+        errorCode: 'MESSAGE_TOO_LONG',
+        maxLength,
+        currentLength: message.trim().length
+      });
       return;
     }
 
-    // Obtener catálogo actualizado desde la DB
+    // Obtener SYSTEM_PROMPT dinámico desde la DB (cacheado 5 minutos)
+    const systemPrompt = await chatConfigService.buildSystemPrompt();
+
+    // Obtener catálogo actualizado desde la DB (cacheado 5 minutos)
     const productContext = await getProductContext();
 
-    // Construir el system prompt completo: info fija + catálogo dinámico
-    const fullSystemPrompt = `${SYSTEM_PROMPT}\n\n${'═'.repeat(31)}\n${productContext}\n${'═'.repeat(31)}`;
+    // Construir el prompt completo: configuración + catálogo dinámico
+    const fullSystemPrompt = `${systemPrompt}\n\n${'═'.repeat(31)}\n${productContext}\n${'═'.repeat(31)}`;
 
     // Limitar historial a los últimos 10 mensajes para no exceder tokens
     const recentHistory = history.slice(-10);
@@ -180,29 +157,79 @@ export async function handleChat(req: Request, res: Response, next: NextFunction
         { role: 'user', content: message.trim() },
       ],
       stream: true,
-      temperature: 0.6,
-      max_tokens: 600,
+      temperature: 0.8,  // 👈 Más alto = más creativo y natural (antes 0.6)
+      max_tokens: 250,   // 👈 Menos tokens = respuestas más cortas (antes 600)
+      top_p: 0.9,        // 👈 Control de diversidad en la generación
     });
 
+    // Estimar tokens del input (aproximación)
+    // fullSystemPrompt + historial + mensaje usuario
+    const estimatedSystemTokens = Math.ceil(fullSystemPrompt.length / 4); // ~4 chars por token
+    const estimatedHistoryTokens = Math.ceil(JSON.stringify(recentHistory).length / 4);
+    const estimatedMessageTokens = Math.ceil(message.trim().length / 4);
+    tokensInput = estimatedSystemTokens + estimatedHistoryTokens + estimatedMessageTokens;
+
     // Enviar cada fragmento al cliente en tiempo real
+    let outputText = '';
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta?.content;
       if (delta) {
+        outputText += delta;
         res.write(`data: ${JSON.stringify({ text: delta })}\n\n`);
       }
     }
+
+    // Estimar tokens del output
+    tokensOutput = Math.ceil(outputText.length / 4);
+
+    // Trackear métricas
+    await chatMetricsService.trackRequest(fingerprint, tokensInput, tokensOutput);
 
     // Señal de fin del stream
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (err: any) {
     console.error('[CHAT ERROR]', err?.message || err);
+    
+    // Detectar el tipo de error y dar mensajes específicos
+    let errorMessage = 'Ocurrió un error inesperado. Por favor intenta de nuevo.';
+    let errorType = 'UNKNOWN_ERROR';
+    let errorCode = 'GENERIC_ERROR';
+
+    // Error de Groq API (timeout, rate limit, etc.)
+    if (err?.error?.type === 'server_error' || err?.error?.code === 'rate_limit_exceeded') {
+      errorMessage = 'El asistente está experimentando alta demanda. Por favor intenta de nuevo en unos segundos.';
+      errorType = 'GROQ_ERROR';
+      errorCode = 'RATE_LIMIT';
+    } else if (err?.code === 'ECONNREFUSED' || err?.code === 'ENOTFOUND') {
+      errorMessage = 'No pudimos conectar con el servicio de IA. Por favor intenta más tarde.';
+      errorType = 'NETWORK_ERROR';
+      errorCode = 'CONNECTION_FAILED';
+    } else if (err?.error?.code === 'context_length_exceeded') {
+      errorMessage = 'La conversación es muy larga. Por favor limpia el historial y vuelve a intentar.';
+      errorType = 'GROQ_ERROR';
+      errorCode = 'CONTEXT_TOO_LONG';
+    } else if (err?.response?.status === 401) {
+      errorMessage = 'Error de autenticación con el servicio de IA. Por favor contacta al administrador.';
+      errorType = 'AUTH_ERROR';
+      errorCode = 'INVALID_API_KEY';
+    }
+
     // Si ya se empezó a enviar el stream, cerrarlo con error
     if (res.headersSent) {
-      res.write(`data: ${JSON.stringify({ error: err?.message || 'Error al procesar la respuesta.' })}\n\n`);
+      res.write(`data: ${JSON.stringify({ 
+        error: errorMessage,
+        errorType,
+        errorCode
+      })}\n\n`);
       res.end();
     } else {
-      next(err);
+      // Si no se envió nada, enviar JSON normal
+      res.status(500).json({ 
+        error: errorMessage,
+        errorType,
+        errorCode
+      });
     }
   }
 }
