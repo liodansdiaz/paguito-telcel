@@ -50,7 +50,7 @@ export class AdminChatConfigController {
    */
   async getSectionByKey(req: Request, res: Response, next: NextFunction) {
     try {
-      const { section } = req.params;
+      const section = req.params.section as string;
       const sectionData = await chatConfigService.getSectionByKey(section);
 
       if (!sectionData) {
@@ -90,7 +90,7 @@ export class AdminChatConfigController {
    */
   async updateSection(req: Request, res: Response, next: NextFunction) {
     try {
-      const { section } = req.params;
+      const section = req.params.section as string;
       const data = updateSectionSchema.parse(req.body);
 
       // Verificar que exista
@@ -112,7 +112,7 @@ export class AdminChatConfigController {
    */
   async deleteSection(req: Request, res: Response, next: NextFunction) {
     try {
-      const { section } = req.params;
+      const section = req.params.section as string;
 
       // Verificar que exista
       const existing = await chatConfigService.getSectionByKey(section);
@@ -133,7 +133,7 @@ export class AdminChatConfigController {
    */
   async toggleSection(req: Request, res: Response, next: NextFunction) {
     try {
-      const { section } = req.params;
+      const section = req.params.section as string;
       const { isActive } = toggleSectionSchema.parse(req.body);
 
       // Verificar que exista
