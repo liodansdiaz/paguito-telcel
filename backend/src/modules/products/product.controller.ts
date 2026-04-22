@@ -7,18 +7,24 @@ import { uploadProductImages } from '../../shared/middleware/upload.middleware';
 import { uploadToCloudinary, deleteFromCloudinary } from '../../shared/services/cloudinary.service';
 
 const createProductSchema = z.object({
-  sku: z.string().min(1, 'SKU requerido'),
-  nombre: z.string().min(1, 'Nombre requerida'),
-  marca: z.string().min(1, 'Marca requerida'),
+  sku: z.string().min(1, 'El SKU es requerido'),
+  nombre: z.string().min(1, 'El nombre del producto es requerido'),
+  marca: z.string().min(1, 'La marca es requerida'),
   descripcion: z.string().optional(),
-  precio: z.number().positive('Precio debe ser positivo'),
-  precioAnterior: z.number().positive().nullable().optional(),
-  stock: z.number().int().min(0),
-  stockMinimo: z.number().int().min(0).optional(),
+  precio: z.number({ invalid_type_error: 'El precio debe ser un número' }).positive('El precio debe ser mayor a cero'),
+  precioAnterior: z.number({ invalid_type_error: 'El precio anterior debe ser un número' }).positive().nullable().optional(),
+  stock: z.number({ invalid_type_error: 'El stock debe ser un número' }).int('El stock debe ser un número entero').min(0, 'El stock no puede ser negativo'),
+  stockMinimo: z.number({ invalid_type_error: 'El stock mínimo debe ser un número' }).int('El stock mínimo debe ser un número entero').min(0, 'El stock mínimo no puede ser negativo').optional(),
   imagenes: z.array(z.string()).optional(),
-  imagenesColores: z.array(z.string()).optional(),
-  colores: z.array(z.string()).optional(),
-  memorias: z.array(z.string()).optional(),
+  imagenesColores: z.array(z.string(), { invalid_type_error: 'Debe seleccionar al menos un color para las imágenes' }).optional(),
+  colores: z.union([
+    z.array(z.string()).min(1, 'Debe seleccionar al menos un color disponible'),
+    z.undefined()
+  ], { invalid_type_error: 'Debe seleccionar al menos un color disponible' }).optional(),
+  memorias: z.union([
+    z.array(z.string()).min(1, 'Debe seleccionar al menos una opción de almacenamiento'),
+    z.undefined()
+  ], { invalid_type_error: 'Debe seleccionar al menos una opción de almacenamiento' }).optional(),
   badge: z.string().optional(),
   disponibleCredito: z.boolean().optional(),
   enganche: z.string().optional(),
@@ -167,9 +173,16 @@ export class ProductController {
       }
 
       // Reemplazar los campos en el body con los arrays parseados
-      if (colores.length > 0) body.colores = colores;
-      if (memorias.length > 0) body.memorias = memorias;
-      if (imagenesColores.length > 0) body.imagenesColores = imagenesColores;
+      // Si el array está vacío, dejarlo como undefined para que la validación funcione correctamente
+      if (body.colores !== undefined) {
+        body.colores = colores.length > 0 ? colores : undefined;
+      }
+      if (body.memorias !== undefined) {
+        body.memorias = memorias.length > 0 ? memorias : undefined;
+      }
+      if (body.imagenesColores !== undefined) {
+        body.imagenesColores = imagenesColores.length > 0 ? imagenesColores : undefined;
+      }
 
       const data = createProductSchema.parse(body);
 
@@ -212,6 +225,8 @@ export class ProductController {
         } else if (Array.isArray(body.colores)) {
           colores = body.colores;
         }
+        // Si el array está vacío, dejarlo como undefined
+        body.colores = (colores && colores.length > 0) ? colores : undefined;
       }
       let memorias: string[] | undefined;
       if (body.memorias !== undefined) {
@@ -220,6 +235,8 @@ export class ProductController {
         } else if (Array.isArray(body.memorias)) {
           memorias = body.memorias;
         }
+        // Si el array está vacío, dejarlo como undefined
+        body.memorias = (memorias && memorias.length > 0) ? memorias : undefined;
       }
       let imagenesColores: string[] | undefined;
       if (body.imagenesColores !== undefined) {
@@ -228,6 +245,8 @@ export class ProductController {
         } else if (Array.isArray(body.imagenesColores)) {
           imagenesColores = body.imagenesColores;
         }
+        // Si el array está vacío, dejarlo como undefined
+        body.imagenesColores = (imagenesColores && imagenesColores.length > 0) ? imagenesColores : undefined;
       }
 
       const data = createProductSchema.partial().parse(body);

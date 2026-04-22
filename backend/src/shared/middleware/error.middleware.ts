@@ -89,13 +89,56 @@ export const errorMiddleware = (
   }
 
   if (err instanceof ZodError) {
+    const errors = err.issues.map((e: any) => {
+      const field = (e.path as PropertyKey[]).join('.');
+      let message = e.message as string;
+      
+      // Si ya tiene un mensaje custom de refine() o del schema, usarlo
+      if (!message.includes('Invalid input') && !message.includes('Expected')) {
+        return { field, message };
+      }
+      
+      // Mejorar mensajes genéricos de Zod solo si son muy técnicos
+      const fieldNames: Record<string, string> = {
+        'sku': 'SKU',
+        'nombre': 'Nombre del producto',
+        'marca': 'Marca',
+        'precio': 'Precio',
+        'stock': 'Stock',
+        'stockMinimo': 'Stock mínimo',
+        'memorias': 'Almacenamiento',
+        'colores': 'Colores',
+        'imagenesColores': 'Colores de imágenes',
+      };
+      const fieldName = fieldNames[field] || field;
+      
+      if (e.code === 'invalid_type') {
+        if (e.expected === 'array') {
+          // Mensajes específicos por campo
+          if (field === 'memorias') {
+            message = 'Debe seleccionar al menos una opción de almacenamiento';
+          } else if (field === 'colores') {
+            message = 'Debe seleccionar al menos un color disponible';
+          } else {
+            message = `El campo ${fieldName} está incompleto`;
+          }
+        } else if (e.expected === 'number') {
+          message = `${fieldName} debe ser un número válido`;
+        } else {
+          message = `${fieldName} tiene un formato inválido`;
+        }
+      }
+      
+      return {
+        field,
+        message,
+      };
+    });
+    
     return res.status(422).json({
       success: false,
-      message: 'Error de validación',
-      errors: err.issues.map((e: any) => ({
-        field: (e.path as PropertyKey[]).join('.'),
-        message: e.message as string,
-      })),
+      message: 'Por favor revise los datos del formulario',
+      errors,
       requestId,
     });
   }
