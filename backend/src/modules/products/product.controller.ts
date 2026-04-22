@@ -17,14 +17,12 @@ const createProductSchema = z.object({
   stockMinimo: z.number({ invalid_type_error: 'El stock mínimo debe ser un número' }).int('El stock mínimo debe ser un número entero').min(0, 'El stock mínimo no puede ser negativo').optional(),
   imagenes: z.array(z.string()).optional(),
   imagenesColores: z.array(z.string(), { invalid_type_error: 'Debe seleccionar al menos un color para las imágenes' }).optional(),
-  colores: z.union([
-    z.array(z.string()).min(1, 'Debe seleccionar al menos un color disponible'),
-    z.undefined()
-  ], { invalid_type_error: 'Debe seleccionar al menos un color disponible' }).optional(),
-  memorias: z.union([
-    z.array(z.string()).min(1, 'Debe seleccionar al menos una opción de almacenamiento'),
-    z.undefined()
-  ], { invalid_type_error: 'Debe seleccionar al menos una opción de almacenamiento' }).optional(),
+  colores: z.array(z.string(), { invalid_type_error: 'Debe seleccionar al menos un color disponible' })
+    .min(1, 'Debe seleccionar al menos un color disponible')
+    .optional(),
+  memorias: z.array(z.string(), { invalid_type_error: 'Debe seleccionar al menos una opción de almacenamiento' })
+    .min(1, 'Debe seleccionar al menos una opción de almacenamiento')
+    .optional(),
   badge: z.string().optional(),
   disponibleCredito: z.boolean().optional(),
   enganche: z.string().optional(),
@@ -173,15 +171,15 @@ export class ProductController {
       }
 
       // Reemplazar los campos en el body con los arrays parseados
-      // Si el array está vacío, dejarlo como undefined para que la validación funcione correctamente
+      // IMPORTANTE: NO convertir a undefined - dejar como array vacío para que Zod valide con .min(1)
       if (body.colores !== undefined) {
-        body.colores = colores.length > 0 ? colores : undefined;
+        body.colores = colores;
       }
       if (body.memorias !== undefined) {
-        body.memorias = memorias.length > 0 ? memorias : undefined;
+        body.memorias = memorias;
       }
       if (body.imagenesColores !== undefined) {
-        body.imagenesColores = imagenesColores.length > 0 ? imagenesColores : undefined;
+        body.imagenesColores = imagenesColores;
       }
 
       const data = createProductSchema.parse(body);
@@ -225,8 +223,7 @@ export class ProductController {
         } else if (Array.isArray(body.colores)) {
           colores = body.colores;
         }
-        // Si el array está vacío, dejarlo como undefined
-        body.colores = (colores && colores.length > 0) ? colores : undefined;
+        body.colores = colores;
       }
       let memorias: string[] | undefined;
       if (body.memorias !== undefined) {
@@ -235,8 +232,7 @@ export class ProductController {
         } else if (Array.isArray(body.memorias)) {
           memorias = body.memorias;
         }
-        // Si el array está vacío, dejarlo como undefined
-        body.memorias = (memorias && memorias.length > 0) ? memorias : undefined;
+        body.memorias = memorias;
       }
       let imagenesColores: string[] | undefined;
       if (body.imagenesColores !== undefined) {
@@ -245,8 +241,7 @@ export class ProductController {
         } else if (Array.isArray(body.imagenesColores)) {
           imagenesColores = body.imagenesColores;
         }
-        // Si el array está vacío, dejarlo como undefined
-        body.imagenesColores = (imagenesColores && imagenesColores.length > 0) ? imagenesColores : undefined;
+        body.imagenesColores = imagenesColores;
       }
 
       const data = createProductSchema.partial().parse(body);
