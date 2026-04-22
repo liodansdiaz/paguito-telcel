@@ -2,11 +2,11 @@ import rateLimit from 'express-rate-limit';
 import { getRedisClient } from './redis';
 
 /**
- * Si Redis está conectado, usa Redis como store para que los rate limits
- * se compartan entre múltiples instancias del servidor.
- * Si no, usa el store en memoria (default de express-rate-limit).
+ * Crea una instancia única de RedisStore para cada rate limiter.
+ * IMPORTANTE: No共享 el mismo store entre limiters - causa error.
+ * @param prefix Prefijo único para cada store (ej: "login", "refresh", etc.)
  */
-function getRedisStore() {
+function createRedisStore(prefix: string) {
   const redis = getRedisClient();
   if (!redis) return undefined;
 
@@ -14,14 +14,14 @@ function getRedisStore() {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { RedisStore } = require('rate-limit-redis');
     return new RedisStore({
-      sendCommand: (...args: string[]) => (redis as any).call(...args),
+      // prefix debe ser único para cada limiter
+      prefix: `rl:${prefix}:`,
+      sendCommand: (...args: string[]) => redis.call(...args),
     });
   } catch {
     return undefined;
   }
 }
-
-const redisStore = getRedisStore();
 
 /**
  * Rate limiter para el endpoint de login.
@@ -33,7 +33,7 @@ export const loginLimiter = rateLimit({
   message: { success: false, message: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
-  store: redisStore,
+  store: createRedisStore('login'),
 });
 
 /**
@@ -46,7 +46,7 @@ export const refreshLimiter = rateLimit({
   message: { success: false, message: 'Demasiadas solicitudes de renovación de sesión. Intenta de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
-  store: redisStore,
+  store: createRedisStore('refresh'),
 });
 
 /**
@@ -59,7 +59,7 @@ export const reservationLimiter = rateLimit({
   message: { success: false, message: 'Has realizado demasiadas reservas. Por favor espera una hora antes de intentar nuevamente.' },
   standardHeaders: true,
   legacyHeaders: false,
-  store: redisStore,
+  store: createRedisStore('reservation'),
 });
 
 /**
@@ -72,7 +72,7 @@ export const consultaLimiter = rateLimit({
   message: { success: false, message: 'Has realizado demasiadas consultas. Por favor espera una hora antes de intentar nuevamente.' },
   standardHeaders: true,
   legacyHeaders: false,
-  store: redisStore,
+  store: createRedisStore('consulta'),
 });
 
 /**
@@ -85,7 +85,7 @@ export const cancelarLimiter = rateLimit({
   message: { success: false, message: 'Has realizado demasiados intentos de cancelación. Por favor espera una hora antes de intentar nuevamente.' },
   standardHeaders: true,
   legacyHeaders: false,
-  store: redisStore,
+  store: createRedisStore('cancelar'),
 });
 
 /**
@@ -98,7 +98,7 @@ export const chatLimiter = rateLimit({
   message: { success: false, message: 'Has enviado demasiados mensajes. Por favor espera un momento antes de continuar.' },
   standardHeaders: true,
   legacyHeaders: false,
-  store: redisStore,
+  store: createRedisStore('chat'),
 });
 
 /**
@@ -111,7 +111,7 @@ export const forgotPasswordLimiter = rateLimit({
   message: { success: false, message: 'Has solicitado demasiados restablecimientos de contraseña. Por favor espera una hora antes de intentar nuevamente.' },
   standardHeaders: true,
   legacyHeaders: false,
-  store: redisStore,
+  store: createRedisStore('forgot'),
 });
 
 /**
@@ -124,5 +124,5 @@ export const resetPasswordLimiter = rateLimit({
   message: { success: false, message: 'Has intentado restablecer tu contraseña demasiadas veces. Por favor espera una hora.' },
   standardHeaders: true,
   legacyHeaders: false,
-  store: redisStore,
+  store: createRedisStore('reset'),
 });
