@@ -42,12 +42,25 @@ vi.mock('../shared/utils/logger', () => ({
   },
 }));
 
+vi.mock('../shared/services/notificaciones-config.service', () => ({
+  getNotificacionesConfig: vi.fn().mockResolvedValue({
+    whatsappCliente: false,
+    whatsappVendedor: false,
+    email: true,
+    internal: true,
+  }),
+  isWhatsappClienteEnabled: vi.fn().mockResolvedValue(false),
+  isWhatsappVendedorEnabled: vi.fn().mockResolvedValue(false),
+  invalidateNotificacionesCache: vi.fn(),
+}));
+
 import { NotificationService } from '../shared/services/notification.service';
 import { prisma } from '../config/database';
 import { emailService } from '../shared/services/email.service';
 import { whatsappService } from '../shared/services/whatsapp.service';
 import { NOTIFICATIONS_CONFIG } from '../config/notifications';
 import { logger } from '../shared/utils/logger';
+import { getNotificacionesConfig } from '../shared/services/notificaciones-config.service';
 
 const makeReservationData = (overrides = {}) => ({
   reservationId: 'resv-uuid-001',
@@ -194,13 +207,22 @@ describe('NotificationService', () => {
   describe('sendWhatsAppNotification (canal habilitado)', () => {
     beforeEach(() => {
       // Habilitar WhatsApp para estos tests
-      NOTIFICATIONS_CONFIG.whatsapp = true;
-      NOTIFICATIONS_CONFIG.email = false; // Deshabilitar email para aislar
+      vi.mocked(getNotificacionesConfig).mockResolvedValue({
+        whatsappCliente: true,
+        whatsappVendedor: true,
+        email: false,
+        internal: true,
+      });
     });
 
     afterEach(() => {
-      NOTIFICATIONS_CONFIG.whatsapp = false;
-      NOTIFICATIONS_CONFIG.email = true;
+      // Restaurar configuración por defecto
+      vi.mocked(getNotificacionesConfig).mockResolvedValue({
+        whatsappCliente: false,
+        whatsappVendedor: false,
+        email: true,
+        internal: true,
+      });
     });
 
     it('envía WhatsApp al vendedor y al cliente', async () => {

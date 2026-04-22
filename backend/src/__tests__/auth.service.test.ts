@@ -60,11 +60,15 @@ vi.mock('../config/jwt', () => ({
   },
 }));
 
-vi.mock('crypto', () => ({
-  randomBytes: vi.fn().mockReturnValue({
-    toString: vi.fn().mockReturnValue('fake-reset-token-abc123'),
-  }),
-}));
+vi.mock('crypto', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('crypto')>();
+  return {
+    ...actual,
+    randomBytes: vi.fn().mockReturnValue({
+      toString: vi.fn().mockReturnValue('fake-reset-token-abc123'),
+    }),
+  };
+});
 
 // ── Imports post-mock ─────────────────────────────────────────────────────────
 import { AuthService } from '../modules/auth/auth.service';

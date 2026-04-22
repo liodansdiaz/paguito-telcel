@@ -525,6 +525,8 @@ export class NotificationService {
       tasks.push(taskVendedor);
     } else if (!enviarAVendedor) {
       logger.info(`WhatsApp al vendedor deshabilitado - no se enviara para reserva ${data.reservationId}`);
+    } else if (!data.vendorTelefono) {
+      logger.warn(`Vendedor ${data.vendorNombre} no tiene teléfono configurado - no se puede enviar WhatsApp para reserva ${data.reservationId}`);
     }
 
     // WhatsApp al cliente (solo si está habilitado)

@@ -54,17 +54,18 @@ export class ReservationService {
     // 1. Validar horario de visita
     ScheduleValidatorService.validateOrThrow(dto.fechaPreferida, dto.horarioPreferido);
 
-    // 2. Contar productos a crédito en el carrito
+    // 2. Normalizar CURP si se proporciona (SIEMPRE a mayúsculas para evitar duplicados)
+    const curpUpper = dto.curp ? dto.curp.toUpperCase().trim() : undefined;
+
+    // 3. Contar productos a crédito en el carrito
     const productosCredito = dto.items.filter(item => item.tipoPago === 'CREDITO');
 
-    // 3. VALIDACIÓN: CURP requerida solo si hay productos a crédito
-    let curpUpper: string | undefined;
+    // 4. VALIDACIÓN: CURP requerida solo si hay productos a crédito
     if (productosCredito.length > 0) {
       // Si hay productos a crédito, CURP es OBLIGATORIA
-      if (!dto.curp || dto.curp.trim().length === 0) {
+      if (!curpUpper || curpUpper.length === 0) {
         throw new AppError('La CURP es requerida cuando seleccionas productos a crédito.', 400);
       }
-      curpUpper = dto.curp.toUpperCase().trim();
 
       // Validar que solo hay 1 producto a crédito en el carrito
       if (productosCredito.length > 1) {
@@ -84,7 +85,7 @@ export class ReservationService {
       }
     }
 
-    // 4. Validar que todos los productos existen y están activos (batch query)
+    // 5. Validar que todos los productos existen y están activos (batch query)
     const productIds = dto.items.map(item => item.productId);
     const productsFound = await productRepository.findByIds(productIds);
     const productsMap = new Map(productsFound.map(p => [p.id, p]));
@@ -103,7 +104,7 @@ export class ReservationService {
       }
     }
 
-    // 5. Upsert cliente
+    // 6. Upsert cliente
     const customer = await customerRepository.upsertByCurp({
       nombreCompleto: dto.nombreCompleto,
       telefono: dto.telefono,
@@ -111,14 +112,14 @@ export class ReservationService {
       direccion: dto.direccion,
     });
 
-    // 6. Asignar vendedor usando Round Robin
+    // 7. Asignar vendedor usando Round Robin
     const vendorId = await RoundRobinService.getNextVendor();
     const vendor = await prisma.user.findUniqueOrThrow({
       where: { id: vendorId },
       select: { id: true, nombre: true, email: true, telefono: true },
     });
 
-    // 7. Preparar items con precio capturado
+    // 8. Preparar items con precio capturado
     const itemsToCreate: CreateReservationItemInput[] = dto.items.map(item => {
       const product = productsMap.get(item.productId)!;
       return {
