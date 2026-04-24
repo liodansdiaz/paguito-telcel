@@ -26,6 +26,7 @@ import adminNotificationsRoutes from './modules/admin/admin.notifications.routes
 import adminChatConfigRoutes from './modules/admin/admin.chat-config.routes';
 import adminChatMetricsRoutes from './modules/admin/admin.chat-metrics.routes';
 import systemConfigRoutes from './modules/system-config/system-config.routes';
+import assignmentConfigRoutes from './modules/assignment-config/assignment-config.routes';
 import { prisma } from './config/database';
 import fs from 'fs';
 import path from 'path';
@@ -142,6 +143,7 @@ app.use('/api/admin/notifications', adminNotificationsRoutes);
 app.use('/api/admin/chat-config', adminChatConfigRoutes);
 app.use('/api/admin/chat-metrics', adminChatMetricsRoutes);
 app.use('/api/admin/config', systemConfigRoutes);
+app.use('/api/admin/assignment-config', assignmentConfigRoutes);
 
 // Ruta 404
 app.use((_req, res) => {

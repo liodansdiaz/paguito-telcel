@@ -52,6 +52,11 @@ enum EstadoNotificacion {
   FAILED
 }
 
+enum EstrategiaAsignacion {
+  ROUND_ROBIN
+  MANUAL
+}
+
 model User {
   id              String    @id @default(uuid())
   nombre          String
@@ -68,6 +73,8 @@ model User {
   reservations       Reservation[]
   refreshTokens      RefreshToken[]
   passwordResetTokens PasswordResetToken[]
+  configuracionesAsignacion ConfiguracionAsignacion[]
+  asignacionesManuales Reservation[] @relation("AsignacionManual")
 
   @@map("users")
   @@index([isActive, rol, lastAssignedAt, createdAt])
@@ -142,11 +149,14 @@ model Reservation {
   estado          EstadoReserva @default(NUEVA)
   estadoDetalle   Json?
   notas           String?
+  motivoAsignacion String?
+  asignadoManualmentePor String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   customer        Customer      @relation(fields: [customerId], references: [id])
   vendor          User?         @relation(fields: [vendorId], references: [id])
+  asignadoManualmentePorUser User? @relation("AsignacionManual", fields: [asignadoManualmentePor], references: [id])
   items           ReservationItem[]
   notifications   Notification[]
 
@@ -264,4 +274,16 @@ model ChatPromptSection {
   @@map("chat_prompt_sections")
   @@index([isActive, order])
   @@index([section])
+}
+
+model ConfiguracionAsignacion {
+  id              Int                   @id @default(autoincrement())
+  estrategia      EstrategiaAsignacion  @default(ROUND_ROBIN)
+  actualizadoEn   DateTime              @updatedAt
+  actualizadoPor  String?
+  createdAt       DateTime              @default(now())
+
+  actualizadoPorUser User? @relation(fields: [actualizadoPor], references: [id])
+
+  @@map("configuracion_asignacion")
 }

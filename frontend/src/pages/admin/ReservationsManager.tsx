@@ -157,6 +157,18 @@ const ReservationsManager = () => {
     finally { setActionLoading(false); }
   };
 
+  // Asignación rápida inline (modo manual)
+  const handleQuickAssign = async (reservationId: string, vendorId: string) => {
+    if (!vendorId) return;
+    try {
+      await api.patch(`/reservations/admin/${reservationId}/assign-vendor`, { vendorId });
+      showSuccess('Vendedor asignado correctamente');
+      fetchReservations();
+    } catch (err: any) {
+      showError(err.response?.data?.message || 'Error al asignar vendedor');
+    }
+  };
+
   const handleStatusChange = async () => {
     if (!statusModal.reservation) return;
     setActionLoading(true);
@@ -525,7 +537,26 @@ const ReservationsManager = () => {
                         </td>
                         {/* Vendedor */}
                         <td className={`px-4 py-3 text-gray-700 whitespace-nowrap text-xs ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>
-                          {isFirst && (r.vendor?.nombre ?? <span className="text-orange-500">Sin asignar</span>)}
+                          {isFirst && (
+                            r.vendor ? (
+                              <span className="text-gray-700">{r.vendor.nombre}</span>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <select
+                                  onChange={(e) => handleQuickAssign(r.id, e.target.value)}
+                                  className="text-xs border border-orange-300 rounded px-1 py-1 bg-orange-50 text-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                  defaultValue=""
+                                >
+                                  <option value="" disabled>⚠️ Sin asignar</option>
+                                  {vendors.map((v) => (
+                                    <option key={v.id} value={v.id}>
+                                      {v.nombre}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )
+                          )}
                         </td>
                         {/* Estado */}
                         <td className={`px-4 py-3 ${!isFirst ? 'border-t border-dashed border-gray-200' : ''}`}>

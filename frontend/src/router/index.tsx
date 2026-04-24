@@ -35,6 +35,7 @@ import InventoryManager from '../pages/admin/InventoryManager';
 import SystemDashboard from '../pages/admin/SystemDashboard';
 import Configuracion from '../pages/admin/Configuracion';
 import ChatConfigManager from '../pages/admin/ChatConfigManager';
+import AssignmentConfig from '../pages/admin/AssignmentConfig';
 
 // Vendor
 import VendorDashboard from '../pages/vendor/VendorDashboard';
@@ -86,6 +87,7 @@ export const router = createBrowserRouter([
       { path: 'inventario', element: <InventoryManager /> },
       { path: 'sistema', element: <SystemDashboard /> },
       { path: 'configuracion', element: <Configuracion /> },
+      { path: 'configuracion/asignacion', element: <AssignmentConfig /> },
       { path: 'chat-config', element: <ChatConfigManager /> },
     ],
   },

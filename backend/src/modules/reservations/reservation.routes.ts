@@ -64,6 +64,12 @@ router.patch('/admin/:id/status', authenticate, requireRole('ADMIN'), reservatio
 router.patch('/admin/:id/assign', authenticate, requireRole('ADMIN'), reservationController.assignVendor.bind(reservationController));
 
 /**
+ * Asignar vendedor manualmente (modo manual de asignación)
+ * PATCH /api/reservations/admin/:id/assign-vendor
+ */
+router.patch('/admin/:id/assign-vendor', authenticate, requireRole('ADMIN'), reservationController.assignVendorManually.bind(reservationController));
+
+/**
  * Cancelar reserva completa
  * POST /api/reservations/admin/:id/cancel
  */

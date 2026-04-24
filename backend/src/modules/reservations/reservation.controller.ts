@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { reservationService } from './reservation.service';
+import { assignmentService } from '../../shared/services/assignment.service';
 import { sendSuccess, sendPaginated } from '../../shared/utils/response.helper';
 import { EstadoReserva, EstadoReservaItem } from '@prisma/client';
 // Importar DTOs
@@ -89,6 +90,26 @@ export class ReservationController {
       const { vendorId } = z.object({ vendorId: z.string().uuid() }).parse(req.body);
       const reservation = await reservationService.assignVendor(req.params['id'] as string, vendorId);
       sendSuccess(res, reservation, 'Vendedor asignado');
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Asignar vendedor manualmente (modo manual) - Solo ADMIN
+   * PATCH /api/admin/reservations/:id/assign-vendor
+   */
+  async assignVendorManually(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { vendorId } = z.object({ vendorId: z.string().uuid() }).parse(req.body);
+      const adminId = req.user!.userId; // Del middleware authenticate
+
+      await assignmentService.assignManually(req.params['id'] as string, vendorId, adminId);
+
+      // Obtener datos actualizados de la reserva
+      const reservation = await reservationService.getById(req.params['id'] as string);
+
+      sendSuccess(res, reservation, 'Vendedor asignado correctamente');
     } catch (err) {
       next(err);
     }

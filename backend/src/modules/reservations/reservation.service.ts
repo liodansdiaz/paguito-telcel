@@ -3,7 +3,7 @@ import { customerRepository } from '../customers/customer.repository';
 import { productRepository } from '../products/product.repository';
 import { prisma } from '../../config/database';
 import { AppError } from '../../shared/middleware/error.middleware';
-import { RoundRobinService } from '../../shared/services/roundrobin.service';
+import { assignmentService } from '../../shared/services/assignment.service';
 import { ScheduleValidatorService } from '../../shared/services/schedule.validator';
 import { NotificationService } from '../../shared/services/notification.service';
 import { EstadoReserva, EstadoReservaItem, TipoPago } from '@prisma/client';
@@ -112,14 +112,7 @@ export class ReservationService {
       direccion: dto.direccion,
     });
 
-    // 7. Asignar vendedor usando Round Robin
-    const vendorId = await RoundRobinService.getNextVendor();
-    const vendor = await prisma.user.findUniqueOrThrow({
-      where: { id: vendorId },
-      select: { id: true, nombre: true, email: true, telefono: true },
-    });
-
-    // 8. Preparar items con precio capturado
+    // 7. Preparar items con precio capturado
     const itemsToCreate: CreateReservationItemInput[] = dto.items.map(item => {
       const product = productsMap.get(item.productId)!;
       return {
@@ -131,7 +124,7 @@ export class ReservationService {
       };
     });
 
-    // 8. Crear la reserva con todos sus items
+    // 8. Crear la reserva con todos sus items (sin vendedor asignado aún)
     const reservation = await reservationRepository.create({
       customerId: customer.id,
       nombreCompleto: dto.nombreCompleto,
@@ -146,10 +139,13 @@ export class ReservationService {
       items: itemsToCreate,
     });
 
-    // 9. Asignar vendedor (cambia estado a ASIGNADA)
-    const reservationWithVendor = await reservationRepository.assignVendor(reservation.id, vendorId);
+    logger.info(`Reserva creada: ${reservation.id} — Cliente: ${dto.nombreCompleto} — Items: ${dto.items.length}`);
 
-    logger.info(`Reserva creada: ${reservation.id} — Cliente: ${dto.nombreCompleto} — Items: ${dto.items.length} — Vendedor: ${vendor.nombre}`);
+    // 9. Asignar vendedor según estrategia configurada (Round Robin o Manual)
+    const vendorId = await assignmentService.assignVendor(reservation.id);
+
+    // Obtener datos actualizados de la reserva después de la asignación
+    const reservationWithVendor = await reservationRepository.findById(reservation.id);
 
     // 10. Enviar notificaciones (no bloquea si falla)
 
@@ -166,36 +162,41 @@ export class ReservationService {
       });
     }
 
-    // 10b. Notificar al vendedor asignado
-    // Construir detalle de items para notificaciones
-    const itemsDetalle = dto.items.map(item => ({
-      nombre: productsMap.get(item.productId)?.nombre ?? 'Producto desconocido',
-      color: item.color,
-      memoria: item.memoria,
-      tipoPago: item.tipoPago,
-    }));
+    // 10b. Notificar al vendedor asignado (solo si hay vendedor asignado)
+    // Si la estrategia es MANUAL, las notificaciones a admins ya se enviaron en assignmentService
+    if (vendorId && reservationWithVendor?.vendor) {
+      // Construir detalle de items para notificaciones
+      const itemsDetalle = dto.items.map(item => ({
+        nombre: productsMap.get(item.productId)?.nombre ?? 'Producto desconocido',
+        color: item.color,
+        memoria: item.memoria,
+        tipoPago: item.tipoPago,
+      }));
 
-    NotificationService.sendReservationNotification({
-      reservationId: reservation.id,
-      vendorEmail: vendor.email,
-      vendorNombre: vendor.nombre,
-      vendorTelefono: vendor.telefono ?? undefined,
-      clienteNombre: dto.nombreCompleto,
-      clienteTelefono: dto.telefono,
-      clienteCurp: curpUpper,
-      productoNombre: Array.from(productsMap.values()).map(p => p.nombre).join(', '),
-      itemsDetalle,
-      tipoPago: productosCredito.length > 0 ? 'CREDITO' : 'CONTADO',
-      direccion: dto.direccion,
-      fechaPreferida: dto.fechaPreferida,
-      horarioPreferido: dto.horarioPreferido,
-      latitude: dto.latitude ?? undefined,
-      longitude: dto.longitude ?? undefined,
-    }).catch((err) => {
-      logger.error(`Notificación falló para reserva ${reservation.id}:`, err);
-    });
+      NotificationService.sendReservationNotification({
+        reservationId: reservation.id,
+        vendorEmail: reservationWithVendor.vendor.email,
+        vendorNombre: reservationWithVendor.vendor.nombre,
+        vendorTelefono: reservationWithVendor.vendor.telefono ?? undefined,
+        clienteNombre: dto.nombreCompleto,
+        clienteTelefono: dto.telefono,
+        clienteCurp: curpUpper,
+        productoNombre: Array.from(productsMap.values()).map(p => p.nombre).join(', '),
+        itemsDetalle,
+        tipoPago: productosCredito.length > 0 ? 'CREDITO' : 'CONTADO',
+        direccion: dto.direccion,
+        fechaPreferida: dto.fechaPreferida,
+        horarioPreferido: dto.horarioPreferido,
+        latitude: dto.latitude ?? undefined,
+        longitude: dto.longitude ?? undefined,
+      }).catch((err) => {
+        logger.error(`Notificación falló para reserva ${reservation.id}:`, err);
+      });
+    } else {
+      logger.info(`Reserva ${reservation.id} creada sin vendedor asignado (modo Manual) — Notificaciones enviadas a admins`);
+    }
 
-    return reservationWithVendor;
+    return reservationWithVendor!;
   }
 
   /**
@@ -294,13 +295,88 @@ export class ReservationService {
    * Asignar o reasignar vendedor a una reserva
    */
   async assignVendor(id: string, vendorId: string) {
-    await this.getById(id);
-    const vendor = await prisma.user.findUnique({
-      where: { id: vendorId, isActive: true },
-    });
-    if (!vendor) throw new AppError('Vendedor no encontrado o inactivo.', 404);
+    // Obtener reserva actual con todos los datos necesarios
+    const currentReservation = await reservationRepository.findById(id);
+    if (!currentReservation) throw new AppError('Reserva no encontrada.', 404);
 
-    return reservationRepository.assignVendor(id, vendorId);
+    const previousVendorId = currentReservation.vendorId;
+
+    // Validar nuevo vendedor
+    const newVendor = await prisma.user.findUnique({
+      where: { id: vendorId, isActive: true },
+      select: { id: true, nombre: true, email: true, telefono: true },
+    });
+    if (!newVendor) throw new AppError('Vendedor no encontrado o inactivo.', 404);
+
+    // Actualizar reserva
+    const updated = await reservationRepository.assignVendor(id, vendorId);
+
+    // Notificaciones según el tipo de asignación
+    const itemsDetalle = currentReservation.items.map((item) => ({
+      nombre: item.product?.nombre ?? 'Producto desconocido',
+      color: item.color,
+      memoria: item.memoria,
+      tipoPago: item.tipoPago,
+    }));
+
+    // Si es REASIGNACIÓN (había vendedor anterior diferente)
+    if (previousVendorId && previousVendorId !== vendorId && currentReservation.vendor) {
+      logger.info(`Reasignación detectada: ${currentReservation.vendor.nombre} → ${newVendor.nombre} (Reserva ${id})`);
+
+      NotificationService.sendReassignmentNotification({
+        reservationId: id,
+        clienteNombre: currentReservation.nombreCompleto,
+        clienteTelefono: currentReservation.telefono,
+        clienteCurp: currentReservation.curp || undefined,
+        itemsDetalle,
+        direccion: currentReservation.direccion,
+        fechaPreferida: currentReservation.fechaPreferida,
+        horarioPreferido: currentReservation.horarioPreferido,
+        latitude: currentReservation.latitude ? Number(currentReservation.latitude) : undefined,
+        longitude: currentReservation.longitude ? Number(currentReservation.longitude) : undefined,
+        previousVendor: {
+          nombre: currentReservation.vendor.nombre,
+          telefono: currentReservation.vendor.telefono || undefined,
+        },
+        newVendor: {
+          nombre: newVendor.nombre,
+          email: newVendor.email,
+          telefono: newVendor.telefono || undefined,
+        },
+      }).catch((err) => {
+        logger.error(`Error enviando notificaciones de reasignación para reserva ${id}:`, err);
+      });
+    }
+    // Si es PRIMERA asignación (no había vendedor)
+    else if (!previousVendorId) {
+      logger.info(`Primera asignación: ${newVendor.nombre} (Reserva ${id})`);
+
+      NotificationService.sendReservationNotification({
+        reservationId: id,
+        vendorEmail: newVendor.email,
+        vendorNombre: newVendor.nombre,
+        vendorTelefono: newVendor.telefono || undefined,
+        clienteNombre: currentReservation.nombreCompleto,
+        clienteTelefono: currentReservation.telefono,
+        clienteCurp: currentReservation.curp || undefined,
+        productoNombre: itemsDetalle.map((i) => i.nombre).join(', '),
+        itemsDetalle,
+        tipoPago: itemsDetalle.some((i) => i.tipoPago === 'CREDITO') ? 'CREDITO' : 'CONTADO',
+        direccion: currentReservation.direccion,
+        fechaPreferida: currentReservation.fechaPreferida,
+        horarioPreferido: currentReservation.horarioPreferido,
+        latitude: currentReservation.latitude ? Number(currentReservation.latitude) : undefined,
+        longitude: currentReservation.longitude ? Number(currentReservation.longitude) : undefined,
+      }).catch((err) => {
+        logger.error(`Error enviando notificaciones de primera asignación para reserva ${id}:`, err);
+      });
+    }
+    // Si es el mismo vendedor, no hacer nada (no tiene sentido notificar)
+    else {
+      logger.info(`Asignación al mismo vendedor, sin notificaciones (Reserva ${id})`);
+    }
+
+    return updated;
   }
 
   /**

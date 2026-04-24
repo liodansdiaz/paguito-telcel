@@ -66,6 +66,41 @@ interface ReservationModificationData {
   longitude?: number;
 }
 
+interface PendingAssignmentNotificationData {
+  reservationId: string;
+  clienteNombre: string;
+  clienteTelefono: string;
+  clienteCurp?: string;
+  itemsDetalle: ItemDetalle[];
+  direccion: string;
+  fechaPreferida: Date;
+  horarioPreferido: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+interface ReassignmentNotificationData {
+  reservationId: string;
+  clienteNombre: string;
+  clienteTelefono: string;
+  clienteCurp?: string;
+  itemsDetalle: ItemDetalle[];
+  direccion: string;
+  fechaPreferida: Date;
+  horarioPreferido: string;
+  latitude?: number;
+  longitude?: number;
+  previousVendor: {
+    nombre: string;
+    telefono?: string;
+  };
+  newVendor: {
+    nombre: string;
+    email: string;
+    telefono?: string;
+  };
+}
+
 export class NotificationService {
   /**
    * Formatea los items de una reserva para mostrar en mensajes de WhatsApp.
@@ -256,6 +291,511 @@ export class NotificationService {
     }));
 
     await Promise.allSettled(tasks);
+  }
+
+  /**
+   * Notifica a todos los admins activos que hay una nueva reserva
+   * pendiente de asignación manual.
+   */
+  static async sendPendingAssignmentNotification(data: PendingAssignmentNotificationData): Promise<void> {
+    // Obtener todos los admins activos
+    const admins = await prisma.user.findMany({
+      where: { rol: 'ADMIN', isActive: true },
+      select: { email: true, nombre: true, telefono: true },
+    });
+
+    if (admins.length === 0) {
+      logger.warn(`Reserva ${data.reservationId} pendiente de asignación pero no hay admins activos para notificar`);
+      return;
+    }
+
+    const notifConfig = await getNotificacionesConfig();
+    const tasks: Promise<void>[] = [];
+
+    // Email a cada admin
+    if (notifConfig.email) {
+      admins.forEach((admin) => {
+        tasks.push(this.sendPendingAssignmentEmail(data, admin.email, admin.nombre));
+      });
+    }
+
+    // WhatsApp a cada admin que tenga teléfono configurado
+    if (notifConfig.whatsappVendedor) {
+      // Usar el mismo flag que vendedores para admins
+      admins
+        .filter((admin) => admin.telefono)
+        .forEach((admin) => {
+          tasks.push(this.sendPendingAssignmentWhatsApp(data, admin.telefono!, admin.nombre));
+        });
+    }
+
+    // Ejecutar todas en paralelo
+    const results = await Promise.allSettled(tasks);
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        logger.error(
+          `Notificación pendiente de asignación ${index} falló para reserva ${data.reservationId}:`,
+          result.reason
+        );
+      }
+    });
+  }
+
+  /**
+   * Envía email a un admin notificando reserva pendiente de asignación
+   */
+  private static async sendPendingAssignmentEmail(
+    data: PendingAssignmentNotificationData,
+    adminEmail: string,
+    adminNombre: string
+  ): Promise<void> {
+    let logId: string | undefined;
+    try {
+      const log = await prisma.notification.create({
+        data: {
+          reservationId: data.reservationId,
+          canal: CanalNotificacion.EMAIL,
+          status: EstadoNotificacion.PENDING,
+          mensaje: `Email pendiente asignación a admin ${adminEmail}`,
+        },
+      });
+      logId = log.id;
+
+      await emailService.send({
+        to: adminEmail,
+        subject: `⚠️ Reserva Pendiente de Asignación — ${data.clienteNombre}`,
+        html: this.buildPendingAssignmentEmailHtml(data, adminNombre),
+      });
+
+      await prisma.notification.update({
+        where: { id: logId },
+        data: { status: EstadoNotificacion.SENT, sentAt: new Date() },
+      });
+
+      logger.info(`Email pendiente asignación enviado a admin ${adminEmail} para reserva ${data.reservationId}`);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      if (logId) {
+        await prisma.notification
+          .update({
+            where: { id: logId },
+            data: { status: EstadoNotificacion.FAILED, error: errorMsg },
+          })
+          .catch(() => {});
+      }
+      logger.error(`Error enviando email pendiente asignación a admin ${adminEmail}:`, err);
+      throw err;
+    }
+  }
+
+  /**
+   * Construye el HTML del email para notificación de asignación pendiente
+   */
+  private static buildPendingAssignmentEmailHtml(
+    data: PendingAssignmentNotificationData,
+    adminNombre: string
+  ): string {
+    const fecha = new Date(data.fechaPreferida).toLocaleDateString('es-MX', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    const folio = data.reservationId.slice(0, 8).toUpperCase();
+    const hasCoords = data.latitude != null && data.longitude != null;
+    const mapsUrl = hasCoords ? `https://www.google.com/maps?q=${data.latitude},${data.longitude}` : null;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const itemsHtml = data.itemsDetalle
+      .map((item) => {
+        const detalles = [item.nombre];
+        if (item.color) detalles.push(`Color: ${item.color}`);
+        if (item.memoria) detalles.push(`Almacenamiento: ${item.memoria}`);
+        detalles.push(item.tipoPago === 'CREDITO' ? 'Crédito' : 'Contado');
+        return `<li>${detalles.join(' | ')}</li>`;
+      })
+      .join('');
+
+    return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+    .container { background: #fff; border-radius: 8px; max-width: 600px; margin: 0 auto; padding: 30px; }
+    .header { background: #f59e0b; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; margin: -30px -30px 20px; }
+    .badge { background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+    .alert-box { background: #fef3c7; border: 1px solid #fbbf24; border-radius: 6px; padding: 15px; margin: 20px 0; color: #92400e; }
+    .field { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid #f59e0b; }
+    .field strong { color: #92400e; }
+    .btn { display: inline-block; background: #0f49bd; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 15px; }
+    .map-btn { display: inline-block; background: #13ec6d; color: #002f87; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 10px; }
+    .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
+    ul { list-style: none; padding: 0; }
+    ul li { padding: 8px; background: #f8f9fa; margin: 5px 0; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>⚠️ Reserva Pendiente de Asignación</h2>
+      <span class="badge">Folio: #${folio}</span>
+    </div>
+
+    <p>Estimado/a <strong>${adminNombre}</strong>,</p>
+
+    <div class="alert-box">
+      <strong>Acción requerida:</strong> Se ha recibido una nueva reserva que requiere asignación manual de vendedor. 
+      Por favor ingrese al sistema para asignar un vendedor lo antes posible.
+    </div>
+
+    <h3 style="color: #92400e; margin-top: 20px;">Datos del Cliente</h3>
+    <div class="field"><strong>Nombre:</strong> ${data.clienteNombre}</div>
+    <div class="field"><strong>Teléfono:</strong> ${data.clienteTelefono}</div>
+    ${data.clienteCurp ? `<div class="field"><strong>CURP:</strong> ${data.clienteCurp}</div>` : ''}
+    <div class="field"><strong>Dirección:</strong> ${data.direccion}</div>
+
+    <h3 style="color: #92400e; margin-top: 20px;">Producto(s) Reservado(s)</h3>
+    <ul>${itemsHtml}</ul>
+
+    <h3 style="color: #92400e; margin-top: 20px;">Fecha y Horario Solicitado</h3>
+    <div class="field"><strong>Fecha preferida:</strong> ${fecha}</div>
+    <div class="field"><strong>Horario preferido:</strong> ${data.horarioPreferido}</div>
+
+    ${
+      hasCoords
+        ? `
+    <h3 style="color: #92400e; margin-top: 20px;">Ubicación GPS</h3>
+    <div class="field">
+      <strong>Coordenadas:</strong><br>
+      Latitud: ${data.latitude}<br>
+      Longitud: ${data.longitude}
+    </div>
+    <a href="${mapsUrl}" class="map-btn">📍 Ver ubicación en Google Maps</a>
+    `
+        : `
+    <div class="field">
+      <strong>Ubicación GPS:</strong> No proporcionada
+    </div>
+    `
+    }
+
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="${frontendUrl}/admin/reservas" class="btn">Ir al Panel de Asignación</a>
+    </div>
+
+    <div class="footer">
+      <p>Amigos Paguito Telcel — Sistema de Reservas</p>
+      <p style="color: #92400e; font-size: 11px;">
+        Este mensaje se envía porque la configuración de asignación está en modo manual.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
+  }
+
+  /**
+   * Envía WhatsApp a un admin notificando reserva pendiente de asignación
+   */
+  private static async sendPendingAssignmentWhatsApp(
+    data: PendingAssignmentNotificationData,
+    adminTelefono: string,
+    adminNombre: string
+  ): Promise<void> {
+    const fecha = new Date(data.fechaPreferida).toLocaleDateString('es-MX', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    const folio = data.reservationId.slice(0, 8).toUpperCase();
+    const hasCoords = data.latitude != null && data.longitude != null;
+    const mapsUrl = hasCoords ? `https://www.google.com/maps?q=${data.latitude},${data.longitude}` : null;
+    const itemsFormateados = this.formatItems(data.itemsDetalle);
+
+    const mensaje = [
+      `⚠️ *RESERVA PENDIENTE DE ASIGNACIÓN*`,
+      ``,
+      `Hola ${adminNombre}, se recibió una nueva reserva que requiere asignación manual de vendedor.`,
+      ``,
+      `*Folio:* #${folio}`,
+      ``,
+      `*DATOS DEL CLIENTE:*`,
+      `• *Nombre:* ${data.clienteNombre}`,
+      `• *Teléfono:* ${data.clienteTelefono}`,
+      data.clienteCurp ? `• *CURP:* ${data.clienteCurp}` : null,
+      `• *Dirección:* ${data.direccion}`,
+      ``,
+      `*PRODUCTO(S):*`,
+      itemsFormateados,
+      ``,
+      `*FECHA PREFERIDA:* ${fecha}`,
+      `*HORARIO:* ${data.horarioPreferido}`,
+      mapsUrl ? `\n*UBICACIÓN GPS:* ${mapsUrl}` : '',
+      ``,
+      `Por favor, ingresa al panel de administración para asignar un vendedor lo antes posible.`,
+    ]
+      .filter((line) => line !== null)
+      .join('\n');
+
+    await this.sendAndLogWhatsApp({
+      reservationId: data.reservationId,
+      numero: adminTelefono,
+      mensaje,
+      logMensaje: `WhatsApp pendiente asignación a admin ${adminNombre} (${adminTelefono})`,
+    });
+  }
+
+  /**
+   * Notifica al vendedor anterior y al nuevo vendedor cuando se reasigna una reserva.
+   */
+  static async sendReassignmentNotification(data: ReassignmentNotificationData): Promise<void> {
+    const notifConfig = await getNotificacionesConfig();
+    const tasks: Promise<void>[] = [];
+
+    // Notificar al vendedor anterior (le quitaron la reserva)
+    if (notifConfig.whatsappVendedor && data.previousVendor.telefono) {
+      tasks.push(this.sendReassignmentWhatsAppToPrevious(data));
+    }
+
+    // Notificar al nuevo vendedor (le asignaron la reserva)
+    if (notifConfig.email) {
+      tasks.push(this.sendReassignmentEmailToNew(data));
+    }
+
+    if (notifConfig.whatsappVendedor && data.newVendor.telefono) {
+      tasks.push(this.sendReassignmentWhatsAppToNew(data));
+    }
+
+    // Ejecutar todas en paralelo
+    const results = await Promise.allSettled(tasks);
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        logger.error(
+          `Notificación de reasignación ${index} falló para reserva ${data.reservationId}:`,
+          result.reason
+        );
+      }
+    });
+  }
+
+  /**
+   * Envía WhatsApp al vendedor anterior informando que le quitaron la reserva
+   */
+  private static async sendReassignmentWhatsAppToPrevious(data: ReassignmentNotificationData): Promise<void> {
+    const folio = data.reservationId.slice(0, 8).toUpperCase();
+    const itemsFormateados = this.formatItems(data.itemsDetalle);
+
+    const mensaje = [
+      `⚠️ *RESERVA REASIGNADA*`,
+      ``,
+      `Hola ${data.previousVendor.nombre}, la siguiente reserva ya no está asignada a ti:`,
+      ``,
+      `*Folio:* #${folio}`,
+      `*Cliente:* ${data.clienteNombre}`,
+      ``,
+      `*PRODUCTO(S):*`,
+      itemsFormateados,
+      ``,
+      `Un administrador reasignó esta reserva a otro vendedor.`,
+      ``,
+      `No es necesario que realices la visita.`,
+    ].join('\n');
+
+    await this.sendAndLogWhatsApp({
+      reservationId: data.reservationId,
+      numero: data.previousVendor.telefono!,
+      mensaje,
+      logMensaje: `WhatsApp reasignación (anterior) a ${data.previousVendor.nombre} (${data.previousVendor.telefono})`,
+    });
+  }
+
+  /**
+   * Envía email al nuevo vendedor con los datos completos de la reserva
+   */
+  private static async sendReassignmentEmailToNew(data: ReassignmentNotificationData): Promise<void> {
+    let logId: string | undefined;
+    try {
+      const log = await prisma.notification.create({
+        data: {
+          reservationId: data.reservationId,
+          canal: CanalNotificacion.EMAIL,
+          status: EstadoNotificacion.PENDING,
+          mensaje: `Email reasignación a ${data.newVendor.email}`,
+        },
+      });
+      logId = log.id;
+
+      await emailService.send({
+        to: data.newVendor.email,
+        subject: `Nueva Reserva Asignada — ${data.clienteNombre} | ${data.itemsDetalle[0]?.nombre || 'Producto'}`,
+        html: this.buildReassignmentEmailHtml(data),
+      });
+
+      await prisma.notification.update({
+        where: { id: logId },
+        data: { status: EstadoNotificacion.SENT, sentAt: new Date() },
+      });
+
+      logger.info(`Email reasignación enviado a ${data.newVendor.email} para reserva ${data.reservationId}`);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      if (logId) {
+        await prisma.notification
+          .update({
+            where: { id: logId },
+            data: { status: EstadoNotificacion.FAILED, error: errorMsg },
+          })
+          .catch(() => {});
+      }
+      logger.error(`Error enviando email reasignación a ${data.newVendor.email}:`, err);
+      throw err;
+    }
+  }
+
+  /**
+   * Construye el HTML del email para notificación de reasignación al nuevo vendedor
+   */
+  private static buildReassignmentEmailHtml(data: ReassignmentNotificationData): string {
+    const fecha = new Date(data.fechaPreferida).toLocaleDateString('es-MX', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    const folio = data.reservationId.slice(0, 8).toUpperCase();
+    const hasCoords = data.latitude != null && data.longitude != null;
+    const mapsUrl = hasCoords ? `https://www.google.com/maps?q=${data.latitude},${data.longitude}` : null;
+    const itemsHtml = data.itemsDetalle
+      .map((item) => {
+        const detalles = [item.nombre];
+        if (item.color) detalles.push(`Color: ${item.color}`);
+        if (item.memoria) detalles.push(`Almacenamiento: ${item.memoria}`);
+        detalles.push(item.tipoPago === 'CREDITO' ? 'Crédito' : 'Contado');
+        return `<li>${detalles.join(' | ')}</li>`;
+      })
+      .join('');
+
+    return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+    .container { background: #fff; border-radius: 8px; max-width: 600px; margin: 0 auto; padding: 30px; }
+    .header { background: #0f49bd; color: #fff; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; margin: -30px -30px 20px; }
+    .badge { background: #13ec6d; color: #002f87; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+    .alert-box { background: #e0f2fe; border: 1px solid #0ea5e9; border-radius: 6px; padding: 15px; margin: 20px 0; color: #075985; }
+    .field { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid #0f49bd; }
+    .field strong { color: #002f87; }
+    .map-btn { display: inline-block; background: #13ec6d; color: #002f87; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 15px; }
+    .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
+    ul { list-style: none; padding: 0; }
+    ul li { padding: 8px; background: #f8f9fa; margin: 5px 0; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Nueva Reserva Asignada</h2>
+      <span class="badge">ID: #${folio}</span>
+    </div>
+
+    <p>Hola <strong>${data.newVendor.nombre}</strong>,</p>
+
+    <div class="alert-box">
+      <strong>ℹ️ Reasignación:</strong> Esta reserva fue reasignada desde ${data.previousVendor.nombre} hacia ti.
+    </div>
+
+    <h3 style="color: #002f87; margin-top: 20px;">Datos del Cliente</h3>
+    <div class="field"><strong>Nombre:</strong> ${data.clienteNombre}</div>
+    <div class="field"><strong>Teléfono:</strong> ${data.clienteTelefono}</div>
+    ${data.clienteCurp ? `<div class="field"><strong>CURP:</strong> ${data.clienteCurp}</div>` : ''}
+    <div class="field"><strong>Dirección:</strong> ${data.direccion}</div>
+
+    <h3 style="color: #002f87; margin-top: 20px;">Producto(s) Reservado(s)</h3>
+    <ul>${itemsHtml}</ul>
+
+    <h3 style="color: #002f87; margin-top: 20px;">Fecha y Horario</h3>
+    <div class="field"><strong>Fecha preferida:</strong> ${fecha}</div>
+    <div class="field"><strong>Horario preferido:</strong> ${data.horarioPreferido}</div>
+
+    ${
+      hasCoords
+        ? `
+    <h3 style="color: #002f87; margin-top: 20px;">Ubicación GPS</h3>
+    <div class="field">
+      <strong>Coordenadas:</strong><br>
+      Latitud: ${data.latitude}<br>
+      Longitud: ${data.longitude}
+    </div>
+    <a href="${mapsUrl}" class="map-btn">📍 Ver ubicación en Google Maps</a>
+    `
+        : `
+    <div class="field">
+      <strong>Ubicación GPS:</strong> No proporcionada
+    </div>
+    `
+    }
+
+    <div class="footer">
+      <p>Amigos Paguito Telcel — Sistema de Reservas</p>
+    </div>
+  </div>
+</body>
+</html>`;
+  }
+
+  /**
+   * Envía WhatsApp al nuevo vendedor con los datos de la reserva
+   */
+  private static async sendReassignmentWhatsAppToNew(data: ReassignmentNotificationData): Promise<void> {
+    const fecha = new Date(data.fechaPreferida).toLocaleDateString('es-MX', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    const folio = data.reservationId.slice(0, 8).toUpperCase();
+    const hasCoords = data.latitude != null && data.longitude != null;
+    const mapsUrl = hasCoords ? `https://www.google.com/maps?q=${data.latitude},${data.longitude}` : null;
+    const itemsFormateados = this.formatItems(data.itemsDetalle);
+
+    const mensaje = [
+      `📋 *NUEVA RESERVA ASIGNADA*`,
+      ``,
+      `Hola ${data.newVendor.nombre}, se te asignó una reserva:`,
+      ``,
+      `*Folio:* #${folio}`,
+      ``,
+      `ℹ️ Esta reserva fue reasignada desde ${data.previousVendor.nombre}`,
+      ``,
+      `*DATOS DEL CLIENTE:*`,
+      `• *Nombre:* ${data.clienteNombre}`,
+      `• *Teléfono:* ${data.clienteTelefono}`,
+      data.clienteCurp ? `• *CURP:* ${data.clienteCurp}` : null,
+      `• *Dirección:* ${data.direccion}`,
+      ``,
+      `*PRODUCTO(S):*`,
+      itemsFormateados,
+      ``,
+      `*FECHA PREFERIDA:* ${fecha}`,
+      `*HORARIO:* ${data.horarioPreferido}`,
+      mapsUrl ? `\n*UBICACIÓN GPS:* ${mapsUrl}` : '',
+      ``,
+      `Ingresa al sistema para ver más detalles.`,
+    ]
+      .filter((line) => line !== null)
+      .join('\n');
+
+    await this.sendAndLogWhatsApp({
+      reservationId: data.reservationId,
+      numero: data.newVendor.telefono!,
+      mensaje,
+      logMensaje: `WhatsApp reasignación (nuevo) a ${data.newVendor.nombre} (${data.newVendor.telefono})`,
+    });
   }
 
   /**

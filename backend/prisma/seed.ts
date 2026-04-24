@@ -166,6 +166,22 @@ async function main() {
     console.log('✅ Sección de chat creada:', section.section);
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // CONFIGURACIÓN DE ASIGNACIÓN INICIAL
+  // ─────────────────────────────────────────────────────────────
+  const existingConfig = await prisma.configuracionAsignacion.findFirst();
+  
+  if (!existingConfig) {
+    await prisma.configuracionAsignacion.create({
+      data: {
+        estrategia: 'ROUND_ROBIN',
+      },
+    });
+    console.log('✅ Configuración de asignación creada: ROUND_ROBIN (por defecto)');
+  } else {
+    console.log('✅ Configuración de asignación ya existe:', existingConfig.estrategia);
+  }
+
   console.log('\n========================================');
   console.log('✅ SEED COMPLETADO EXITOSAMENTE');
   console.log('========================================\n');
