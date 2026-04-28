@@ -206,8 +206,12 @@ git push origin main
 | **Name** | `paguito-backend` |
 | **Branch** | `main` |
 | **Runtime** | `Node` |
-| **Build Command** | `npm run build` |
-| **Start Command** | `npm run start` |
+| **Build Command** | `cd backend && npm install && npx prisma generate && npm run build` |
+| **Start Command** | `cd backend && npx prisma migrate deploy && npm start` |
+
+> **⚠️ IMPORTANTE:** El Start Command DEBE incluir `npx prisma migrate deploy` para aplicar migraciones automáticamente en cada deploy. Esto se conecta a Neon y actualiza el schema de la base de datos antes de iniciar el servidor.
+
+> **💡 ALTERNATIVA:** Si agregaste el archivo `render.yaml` en la raíz del proyecto, Render usará automáticamente esa configuración y no necesitas configurar manualmente estos campos.
 
 ### Paso 3: Variables de Entorno en Render
 
