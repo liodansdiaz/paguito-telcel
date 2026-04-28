@@ -1,5 +1,12 @@
 import api from './api';
 
+// Tipo genérico para respuestas del backend que usan sendSuccess()
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
 // Tipos para la configuración del sistema
 export interface NotificacionesConfig {
   whatsappCliente: boolean;
@@ -30,34 +37,34 @@ export interface AdminUser {
 // API para configuraciones del sistema
 export const systemConfigApi = {
   // Obtener todas las configuraciones
-  getAll: () => api.get<SystemConfig[]>('/admin/config'),
+  getAll: () => api.get<ApiResponse<SystemConfig[]>>('/admin/config'),
 
   // Obtener configuración por clave
-  getByClave: (clave: string) => api.get<SystemConfig>(`/admin/config/clave/${clave}`),
+  getByClave: (clave: string) => api.get<ApiResponse<SystemConfig>>(`/admin/config/clave/${clave}`),
 
   // Actualizar una configuración
   update: (data: { clave: string; valor: string }) =>
-    api.put<SystemConfig>('/admin/config', data),
+    api.put<ApiResponse<SystemConfig>>('/admin/config', data),
 
   // Actualizar múltiples configuraciones
   bulkUpdate: (configs: Array<{ clave: string; valor: string }>) =>
-    api.put<SystemConfig[]>('/admin/config/bulk', configs),
+    api.put<ApiResponse<SystemConfig[]>>('/admin/config/bulk', configs),
 
   // Configuración de notificaciones
   getNotificaciones: () =>
-    api.get<NotificacionesConfig>('/admin/config/notificaciones'),
+    api.get<ApiResponse<NotificacionesConfig>>('/admin/config/notificaciones'),
 
   updateNotificaciones: (data: Partial<NotificacionesConfig>) =>
-    api.patch<NotificacionesConfig>('/admin/config/notificaciones', data),
+    api.patch<ApiResponse<NotificacionesConfig>>('/admin/config/notificaciones', data),
 
   // Configuración del resumen diario
-  getResumen: () => api.get<ResumenConfig>('/admin/config/resumen'),
+  getResumen: () => api.get<ApiResponse<ResumenConfig>>('/admin/config/resumen'),
 
   updateResumen: (data: Partial<ResumenConfig>) =>
-    api.patch<ResumenConfig>('/admin/config/resumen', data),
+    api.patch<ApiResponse<ResumenConfig>>('/admin/config/resumen', data),
 };
 
 // API para usuarios admin
 export const adminUsersApi = {
-  getAll: () => api.get<{ data: AdminUser[] }>('/admin/users', { params: { rol: 'ADMIN', limit: 100 } }),
+  getAll: () => api.get<ApiResponse<AdminUser[]>>('/admin/users', { params: { rol: 'ADMIN', limit: 100 } }),
 };

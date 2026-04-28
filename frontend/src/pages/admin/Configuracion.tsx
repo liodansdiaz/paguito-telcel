@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { systemConfigApi, adminUsersApi, type NotificacionesConfig, type ResumenConfig, type AdminUser } from '../../services/system-config.api';
+import { systemConfigApi, adminUsersApi, type AdminUser } from '../../services/system-config.api';
 
 // Tipos locales
 interface FormNotificaciones {

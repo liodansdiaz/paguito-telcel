@@ -17,43 +17,6 @@ const COLOR_MAP: Record<string, string> = {
 
 const getColorHex = (c: string) => COLOR_MAP[c.toLowerCase()] ?? '#9ca3af';
 
-const getImageForColor = (imagenes: string[], colores: string[] | undefined, color: string | null): string => {
-  // Si no hay imagenes, devolver vacío
-  if (!imagenes || imagenes.length === 0) {
-    return '';
-  }
-  
-  // Si hay un color seleccionado, buscar imagen que coincida con ese color
-  if (color && imagenes.length > 0) {
-    const colorLower = color.toLowerCase();
-    // Dividir el color en palabras (ej: "Azul Oscuro" -> ["azul", "oscuro"])
-    const colorWords = colorLower.split(/\s+/);
-    
-    // Buscar imagen que contenga CUALQUIER palabra del color
-    const matchingImage = imagenes.find(img => {
-      const imgLower = img.toLowerCase();
-      return colorWords.some(word => imgLower.includes(word));
-    });
-    return matchingImage || imagenes[0]; // fallback a primera imagen
-  }
-  
-  // Si no hay color seleccionado pero sí hay colores definidos, usar la imagen del primer color
-  if (colores && colores.length > 0 && imagenes.length > 0) {
-    const primerColor = colores[0];
-    const colorLower = primerColor.toLowerCase();
-    const colorWords = colorLower.split(/\s+/);
-    
-    const matchingImage = imagenes.find(img => {
-      const imgLower = img.toLowerCase();
-      return colorWords.some(word => imgLower.includes(word));
-    });
-    return matchingImage || imagenes[0]; // fallback a primera imagen
-  }
-  
-  // Caso por defecto: devolver la primera imagen
-  return imagenes[0];
-};
-
 // Función para detectar el color de una imagen basándose en su nombre
 const detectColorFromImage = (imagen: string, coloresDisponibles: string[]): string | null => {
   const imagenLower = imagen.toLowerCase();

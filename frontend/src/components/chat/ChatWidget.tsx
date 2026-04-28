@@ -376,7 +376,7 @@ export default function ChatWidget() {
                 style={{ lineHeight: '1.4' }}
               />
               <button
-                onClick={sendMessage}
+                onClick={() => sendMessage()}
                 disabled={loading || !input.trim()}
                 className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center hover:bg-primary-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
                 title="Enviar (Enter)"
