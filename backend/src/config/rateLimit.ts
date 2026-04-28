@@ -16,7 +16,7 @@ function createRedisStore(prefix: string) {
     return new RedisStore({
       // prefix debe ser único para cada limiter
       prefix: `rl:${prefix}:`,
-      sendCommand: (...args: string[]) => redis.call(...args),
+      sendCommand: (...args: [command: string, ...args: any[]]) => redis.call(...args),
     });
   } catch {
     return undefined;

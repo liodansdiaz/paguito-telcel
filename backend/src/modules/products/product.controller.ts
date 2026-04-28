@@ -11,16 +11,16 @@ const createProductSchema = z.object({
   nombre: z.string().min(1, 'El nombre del producto es requerido'),
   marca: z.string().min(1, 'La marca es requerida'),
   descripcion: z.string().optional(),
-  precio: z.number({ invalid_type_error: 'El precio debe ser un número' }).positive('El precio debe ser mayor a cero'),
-  precioAnterior: z.number({ invalid_type_error: 'El precio anterior debe ser un número' }).positive().nullable().optional(),
-  stock: z.number({ invalid_type_error: 'El stock debe ser un número' }).int('El stock debe ser un número entero').min(0, 'El stock no puede ser negativo'),
-  stockMinimo: z.number({ invalid_type_error: 'El stock mínimo debe ser un número' }).int('El stock mínimo debe ser un número entero').min(0, 'El stock mínimo no puede ser negativo').optional(),
+  precio: z.number({ message: 'El precio debe ser un número' }).positive('El precio debe ser mayor a cero'),
+  precioAnterior: z.number({ message: 'El precio anterior debe ser un número' }).positive().nullable().optional(),
+  stock: z.number({ message: 'El stock debe ser un número' }).int('El stock debe ser un número entero').min(0, 'El stock no puede ser negativo'),
+  stockMinimo: z.number({ message: 'El stock mínimo debe ser un número' }).int('El stock mínimo debe ser un número entero').min(0, 'El stock mínimo no puede ser negativo').optional(),
   imagenes: z.array(z.string()).optional(),
-  imagenesColores: z.array(z.string(), { invalid_type_error: 'Debe seleccionar al menos un color para las imágenes' }).optional(),
-  colores: z.array(z.string(), { invalid_type_error: 'Debe seleccionar al menos un color disponible' })
+  imagenesColores: z.array(z.string(), { message: 'Debe seleccionar al menos un color para las imágenes' }).optional(),
+  colores: z.array(z.string(), { message: 'Debe seleccionar al menos un color disponible' })
     .min(1, 'Debe seleccionar al menos un color disponible')
     .optional(),
-  memorias: z.array(z.string(), { invalid_type_error: 'Debe seleccionar al menos una opción de almacenamiento' })
+  memorias: z.array(z.string(), { message: 'Debe seleccionar al menos una opción de almacenamiento' })
     .min(1, 'Debe seleccionar al menos una opción de almacenamiento')
     .optional(),
   badge: z.string().optional(),
