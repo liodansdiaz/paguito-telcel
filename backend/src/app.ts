@@ -82,6 +82,14 @@ app.use(morgan('combined', {
   stream: { write: (msg: string) => logger.info(msg.trim()) },
 }));
 
+// Ping endpoint - super simple para verificar que el servidor está vivo
+app.get('/ping', (_req, res) => {
+  res.status(200).json({
+    status: 'alive',
+    time: new Date()
+  });
+});
+
 // Health check básico
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), service: 'Paguito Telcel API' });
