@@ -8,16 +8,19 @@ import PublicLayout from '../components/layout/PublicLayout';
 import AdminLayout from '../components/layout/AdminLayout';
 import VendorLayout from '../components/layout/VendorLayout';
 
-// Public pages
+// Public pages - ACXOCEL Corporate
 import Home from '../pages/public/Home';
-import Catalog from '../pages/public/Catalog';
-import ProductDetail from '../pages/public/ProductDetail';
-import CartCheckout from '../pages/public/CartCheckout';
-import ReservationSuccess from '../pages/public/ReservationSuccess';
-import FAQ from '../pages/public/FAQ';
 import Nosotros from '../pages/public/Nosotros';
-import DondePagar from '../pages/public/DondePagar';
-import MiReserva from '../pages/public/MiReserva';
+
+// Public pages - Amigo Paguitos
+import AmigoPaguitosHome from '../pages/public/amigo-paguitos/Home';
+import Catalog from '../pages/public/amigo-paguitos/Catalog';
+import ProductDetail from '../pages/public/amigo-paguitos/ProductDetail';
+import CartCheckout from '../pages/public/amigo-paguitos/CartCheckout';
+import ReservationSuccess from '../pages/public/amigo-paguitos/ReservationSuccess';
+import FAQ from '../pages/public/amigo-paguitos/FAQ';
+import DondePagar from '../pages/public/amigo-paguitos/DondePagar';
+import MiReserva from '../pages/public/amigo-paguitos/MiReserva';
 
 // Auth
 import Login from '../pages/auth/Login';
@@ -51,22 +54,51 @@ const ProtectedRoute = ({ children, role }: { children: React.ReactNode; role?: 
 };
 
 export const router = createBrowserRouter([
-  // Rutas públicas
+  // ══════════════════════════════════════════════════════════════════════════
+  // RUTAS CORPORATIVAS ACXOCEL
+  // ══════════════════════════════════════════════════════════════════════════
   {
     element: <PublicLayout />,
     errorElement: <RouteErrorBoundary />,
     children: [
       { path: '/', element: <Home /> },
-      { path: '/catalogo', element: <Catalog /> },
-      { path: '/producto/:id', element: <ProductDetail /> },
-      { path: '/carrito', element: <CartCheckout /> },
-      { path: '/reserva/exitosa', element: <ReservationSuccess /> },
-      { path: '/faq', element: <FAQ /> },
       { path: '/nosotros', element: <Nosotros /> },
-      { path: '/donde-pagar', element: <DondePagar /> },
-      { path: '/mi-reserva', element: <MiReserva /> },
+      // TODO: Agregar rutas de planes, equipos, corporativo, sucursales, trabaja
     ],
   },
+  
+  // ══════════════════════════════════════════════════════════════════════════
+  // RUTAS AMIGO PAGUITOS (bajo /amigo-paguitos/*)
+  // ══════════════════════════════════════════════════════════════════════════
+  {
+    element: <PublicLayout />,
+    errorElement: <RouteErrorBoundary />,
+    children: [
+      // Redirect /amigo-paguitos → /amigo-paguitos/catalogo
+      { path: '/amigo-paguitos', element: <Navigate to="/amigo-paguitos/catalogo" replace /> },
+      
+      // Páginas de Amigo Paguitos
+      { path: '/amigo-paguitos/home', element: <AmigoPaguitosHome /> },
+      { path: '/amigo-paguitos/catalogo', element: <Catalog /> },
+      { path: '/amigo-paguitos/producto/:id', element: <ProductDetail /> },
+      { path: '/amigo-paguitos/carrito', element: <CartCheckout /> },
+      { path: '/amigo-paguitos/reserva/exitosa', element: <ReservationSuccess /> },
+      { path: '/amigo-paguitos/faq', element: <FAQ /> },
+      { path: '/amigo-paguitos/donde-pagar', element: <DondePagar /> },
+      { path: '/amigo-paguitos/mi-reserva', element: <MiReserva /> },
+    ],
+  },
+  
+  // ══════════════════════════════════════════════════════════════════════════
+  // REDIRECTS LEGACY (para no romper links externos)
+  // ══════════════════════════════════════════════════════════════════════════
+  { path: '/catalogo', element: <Navigate to="/amigo-paguitos/catalogo" replace /> },
+  { path: '/producto/:id', element: <Navigate to="/amigo-paguitos/producto/:id" replace /> },
+  { path: '/carrito', element: <Navigate to="/amigo-paguitos/carrito" replace /> },
+  { path: '/reserva/exitosa', element: <Navigate to="/amigo-paguitos/reserva/exitosa" replace /> },
+  { path: '/faq', element: <Navigate to="/amigo-paguitos/faq" replace /> },
+  { path: '/donde-pagar', element: <Navigate to="/amigo-paguitos/donde-pagar" replace /> },
+  { path: '/mi-reserva', element: <Navigate to="/amigo-paguitos/mi-reserva" replace /> },
   // Auth
   { path: '/login', element: <Login /> },
   { path: '/forgot-password', element: <ForgotPassword /> },
