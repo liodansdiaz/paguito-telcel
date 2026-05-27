@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -654,8 +654,8 @@ const InventoryManager = () => {
                       }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                         selectedColores.includes(color)
-                          ? 'bg-primary-500 text-white border-[primary-500]'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-[primary-500]'
+                          ? 'bg-primary-500 text-white border-primary-500'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-primary-500'
                       }`}
                     >
                       {color}
@@ -680,8 +680,8 @@ const InventoryManager = () => {
                       }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                         selectedMemorias.includes(memoria)
-                          ? 'bg-primary-500 text-white border-[primary-500]'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-[primary-500]'
+                          ? 'bg-primary-500 text-white border-primary-500'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-primary-500'
                       }`}
                     >
                       {memoria}
@@ -712,7 +712,7 @@ const InventoryManager = () => {
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                           especificaciones[categoria]
                             ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'bg-white text-primary-500 border border-[primary-500] hover:bg-primary-500 hover:text-white'
+                            : 'bg-white text-primary-500 border border-primary-500 hover:bg-primary-500 hover:text-white'
                         }`}
                       >
                         {especificaciones[categoria] ? '✓ ' : '+ '}{categoria}
@@ -798,7 +798,7 @@ const InventoryManager = () => {
                     }
 
                     return (
-                      <div key={key} className="flex gap-2 items-start p-3 bg-white border border-gray-200 rounded-lg hover:border-[primary-500] transition-colors">
+                      <div key={key} className="flex gap-2 items-start p-3 bg-white border border-gray-200 rounded-lg hover:border-primary-500 transition-colors">
                         <div className="flex-shrink-0 mt-0.5">
                           {icon}
                         </div>
@@ -915,7 +915,7 @@ const InventoryManager = () => {
                       }}
                       className="hidden"
                     />
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[primary-500] transition-colors">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors">
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>

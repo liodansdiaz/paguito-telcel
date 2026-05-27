@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useCarritoStore } from '../../store/carrito.store';
 import { toImageUrl } from '../../services/config';
@@ -51,10 +51,10 @@ const Carrito = () => {
       {open && (
         <div className="fixed right-2 top-16 w-[calc(100vw-1rem)] sm:w-96 sm:absolute sm:right-0 sm:top-12 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-[secondary-500] to-[primary-500] px-5 py-4 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-secondary-500 to-primary-500 px-5 py-4 flex items-center justify-between">
             <div>
               <p className="text-white font-bold text-sm">Carrito de compras</p>
-              <p className="text-blue-200 text-xs">
+              <p className="text-blue-100 text-xs">
                 {cantidadTotal} {cantidadTotal === 1 ? 'producto' : 'productos'}
               </p>
             </div>
@@ -74,7 +74,7 @@ const Carrito = () => {
                 <Link
                   to="/catalogo"
                   onClick={() => setOpen(false)}
-                  className="text-[primary-500] text-sm font-medium hover:underline"
+                  className="text-primary-500 text-sm font-medium hover:underline"
                 >
                   Ver catálogo →
                 </Link>
@@ -118,7 +118,7 @@ const Carrito = () => {
                       </div>
                       
                       {/* Precio */}
-                      <p className="text-sm font-bold text-[secondary-500] mt-1.5">
+                      <p className="text-sm font-bold text-secondary-500 mt-1.5">
                         {formatPrice(item.precio)}
                       </p>
                     </div>
@@ -145,7 +145,7 @@ const Carrito = () => {
               <div className="px-5 py-3 flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Total</p>
-                  <p className="text-xl font-extrabold text-[secondary-500]">
+                  <p className="text-xl font-extrabold text-secondary-500">
                     {formatPrice(totalPrecio)}
                   </p>
                 </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { showError, toast } from '../../utils/notifications';
 import api from '../../services/api';
@@ -337,8 +337,8 @@ const ProductDetail = () => {
                 onClick={() => setTipoPago('CONTADO')}
                 className={`flex-1 px-2 py-2.5 sm:px-4 sm:py-3 rounded-lg text-xs sm:text-sm font-medium border-2 transition-all ${
                   tipoPago === 'CONTADO'
-                    ? 'bg-primary-500 text-white border-[primary-500]'
-                    : 'bg-white text-gray-700 border-gray-300 hover:border-[primary-500]'
+                    ? 'bg-primary-500 text-white border-primary-500'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-primary-500'
                 }`}
               >
                 <div className="flex items-center justify-center gap-2">
@@ -352,8 +352,8 @@ const ProductDetail = () => {
                   onClick={() => setTipoPago('CREDITO')}
                   className={`flex-1 px-2 py-2.5 sm:px-4 sm:py-3 rounded-lg text-xs sm:text-sm font-medium border-2 transition-all ${
                     tipoPago === 'CREDITO'
-                      ? 'bg-primary-500 text-white border-[primary-500]'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-[primary-500]'
+                      ? 'bg-primary-500 text-white border-primary-500'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-primary-500'
                   }`}
                   disabled={contarProductosCredito() > 0}
                   title={contarProductosCredito() > 0 ? 'Ya tienes un producto a crédito en el carrito' : ''}
@@ -385,7 +385,7 @@ const ProductDetail = () => {
             </button>
             <Link
               to="/carrito"
-              className="flex-1 border-2 border-[primary-500] text-primary-500 px-4 py-2.5 sm:px-5 sm:py-3.5 rounded-xl font-medium hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
+              className="flex-1 border-2 border-primary-500 text-primary-500 px-4 py-2.5 sm:px-5 sm:py-3.5 rounded-xl font-medium hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -405,7 +405,7 @@ const ProductDetail = () => {
         <div className="mt-8 md:mt-12 bg-white">
           {/* Encabezado de pestaña */}
           <div className="border-b border-gray-200">
-            <button className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 border-b-2 border-[primary-500] text-primary-500 font-semibold text-xs sm:text-sm">
+            <button className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 border-b-2 border-primary-500 text-primary-500 font-semibold text-xs sm:text-sm">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { addDays, isSunday, isBefore, startOfDay } from 'date-fns';
@@ -338,7 +338,7 @@ const MiReserva = () => {
                   {!editando && (
                     <button
                       onClick={handleAbrirEdicion}
-                      className="w-full sm:w-auto border-2 border-[primary-500] text-[primary-500] px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium hover:bg-blue-50 transition-colors mr-0 sm:mr-3 mb-2 sm:mb-0"
+                      className="w-full sm:w-auto border-2 border-primary-500 text-primary-500 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium hover:bg-blue-50 transition-colors mr-0 sm:mr-3 mb-2 sm:mb-0"
                     >
                       Modificar reserva
                     </button>
@@ -575,7 +575,7 @@ const MiReserva = () => {
             <div className="mt-8 text-center">
               <Link
                 to="/catalogo"
-                className="inline-block text-[primary-500] font-medium hover:underline"
+                className="inline-block text-primary-500 font-medium hover:underline"
               >
                 ← Volver al catálogo
               </Link>

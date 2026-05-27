@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+﻿import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { showError, toast } from '../../utils/notifications';
 import api from '../../services/api';
@@ -551,32 +551,32 @@ const Catalog = () => {
           {selectedMarcas.map(m => (
             <span key={m} className="inline-flex items-center gap-1 bg-blue-50 text-primary-500 text-xs px-2.5 py-1 rounded-full border border-blue-100">
               {m}
-              <button onClick={() => toggleMarca(m)} className="hover:text-[secondary-500]"><IconX /></button>
+              <button onClick={() => toggleMarca(m)} className="hover:text-secondary-500"><IconX /></button>
             </span>
           ))}
           {selectedColor && (
             <span className="inline-flex items-center gap-1.5 bg-blue-50 text-primary-500 text-xs px-2.5 py-1 rounded-full border border-blue-100">
               <span className="w-3 h-3 rounded-full inline-block border border-white/50" style={{ backgroundColor: getColorHex(selectedColor) }} />
               {selectedColor}
-              <button onClick={() => setSelectedColor('')} className="hover:text-[secondary-500]"><IconX /></button>
+              <button onClick={() => setSelectedColor('')} className="hover:text-secondary-500"><IconX /></button>
             </span>
           )}
           {selectedMemoria && (
             <span className="inline-flex items-center gap-1 bg-blue-50 text-primary-500 text-xs px-2.5 py-1 rounded-full border border-blue-100">
               {selectedMemoria}
-              <button onClick={() => setSelectedMemoria('')} className="hover:text-[secondary-500]"><IconX /></button>
+              <button onClick={() => setSelectedMemoria('')} className="hover:text-secondary-500"><IconX /></button>
             </span>
           )}
           {selectedPriceRange !== null && (
             <span className="inline-flex items-center gap-1 bg-blue-50 text-primary-500 text-xs px-2.5 py-1 rounded-full border border-blue-100">
               {PRICE_RANGES[selectedPriceRange].label}
-              <button onClick={() => setSelectedPriceRange(null)} className="hover:text-[secondary-500]"><IconX /></button>
+              <button onClick={() => setSelectedPriceRange(null)} className="hover:text-secondary-500"><IconX /></button>
             </span>
           )}
           {(precioMin || precioMax) && selectedPriceRange === null && (
             <span className="inline-flex items-center gap-1 bg-blue-50 text-primary-500 text-xs px-2.5 py-1 rounded-full border border-blue-100">
               ${precioMin || '0'} – ${precioMax || '∞'}
-              <button onClick={() => { setPrecioMin(''); setPrecioMax(''); setPrecioMinInput(''); setPrecioMaxInput(''); }} className="hover:text-[secondary-500]">
+              <button onClick={() => { setPrecioMin(''); setPrecioMax(''); setPrecioMinInput(''); setPrecioMaxInput(''); }} className="hover:text-secondary-500">
                 <IconX />
               </button>
             </span>
@@ -584,7 +584,7 @@ const Catalog = () => {
           {search && (
             <span className="inline-flex items-center gap-1 bg-blue-50 text-primary-500 text-xs px-2.5 py-1 rounded-full border border-blue-100">
               "{search}"
-              <button onClick={() => { setSearch(''); setSearchInput(''); }} className="hover:text-[secondary-500]"><IconX /></button>
+              <button onClick={() => { setSearch(''); setSearchInput(''); }} className="hover:text-secondary-500"><IconX /></button>
             </span>
           )}
           {activeFiltersCount > 0 && (

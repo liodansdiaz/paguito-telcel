@@ -130,14 +130,14 @@ const PublicLayout = () => {
             </div>
             <div className="flex flex-col gap-2">
               <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">Navegación</p>
-              <Link to="/" className="text-blue-300 text-sm hover:text-white transition-colors">Inicio</Link>
-              <Link to="/catalogo" className="text-blue-300 text-sm hover:text-white transition-colors">Catálogo</Link>
-              <Link to="/nosotros" className="text-blue-300 text-sm hover:text-white transition-colors">Quiénes somos</Link>
-              <Link to="/faq" className="text-blue-300 text-sm hover:text-white transition-colors">Preguntas frecuentes</Link>
-              <Link to="/donde-pagar" className="text-blue-300 text-sm hover:text-white transition-colors">Dónde pagar</Link>
-              <Link to="/mi-reserva" className="text-blue-300 text-sm hover:text-white transition-colors">Mi reserva</Link>
+              <Link to="/" className="text-blue-100 text-sm hover:text-white transition-colors">Inicio</Link>
+              <Link to="/catalogo" className="text-blue-100 text-sm hover:text-white transition-colors">Catálogo</Link>
+              <Link to="/nosotros" className="text-blue-100 text-sm hover:text-white transition-colors">Quiénes somos</Link>
+              <Link to="/faq" className="text-blue-100 text-sm hover:text-white transition-colors">Preguntas frecuentes</Link>
+              <Link to="/donde-pagar" className="text-blue-100 text-sm hover:text-white transition-colors">Dónde pagar</Link>
+              <Link to="/mi-reserva" className="text-blue-100 text-sm hover:text-white transition-colors">Mi reserva</Link>
             </div>
-            <p className="text-blue-300 text-sm md:self-end">© {new Date().getFullYear()} Todos los derechos reservados.</p>
+            <p className="text-blue-100 text-sm md:self-end">© {new Date().getFullYear()} Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>

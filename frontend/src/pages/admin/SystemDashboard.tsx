@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
@@ -350,7 +350,7 @@ const LogsTab = () => {
        <div className="flex justify-end mb-4">
          <button
            onClick={exportLogsToExcel}
-           className="bg-[primary-500] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors flex items-center gap-2"
+           className="bg-primary-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors flex items-center gap-2"
          >
            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -406,7 +406,7 @@ const LogsTab = () => {
           <div className="flex items-end gap-2">
             <button
               onClick={fetchLogs}
-              className="bg-[primary-500] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors"
+              className="bg-primary-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors"
             >
               Buscar
             </button>
@@ -428,7 +428,7 @@ const LogsTab = () => {
           <span className="text-sm text-gray-500">
             Mostrando {logs.length} de {total} registros
           </span>
-          <button onClick={fetchLogs} className="text-[primary-500] text-sm font-medium hover:underline">
+          <button onClick={fetchLogs} className="text-primary-500 text-sm font-medium hover:underline">
             Actualizar
           </button>
         </div>
@@ -491,7 +491,7 @@ const LogsTab = () => {
               key={i}
               onClick={() => setFilters({ ...filters, page: i + 1 })}
               className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
-                filters.page === i + 1 ? 'bg-[primary-500] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                filters.page === i + 1 ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               {i + 1}
@@ -646,7 +646,7 @@ const NotificationsTab = () => {
        <div className="flex justify-end mb-4">
          <button
            onClick={exportNotificationsToExcel}
-           className="bg-[primary-500] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors flex items-center gap-2"
+           className="bg-primary-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors flex items-center gap-2"
          >
            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -706,7 +706,7 @@ const NotificationsTab = () => {
           <div className="flex items-end">
             <button
               onClick={fetchNotifications}
-              className="bg-[primary-500] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors"
+              className="bg-primary-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors"
             >
               Buscar
             </button>
@@ -720,7 +720,7 @@ const NotificationsTab = () => {
           <span className="text-sm text-gray-500">
             Mostrando {notifications.length} de {total} notificaciones
           </span>
-          <button onClick={fetchNotifications} className="text-[primary-500] text-sm font-medium hover:underline">
+          <button onClick={fetchNotifications} className="text-primary-500 text-sm font-medium hover:underline">
             Actualizar
           </button>
         </div>
@@ -776,7 +776,7 @@ const NotificationsTab = () => {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => setSelectedNotif(notif)}
-                        className="text-[primary-500] text-sm font-medium hover:underline"
+                        className="text-primary-500 text-sm font-medium hover:underline"
                       >
                         Ver
                       </button>
@@ -797,7 +797,7 @@ const NotificationsTab = () => {
               key={i}
               onClick={() => setFilters({ ...filters, page: i + 1 })}
               className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
-                filters.page === i + 1 ? 'bg-[primary-500] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                filters.page === i + 1 ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               {i + 1}
@@ -906,7 +906,7 @@ const SystemDashboard = () => {
           onClick={() => setActiveTab('logs')}
           className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'logs'
-              ? 'border-[primary-500] text-[primary-500]'
+              ? 'border-primary-500 text-primary-500'
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -916,7 +916,7 @@ const SystemDashboard = () => {
           onClick={() => setActiveTab('notifications')}
           className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'notifications'
-              ? 'border-[primary-500] text-[primary-500]'
+              ? 'border-primary-500 text-primary-500'
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >

@@ -76,19 +76,19 @@ const AdminLayout = () => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-white truncate">{user?.nombre}</p>
-              <p className="text-xs text-blue-300 truncate">{user?.email}</p>
+              <p className="text-xs text-blue-100 truncate">{user?.email}</p>
             </div>
           </div>
           <Link
             to="/"
-            className="w-full text-xs text-blue-300 hover:text-white flex items-center gap-2 py-1 mb-1 transition-colors"
+            className="w-full text-xs text-blue-100 hover:text-white flex items-center gap-2 py-1 mb-1 transition-colors"
           >
             <IconHome />
             Ir al sitio
           </Link>
           <button
             onClick={handleLogout}
-            className="w-full text-left text-xs text-blue-300 hover:text-white flex items-center gap-2 py-1 transition-colors"
+            className="w-full text-left text-xs text-blue-100 hover:text-white flex items-center gap-2 py-1 transition-colors"
           >
             <IconLogout />
             Cerrar sesión

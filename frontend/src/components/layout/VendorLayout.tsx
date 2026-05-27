@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router-dom';
+﻿import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 
 const VendorLayout = () => {
@@ -12,14 +12,14 @@ const VendorLayout = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-      <header className="bg-[primary-500] text-white shadow-md px-4 py-3 flex items-center justify-between">
+      <header className="bg-primary-500 text-white shadow-md px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img src="/amigo_paguito_telcel.png" alt="Amigo Paguitos Telcel" className="h-8" />
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
             <p className="text-sm font-semibold">{user?.nombre}</p>
-            <p className="text-xs text-blue-200">{user?.zona || 'Sin zona'}</p>
+            <p className="text-xs text-blue-100">{user?.zona || 'Sin zona'}</p>
           </div>
           <button
             onClick={handleLogout}

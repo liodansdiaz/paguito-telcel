@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 
 // Mapeo de logos locales por nombre
 const getLogoSrc = (nombre: string): string | null => {
@@ -136,7 +136,7 @@ const DondePagar = () => {
             </Link>
             <Link
               to="/catalogo"
-              className="bg-[accent-500] text-secondary-500 px-6 py-3 rounded-xl font-bold text-sm hover:bg-green-400 transition-all shadow-lg"
+              className="bg-accent-500 text-secondary-500 px-6 py-3 rounded-xl font-bold text-sm hover:bg-green-400 transition-all shadow-lg"
             >
               Ver catálogo
             </Link>

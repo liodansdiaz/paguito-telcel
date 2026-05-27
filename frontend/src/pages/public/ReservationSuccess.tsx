@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { toImageUrl } from '../../services/config';
 
@@ -68,7 +68,7 @@ const ReservationSuccess = () => {
           </p>
           <Link
             to="/catalogo"
-            className="inline-block bg-[primary-500] text-white px-8 py-3 rounded-xl font-bold hover:bg-primary-600 transition-colors"
+            className="inline-block bg-primary-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-primary-600 transition-colors"
           >
             Ver catálogo
           </Link>
@@ -217,7 +217,7 @@ const ReservationSuccess = () => {
           </Link>
           <Link
             to="/mi-reserva"
-            className="flex-1 border-2 border-[primary-500] text-primary-500 py-3.5 rounded-xl font-bold text-center hover:bg-blue-50 transition-colors"
+            className="flex-1 border-2 border-primary-500 text-primary-500 py-3.5 rounded-xl font-bold text-center hover:bg-blue-50 transition-colors"
           >
             Consultar mi reserva
           </Link>
