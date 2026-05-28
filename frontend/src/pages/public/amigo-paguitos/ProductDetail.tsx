@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+ï»¿import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { showError, toast } from '../../../utils/notifications';
 import api from '../../../services/api';
@@ -12,12 +12,12 @@ const COLOR_MAP: Record<string, string> = {
   verde: '#16a34a', 'verde menta': '#6ee7b7', morado: '#7c3aed',
   rojo: '#dc2626', rosa: '#ec4899', dorado: '#d97706', amarillo: '#eab308',
   naranja: '#ea580c', titanio: '#a0a098', 'titanio negro': '#3a3a3a',
-  'titanio natural': '#a0a098', beige: '#d4b896', café: '#92400e', cafe: '#92400e',
+  'titanio natural': '#a0a098', beige: '#d4b896', cafe: '#92400e',
 };
 
 const getColorHex = (c: string) => COLOR_MAP[c.toLowerCase()] ?? '#9ca3af';
 
-// Función para detectar el color de una imagen basándose en su nombre
+// Funcion para detectar el color de una imagen basandose en su nombre
 const detectColorFromImage = (imagen: string, coloresDisponibles: string[]): string | null => {
   const imagenLower = imagen.toLowerCase();
   for (const color of coloresDisponibles) {
@@ -36,7 +36,7 @@ const ProductDetail = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedMemoria, setSelectedMemoria] = useState<string | null>(null);
-  const [tipoPago, setTipoPago] = useState<'CONTADO' | 'CREDITO'>('CONTADO');
+  const [tipoPago, setTipoPago] = useState<'CONTADO' | 'Credito'>('CONTADO');
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const { agregarAlCarrito, contarProductosCredito } = useCarritoStore();
@@ -54,12 +54,12 @@ const ProductDetail = () => {
           setSelectedColor(prod.colores[0]);
         }
         
-        // Auto-seleccionar primera memoria SI SOLO HAY UNA opción
+        // Auto-seleccionar primera memoria SI SOLO HAY UNA opcion
         if (prod.memorias && prod.memorias.length === 1) {
           setSelectedMemoria(prod.memorias[0]);
         }
       })
-      .catch(() => navigate('/catalogo'))
+      .catch(() => navigate('/Catalogo'))
       .finally(() => setLoading(false));
   }, [id, navigate]);
 
@@ -69,9 +69,9 @@ const ProductDetail = () => {
   const handleAgregarAlCarrito = () => {
     if (!product) return;
     
-    // Validar: Solo 1 producto a crédito permitido
-    if (tipoPago === 'CREDITO' && contarProductosCredito() > 0) {
-      showError('Solo puedes agregar un producto a crédito por reserva');
+    // Validar: Solo 1 producto a Credito permitido
+    if (tipoPago === 'Credito' && contarProductosCredito() > 0) {
+      showError('Solo puedes agregar un producto a Credito por reserva');
       return;
     }
     
@@ -141,13 +141,13 @@ const ProductDetail = () => {
       <nav className="text-xs sm:text-sm text-gray-400 mb-4">
         <Link to="/" className="hover:text-blue-600">Inicio</Link>
         <span className="mx-2">/</span>
-        <Link to="/catalogo" className="hover:text-blue-600">Catálogo</Link>
+        <Link to="/Catalogo" className="hover:text-blue-600">Catlogo</Link>
         <span className="mx-2">/</span>
         <span className="text-gray-700 truncate">{product.nombre}</span>
       </nav>
 
       <div className="grid md:grid-cols-2 gap-6 md:gap-10">
-        {/* Galería de imágenes */}
+        {/* Galera de imgenes */}
         <div className="space-y-2 md:space-y-3">
           {/* Imagen principal */}
           <div 
@@ -181,7 +181,7 @@ const ProductDetail = () => {
                   // Usar mapeo directo
                   colorDeImagen = product.imagenesColores[i] || null;
                 } else if (product.colores && product.colores.length > i) {
-                  // Fallback: usar índice
+                  // Fallback: usar ndice
                   colorDeImagen = product.colores[i];
                 }
                 
@@ -235,7 +235,7 @@ const ProductDetail = () => {
             </div>
             {product.disponibleCredito && (product.pagoSemanal || product.enganche) && (
               <div className="mt-2 md:mt-3">
-                <p className="text-sm font-medium text-gray-700 mb-1 md:mb-2">A crédito</p>
+                <p className="text-sm font-medium text-gray-700 mb-1 md:mb-2">A crdito</p>
                 <div className="bg-blue-50 border border-blue-100 rounded-lg px-2 md:px-3 py-1.5 md:py-2 inline-block">
                   <div className="text-xs sm:text-sm text-primary-500">
                     {product.enganche && (
@@ -292,7 +292,7 @@ const ProductDetail = () => {
                           setActiveImage(matchingImageIndex);
                         }
                       } else if (product.colores && imagenes.length > 0) {
-                        // Fallback: usar índice - assumes imagenes[0] = colores[0], etc.
+                        // Fallback: usar ndice - assumes imagenes[0] = colores[0], etc.
                         const colorIndex = product.colores.indexOf(c);
                         if (colorIndex !== -1 && colorIndex < imagenes.length) {
                           setActiveImage(colorIndex);
@@ -349,25 +349,25 @@ const ProductDetail = () => {
               {product.disponibleCredito && (
                 <button
                   type="button"
-                  onClick={() => setTipoPago('CREDITO')}
+                  onClick={() => setTipoPago('Credito')}
                   className={`flex-1 px-2 py-2.5 sm:px-4 sm:py-3 rounded-lg text-xs sm:text-sm font-medium border-2 transition-all ${
-                    tipoPago === 'CREDITO'
+                    tipoPago === 'Credito'
                       ? 'bg-primary-500 text-white border-primary-500'
                       : 'bg-white text-gray-700 border-gray-300 hover:border-primary-500'
                   }`}
                   disabled={contarProductosCredito() > 0}
-                  title={contarProductosCredito() > 0 ? 'Ya tienes un producto a crédito en el carrito' : ''}
+                  title={contarProductosCredito() > 0 ? 'Ya tienes un producto a crdito en el carrito' : ''}
                 >
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-lg">??</span>
-                    <span>A Crédito</span>
+                    <span>A Crdito</span>
                   </div>
                 </button>
               )}
             </div>
           </div>
 
-          {/* CTA - Botón de reservar */}
+          {/* CTA - Botn de reservar */}
           <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
             <button
               onClick={handleAgregarAlCarrito}
@@ -400,22 +400,22 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {/* Pestaña de Características */}
+      {/* Pestaa de Caractersticas */}
       {product.especificaciones && Object.keys(product.especificaciones).length > 0 && (
         <div className="mt-8 md:mt-12 bg-white">
-          {/* Encabezado de pestaña */}
+          {/* Encabezado de pestaa */}
           <div className="border-b border-gray-200">
             <button className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 border-b-2 border-primary-500 text-primary-500 font-semibold text-xs sm:text-sm">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              Características
+              Caractersticas
             </button>
           </div>
 
-          {/* Contenido de características */}
+          {/* Contenido de caractersticas */}
           <div className="py-6 sm:py-8 px-3 sm:px-6">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-700 mb-6 sm:mb-8 text-center">Características y especificaciones</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-700 mb-6 sm:mb-8 text-center">Caractersticas y especificaciones</h3>
             
             {/* Grid de especificaciones principales */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-x-8 sm:gap-y-6 mb-6 sm:mb-8 max-w-5xl mx-auto">
@@ -423,7 +423,7 @@ const ProductDetail = () => {
                 const keyLower = key.toLowerCase();
                 let icon = null;
                 
-                // Iconos según el tipo de especificación
+                // Iconos segn el tipo de especificacin
                 if (keyLower.includes('red')) {
                   icon = (
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -442,7 +442,7 @@ const ProductDetail = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                     </svg>
                   );
-                } else if (keyLower.includes('cámara') || keyLower.includes('camara')) {
+                } else if (keyLower.includes('cmara') || keyLower.includes('camara')) {
                   icon = (
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -461,7 +461,7 @@ const ProductDetail = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   );
-                } else if (keyLower.includes('conexi') || keyLower.includes('inalám')) {
+                } else if (keyLower.includes('conexi') || keyLower.includes('inalm')) {
                   icon = (
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
@@ -507,7 +507,7 @@ const ProductDetail = () => {
               })}
             </div>
 
-            {/* Descripción adicional si existe */}
+            {/* Descripcin adicional si existe */}
             {product.descripcion && (
               <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gray-50 rounded-lg border border-gray-100 max-w-5xl mx-auto">
                 <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">{product.descripcion}</p>
@@ -523,7 +523,7 @@ const ProductDetail = () => {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
           onClick={() => setIsModalOpen(false)}
         >
-          {/* Botón cerrar */}
+          {/* Botn cerrar */}
           <button 
             className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
             onClick={() => setIsModalOpen(false)}
