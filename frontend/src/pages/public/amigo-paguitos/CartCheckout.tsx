@@ -6,7 +6,7 @@ import 'react-day-picker/style.css';
 import { showError, showWarning } from '../../../utils/notifications';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import '../../utils/leaflet';
+import '../../../utils/leaflet';
 import { useCarritoStore } from '../../../store/carrito.store';
 import { useGeolocation } from '../../../hooks/useGeolocation';
 import { toImageUrl } from '../../../services/config';
