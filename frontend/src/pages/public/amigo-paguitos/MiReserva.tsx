@@ -1,11 +1,11 @@
-Ôªøimport { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { addDays, isSunday, isBefore, startOfDay } from 'date-fns';
 import 'react-day-picker/style.css';
-import { showError, showSuccess } from '../../utils/notifications';
-import api from '../../services/api';
-import { toImageUrl } from '../../services/config';
+import { showError, showSuccess } from '../../../../utils/notifications';
+import api from '../../../../services/api';
+import { toImageUrl } from '../../../../services/config';
 
 const formatFecha = (fecha: string) =>
   new Date(fecha).toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -86,12 +86,12 @@ const EstadoItemBadge = ({ estado }: { estado: string }) => {
     SIN_STOCK: 'bg-gray-50 text-gray-700 border-gray-200',
   };
   const label: Record<string, string> = {
-    PENDIENTE: '‚è≥ Pendiente',
-    EN_PROCESO: 'üîÑ En proceso',
-    VENDIDO: '‚úÖ Vendido',
-    NO_CONCRETADO: '‚ùå No concretado',
-    CANCELADO: 'üö´ Cancelado',
-    SIN_STOCK: 'üì¶ Sin stock',
+    PENDIENTE: '? Pendiente',
+    EN_PROCESO: '?? En proceso',
+    VENDIDO: '? Vendido',
+    NO_CONCRETADO: '? No concretado',
+    CANCELADO: '?? Cancelado',
+    SIN_STOCK: '?? Sin stock',
   };
   return (
     <span className={`text-xs font-medium px-2 py-1 rounded border ${map[estado] ?? 'bg-gray-50 text-gray-600 border-gray-200'}`}>
@@ -129,7 +129,7 @@ const MiReserva = () => {
       const res = await api.post('/reservations/consulta', { busqueda: busqueda.trim() });
       setReserva(res.data.data);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'No se encontr√≥ ninguna reserva activa con ese dato.');
+      setError(err.response?.data?.message || 'No se encontrÛ ninguna reserva activa con ese dato.');
     } finally {
       setLoading(false);
     }
@@ -223,12 +223,12 @@ const MiReserva = () => {
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold mb-2">Consulta tu reserva</h1>
           <p className="text-blue-100 text-xs sm:text-sm max-w-md mx-auto">
-            Ingresa tu n√∫mero de folio o tu CURP para ver el estado de tu reserva y gestionar tus productos.
+            Ingresa tu n˙mero de folio o tu CURP para ver el estado de tu reserva y gestionar tus productos.
           </p>
         </div>
       </section>
 
-      {/* Formulario de b√∫squeda */}
+      {/* Formulario de b˙squeda */}
       <section className="py-6 sm:py-10 px-4">
         <div className="max-w-md mx-auto">
           <form onSubmit={handleBuscar} className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
@@ -259,7 +259,7 @@ const MiReserva = () => {
 
           {cancelada && (
             <div className="mt-6 bg-green-50 border border-green-200 rounded-xl p-4">
-              <p className="text-green-700 text-sm font-medium">‚úì Tu reserva ha sido cancelada exitosamente</p>
+              <p className="text-green-700 text-sm font-medium">? Tu reserva ha sido cancelada exitosamente</p>
             </div>
           )}
         </div>
@@ -283,7 +283,7 @@ const MiReserva = () => {
                 </div>
               </div>
 
-              {/* Estad√≠sticas de items */}
+              {/* EstadÌsticas de items */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                 <div className="bg-blue-50 rounded-lg p-3 text-center">
                   <p className="text-2xl font-bold text-blue-600">{reserva.estadoDetalle.total}</p>
@@ -319,20 +319,20 @@ const MiReserva = () => {
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Visita programada</p>
                   <p className="font-semibold text-gray-900">{formatFecha(reserva.fechaPreferida)}</p>
-                  <p className="text-sm text-gray-600">‚è∞ {reserva.horarioPreferido}</p>
+                  <p className="text-sm text-gray-600">? {reserva.horarioPreferido}</p>
                 </div>
                 {reserva.vendor && (
                   <div className="sm:col-span-2">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Vendedor asignado</p>
-                    <p className="font-semibold text-gray-900">üë§ {reserva.vendor.nombre}</p>
+                    <p className="font-semibold text-gray-900">?? {reserva.vendor.nombre}</p>
                     {reserva.vendor.telefono && (
-                      <p className="text-sm text-gray-600">üìû {reserva.vendor.telefono}</p>
+                      <p className="text-sm text-gray-600">?? {reserva.vendor.telefono}</p>
                     )}
                   </div>
                 )}
               </div>
 
-              {/* Bot√≥n cancelar reserva completa */}
+              {/* BotÛn cancelar reserva completa */}
               {puedeCancelarReserva && (
                 <div className="space-y-2 sm:space-y-3">
                   {!editando && (
@@ -350,7 +350,7 @@ const MiReserva = () => {
                     Cancelar toda la reserva
                   </button>
 
-                  {/* Formulario de edici√≥n */}
+                  {/* Formulario de ediciÛn */}
                   {editando && (
                     <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-5">
                       <h4 className="font-bold text-blue-900 mb-4">Editar datos de la reserva</h4>
@@ -413,9 +413,9 @@ const MiReserva = () => {
                           </select>
                         </div>
 
-                        {/* Direcci√≥n */}
+                        {/* DirecciÛn */}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Direcci√≥n</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">DirecciÛn</label>
                           <textarea
                             rows={2}
                             value={editForm.direccion}
@@ -447,10 +447,10 @@ const MiReserva = () => {
                   {showConfirmReserva && (
                     <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4">
                       <p className="text-red-800 font-semibold mb-3">
-                        ¬øEst√°s seguro de cancelar toda la reserva?
+                        øEst·s seguro de cancelar toda la reserva?
                       </p>
                       <p className="text-red-600 text-sm mb-4">
-                        Se cancelar√°n todos los productos pendientes. Esta acci√≥n no se puede deshacer.
+                        Se cancelar·n todos los productos pendientes. Esta acciÛn no se puede deshacer.
                       </p>
                       <div className="flex gap-3">
                         <button
@@ -465,7 +465,7 @@ const MiReserva = () => {
                           disabled={cancelando === 'reserva'}
                           className="flex-1 bg-red-600 text-white py-2 rounded-lg font-bold hover:bg-red-700 disabled:opacity-50"
                         >
-                          {cancelando === 'reserva' ? 'Cancelando...' : 'S√≠, cancelar todo'}
+                          {cancelando === 'reserva' ? 'Cancelando...' : 'SÌ, cancelar todo'}
                         </button>
                       </div>
                     </div>
@@ -489,7 +489,7 @@ const MiReserva = () => {
                         {imagen ? (
                           <img src={imagen} alt={item.product.nombre} className="w-full h-full object-contain" />
                         ) : (
-                          <span className="text-3xl">üì±</span>
+                          <span className="text-3xl">??</span>
                         )}
                       </div>
 
@@ -515,7 +515,7 @@ const MiReserva = () => {
                               ? 'bg-blue-50 text-blue-600' 
                               : 'bg-green-50 text-green-700'
                           }`}>
-                            {item.tipoPago === 'CREDITO' ? 'üìä Cr√©dito' : 'üíµ Contado'}
+                            {item.tipoPago === 'CREDITO' ? '?? CrÈdito' : '?? Contado'}
                           </span>
                           <EstadoItemBadge estado={item.estado} />
                         </div>
@@ -526,7 +526,7 @@ const MiReserva = () => {
                         </p>
                       </div>
 
-                      {/* Bot√≥n cancelar item */}
+                      {/* BotÛn cancelar item */}
                       {puedeCancelarItem && (
                         <div className="flex-shrink-0">
                           <button
@@ -542,11 +542,11 @@ const MiReserva = () => {
                       )}
                     </div>
 
-                    {/* Confirmaci√≥n de cancelaci√≥n de item */}
+                    {/* ConfirmaciÛn de cancelaciÛn de item */}
                     {showConfirmItem === item.id && (
                       <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
                         <p className="text-red-700 text-sm font-medium mb-3">
-                          ¬øCancelar este producto?
+                          øCancelar este producto?
                         </p>
                         <div className="flex gap-2">
                           <button
@@ -561,7 +561,7 @@ const MiReserva = () => {
                             disabled={cancelando === item.id}
                             className="flex-1 bg-red-600 text-white py-1.5 rounded-lg text-sm font-bold hover:bg-red-700 disabled:opacity-50"
                           >
-                            {cancelando === item.id ? 'Cancelando...' : 'S√≠, cancelar'}
+                            {cancelando === item.id ? 'Cancelando...' : 'SÌ, cancelar'}
                           </button>
                         </div>
                       </div>
@@ -577,7 +577,7 @@ const MiReserva = () => {
                 to="/catalogo"
                 className="inline-block text-primary-500 font-medium hover:underline"
               >
-                ‚Üê Volver al cat√°logo
+                ? Volver al cat·logo
               </Link>
             </div>
           </div>

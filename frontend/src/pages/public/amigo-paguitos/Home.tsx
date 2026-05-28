@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../services/api';
-import { ProductCard, CardSkeleton } from '../../components/product';
-import { confianza, testimonios } from './constants';
-import type { Product } from '../../types';
+import api from '../../../services/api';
+import { ProductCard, CardSkeleton } from '../../../components/product';
+import { confianza, testimonios } from '../constants';
+import type { Product } from '../../../types';
 
 // ════════════════════════════════════════════════════════════════════════════
 // HOME PAGE - Pagina principal

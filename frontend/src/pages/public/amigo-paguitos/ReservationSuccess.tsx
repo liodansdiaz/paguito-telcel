@@ -1,6 +1,6 @@
-ï»¿import { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { toImageUrl } from '../../services/config';
+import { toImageUrl } from '../../../services/config';
 
 interface ReservaItem {
   id: string;
@@ -60,17 +60,17 @@ const ReservationSuccess = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="text-4xl">â“</span>
+            <span className="text-4xl">?</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Sin informaciÃ³n</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Sin información</h1>
           <p className="text-gray-500 text-sm mb-6">
-            No se encontrÃ³ informaciÃ³n de la reserva
+            No se encontró información de la reserva
           </p>
           <Link
             to="/catalogo"
             className="inline-block bg-primary-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-primary-600 transition-colors"
           >
-            Ver catÃ¡logo
+            Ver catálogo
           </Link>
         </div>
       </div>
@@ -83,20 +83,20 @@ const ReservationSuccess = () => {
         {/* Success header */}
         <div className="bg-white rounded-2xl shadow-xl p-8 text-center mb-6">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="text-4xl">âœ…</span>
+            <span className="text-4xl">?</span>
           </div>
 
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Â¡Reserva confirmada!</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">¡Reserva confirmada!</h1>
           <p className="text-gray-500 text-sm mb-6">
-            Tu reserva fue registrada exitosamente. Un vendedor te contactarÃ¡ pronto.
+            Tu reserva fue registrada exitosamente. Un vendedor te contactará pronto.
           </p>
 
           {/* Folio destacado */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6">
-            <p className="text-sm text-gray-600 mb-2">Tu nÃºmero de reserva es</p>
+            <p className="text-sm text-gray-600 mb-2">Tu número de reserva es</p>
             <p className="text-4xl font-extrabold text-primary-500 mb-2">#{folio}</p>
             <p className="text-xs text-gray-500">
-              GuÃ¡rdalo para consultar o cancelar tu reserva
+              Guárdalo para consultar o cancelar tu reserva
             </p>
           </div>
 
@@ -107,7 +107,7 @@ const ReservationSuccess = () => {
               <span className="font-semibold text-gray-900">{reserva.nombreCompleto}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">TelÃ©fono</span>
+              <span className="text-gray-500">Teléfono</span>
               <span className="font-medium text-gray-900">{reserva.telefono}</span>
             </div>
             <div className="flex justify-between text-sm">
@@ -117,7 +117,7 @@ const ReservationSuccess = () => {
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Visita programada</span>
               <span className="font-medium text-gray-900">
-                {formatFecha(reserva.fechaPreferida)} Â· {reserva.horarioPreferido}
+                {formatFecha(reserva.fechaPreferida)} · {reserva.horarioPreferido}
               </span>
             </div>
             {reserva.vendor && (
@@ -144,7 +144,7 @@ const ReservationSuccess = () => {
                     {imagen ? (
                       <img src={imagen} alt={item.product.nombre} className="w-full h-full object-contain" />
                     ) : (
-                      <span className="text-2xl">ğŸ“±</span>
+                      <span className="text-2xl">??</span>
                     )}
                   </div>
 
@@ -169,7 +169,7 @@ const ReservationSuccess = () => {
                           ? 'bg-blue-100 text-blue-700' 
                           : 'bg-green-100 text-green-700'
                       }`}>
-                        {item.tipoPago === 'CREDITO' ? 'ğŸ“Š CrÃ©dito' : 'ğŸ’µ Contado'}
+                        {item.tipoPago === 'CREDITO' ? '?? Crédito' : '?? Contado'}
                       </span>
                     </div>
                   </div>
@@ -197,11 +197,11 @@ const ReservationSuccess = () => {
         {/* Importante */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
           <div className="flex items-start gap-3">
-            <span className="text-2xl">ğŸ’¡</span>
+            <span className="text-2xl">??</span>
             <div className="flex-1">
               <p className="text-yellow-900 font-semibold mb-1">Importante</p>
               <p className="text-yellow-700 text-sm">
-                Guarda tu nÃºmero de folio <strong>#{folio}</strong>. Lo necesitarÃ¡s si quieres consultar o cancelar tu reserva desde la secciÃ³n "Mi Reserva".
+                Guarda tu número de folio <strong>#{folio}</strong>. Lo necesitarás si quieres consultar o cancelar tu reserva desde la sección "Mi Reserva".
               </p>
             </div>
           </div>
@@ -213,7 +213,7 @@ const ReservationSuccess = () => {
             to="/catalogo"
             className="flex-1 bg-accent-500 text-secondary-500 py-3.5 rounded-xl font-bold text-center hover:bg-accent-400 transition-colors shadow-md"
           >
-            Ver mÃ¡s celulares
+            Ver más celulares
           </Link>
           <Link
             to="/mi-reserva"
@@ -228,7 +228,7 @@ const ReservationSuccess = () => {
             to="/"
             className="text-gray-500 text-sm hover:text-gray-700 transition-colors"
           >
-            â† Volver al inicio
+            ? Volver al inicio
           </Link>
         </div>
       </div>

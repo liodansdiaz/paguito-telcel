@@ -1,12 +1,12 @@
-﻿import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { showError, toast } from '../../utils/notifications';
-import api from '../../services/api';
-import { toImageUrl } from '../../services/config';
-import { getColorHex } from '../../utils/colors';
-import { formatPrice } from '../../utils/format';
-import { useCarritoStore } from '../../store/carrito.store';
-import type { Product } from '../../types';
+import { showError, toast } from '../../../utils/notifications';
+import api from '../../../services/api';
+import { toImageUrl } from '../../../services/config';
+import { getColorHex } from '../../../utils/colors';
+import { formatPrice } from '../../../utils/format';
+import { useCarritoStore } from '../../../store/carrito.store';
+import type { Product } from '../../../types';
 
 const PAGE_SIZE = 12;
 
@@ -16,10 +16,10 @@ const PRICE_RANGES = [
   { label: '$1,500 a $5,499', min: 1500, max: 5499 },
   { label: '$5,500 a $10,499', min: 5500, max: 10499 },
   { label: '$10,500 a $16,499', min: 10500, max: 16499 },
-  { label: 'Más de $16,500', min: 16500, max: undefined },
+  { label: 'M�s de $16,500', min: 16500, max: undefined },
 ];
 
-// ── Íconos SVG ────────────────────────────────────────────────────────────────
+// -- �conos SVG ----------------------------------------------------------------
 const IconFilter = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
@@ -44,7 +44,7 @@ const IconCart = () => (
   </svg>
 );
 
-// ── Sección colapsable del sidebar ────────────────────────────────────────────
+// -- Secci�n colapsable del sidebar --------------------------------------------
 const FilterSection = ({ title, children, defaultOpen = true }: {
   title: string; children: React.ReactNode; defaultOpen?: boolean;
 }) => {
@@ -63,7 +63,7 @@ const FilterSection = ({ title, children, defaultOpen = true }: {
   );
 };
 
-// ── Skeletons ─────────────────────────────────────────────────────────────────
+// -- Skeletons -----------------------------------------------------------------
 const Skeletons = ({ count = 6 }: { count?: number }) => (
   <>
     {Array.from({ length: count }).map((_, i) => (
@@ -82,7 +82,7 @@ const Skeletons = ({ count = 6 }: { count?: number }) => (
   </>
 );
 
-// ── Props del sidebar ─────────────────────────────────────────────────────────
+// -- Props del sidebar ---------------------------------------------------------
 interface SidebarProps {
   marcas: string[];
   colores: string[];
@@ -106,7 +106,7 @@ interface SidebarProps {
   onMemoriaChange: (m: string) => void;
 }
 
-// ── Sidebar — definido FUERA del componente padre para evitar pérdida de foco ─
+// -- Sidebar � definido FUERA del componente padre para evitar p�rdida de foco -
 const SidebarContent = ({
   marcas, colores, memorias,
   selectedMarcas, selectedColor, selectedMemoria, selectedPriceRange,
@@ -120,7 +120,7 @@ const SidebarContent = ({
 }: SidebarProps) => (
   <div className="space-y-0">
 
-    {/* Búsqueda */}
+    {/* B�squeda */}
     <div className="mb-5">
       <form onSubmit={onSearchSubmit} className="flex gap-2">
         <input
@@ -181,16 +181,16 @@ const SidebarContent = ({
       <div className="flex gap-2 items-center">
         <input
           type="number"
-          placeholder="Mín."
+          placeholder="M�n."
           value={precioMinInput}
           onChange={(e) => onPrecioMinInputChange(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onApplyPrecioPersonalizado()}
           className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500"
         />
-        <span className="text-gray-400 text-xs flex-shrink-0">–</span>
+        <span className="text-gray-400 text-xs flex-shrink-0">�</span>
         <input
           type="number"
-          placeholder="Máx."
+          placeholder="M�x."
           value={precioMaxInput}
           onChange={(e) => onPrecioMaxInputChange(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onApplyPrecioPersonalizado()}
@@ -266,7 +266,7 @@ const SidebarContent = ({
   </div>
 );
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// -- Helpers -------------------------------------------------------------------
 const getBadgeStyle = (badge: string) => {
   const b = badge.toLowerCase();
   if (b.includes('promo') || b.includes('oferta') || b.includes('descuento')) return 'bg-green-100 text-green-800';
@@ -274,14 +274,14 @@ const getBadgeStyle = (badge: string) => {
   return 'bg-yellow-100 text-yellow-800';
 };
 
-// ── Componente principal ───────────────────────────────────────────────────────
+// -- Componente principal -------------------------------------------------------
 const Catalog = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [marcas, setMarcas] = useState<string[]>([]);
   const [colores, setColores] = useState<string[]>([]);
   const [memorias, setMemorias] = useState<string[]>([]);
 
-  // Filtros aplicados — disparan fetch
+  // Filtros aplicados � disparan fetch
   const [selectedMarcas, setSelectedMarcas] = useState<string[]>([]);
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedMemoria, setSelectedMemoria] = useState('');
@@ -291,12 +291,12 @@ const Catalog = () => {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('reciente');
 
-  // Estados de escritura — solo UI, no disparan fetch
+  // Estados de escritura � solo UI, no disparan fetch
   const [searchInput, setSearchInput] = useState('');
   const [precioMinInput, setPrecioMinInput] = useState('');
   const [precioMaxInput, setPrecioMaxInput] = useState('');
 
-  // Paginación
+  // Paginaci�n
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -307,9 +307,9 @@ const Catalog = () => {
   const { agregarAlCarrito } = useCarritoStore();
 
   /**
-   * Función inteligente de reserva:
-   * - Si el producto tiene opciones (color/memoria) → redirige a ProductDetail
-   * - Si no tiene opciones → agrega directo al carrito
+   * Funci�n inteligente de reserva:
+   * - Si el producto tiene opciones (color/memoria) ? redirige a ProductDetail
+   * - Si no tiene opciones ? agrega directo al carrito
    */
   const handleReservar = (product: Product) => {
     const tieneColores = product.colores && product.colores.length > 0;
@@ -321,7 +321,7 @@ const Catalog = () => {
       return;
     }
 
-    // Reservar directamente desde el catálogo
+    // Reservar directamente desde el cat�logo
     try {
       agregarAlCarrito({
         productId: product.id,
@@ -335,7 +335,7 @@ const Catalog = () => {
       toast.success(
         (t) => (
           <div className="flex items-center gap-3">
-            <span>✅ {product.nombre} reservado</span>
+            <span>? {product.nombre} reservado</span>
             <button
               onClick={() => {
                 toast.dismiss(t.id);
@@ -354,11 +354,11 @@ const Catalog = () => {
     }
   };
 
-  // UI móvil
+  // UI m�vil
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  // ── Construir params ──────────────────────────────────────────────────────
+  // -- Construir params ------------------------------------------------------
   const buildParams = useCallback((
     currentPage: number,
     currentMarcas: string[],
@@ -390,7 +390,7 @@ const Catalog = () => {
     return params;
   }, []);
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
+  // -- Fetch -----------------------------------------------------------------
   const fetchProducts = useCallback(async (
     currentPage: number,
     currentMarcas: string[],
@@ -428,14 +428,14 @@ const Catalog = () => {
     }
   }, [buildParams]);
 
-  // ── Cargar opciones de filtros ────────────────────────────────────────────
+  // -- Cargar opciones de filtros --------------------------------------------
   useEffect(() => {
     api.get('/products/marcas').then(r => setMarcas(r.data.data)).catch(() => {});
     api.get('/products/colores').then(r => setColores(r.data.data)).catch(() => {});
     api.get('/products/memorias').then(r => setMemorias(r.data.data)).catch(() => {});
   }, []);
 
-  // ── Recargar cuando cambian filtros aplicados ─────────────────────────────
+  // -- Recargar cuando cambian filtros aplicados -----------------------------
   useEffect(() => {
     setPage(1);
     fetchProducts(1, selectedMarcas, search, sort, selectedColor, selectedMemoria,
@@ -443,7 +443,7 @@ const Catalog = () => {
   }, [selectedMarcas, search, sort, selectedColor, selectedMemoria,
       selectedPriceRange, precioMin, precioMax]);
 
-  // ── Scroll infinito ───────────────────────────────────────────────────────
+  // -- Scroll infinito -------------------------------------------------------
   useEffect(() => {
     if (!sentinelRef.current) return;
     const observer = new IntersectionObserver(
@@ -462,7 +462,7 @@ const Catalog = () => {
   }, [hasMore, loadingMore, loading, page, selectedMarcas, search, sort,
       selectedColor, selectedMemoria, selectedPriceRange, precioMin, precioMax]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  // -- Handlers --------------------------------------------------------------
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setSearch(searchInput); };
 
   const toggleMarca = (marca: string) =>
@@ -499,7 +499,7 @@ const Catalog = () => {
     (selectedPriceRange !== null || precioMin || precioMax ? 1 : 0) +
     (search ? 1 : 0);
 
-  // Props del sidebar compartidas entre instancia desktop y móvil
+  // Props del sidebar compartidas entre instancia desktop y m�vil
   const sidebarProps: SidebarProps = {
     marcas, colores, memorias,
     selectedMarcas, selectedColor, selectedMemoria, selectedPriceRange,
@@ -517,13 +517,13 @@ const Catalog = () => {
     onMemoriaChange: handleMemoriaChange,
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // -- Render ----------------------------------------------------------------
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
 
       {/* Cabecera */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Catálogo de Equipos</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Cat�logo de Equipos</h1>
         <p className="text-gray-500 text-sm mt-1">
           {loading ? 'Cargando...' : `${total} celular${total !== 1 ? 'es' : ''} disponible${total !== 1 ? 's' : ''}`}
         </p>
@@ -533,7 +533,7 @@ const Catalog = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-2 flex-wrap">
 
-          {/* Botón abrir sidebar en móvil */}
+          {/* Bot�n abrir sidebar en m�vil */}
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -575,7 +575,7 @@ const Catalog = () => {
           )}
           {(precioMin || precioMax) && selectedPriceRange === null && (
             <span className="inline-flex items-center gap-1 bg-blue-50 text-primary-500 text-xs px-2.5 py-1 rounded-full border border-blue-100">
-              ${precioMin || '0'} – ${precioMax || '∞'}
+              ${precioMin || '0'} � ${precioMax || '8'}
               <button onClick={() => { setPrecioMin(''); setPrecioMax(''); setPrecioMinInput(''); setPrecioMaxInput(''); }} className="hover:text-secondary-500">
                 <IconX />
               </button>
@@ -600,10 +600,10 @@ const Catalog = () => {
           onChange={(e) => setSort(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white self-start sm:self-auto flex-shrink-0"
         >
-          <option value="reciente">Más recientes</option>
+          <option value="reciente">M�s recientes</option>
           <option value="precio_asc">Menor precio</option>
           <option value="precio_desc">Mayor precio</option>
-          <option value="nombre_asc">Nombre A–Z</option>
+          <option value="nombre_asc">Nombre A�Z</option>
         </select>
       </div>
 
@@ -625,7 +625,7 @@ const Catalog = () => {
           </div>
         </aside>
 
-        {/* Sidebar móvil (drawer) */}
+        {/* Sidebar m�vil (drawer) */}
         {sidebarOpen && (
           <div className="fixed inset-0 z-50 lg:hidden">
             <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
@@ -659,9 +659,9 @@ const Catalog = () => {
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-24 text-gray-400">
-              <p className="text-5xl mb-4">📱</p>
+              <p className="text-5xl mb-4">??</p>
               <p className="text-lg font-medium mb-1 text-gray-600">Sin resultados</p>
-              <p className="text-sm">Intenta con otros filtros o búsqueda</p>
+              <p className="text-sm">Intenta con otros filtros o b�squeda</p>
               <button onClick={clearFilters} className="mt-4 text-sm text-primary-500 underline hover:no-underline">
                 Limpiar filtros
               </button>
@@ -676,7 +676,7 @@ const Catalog = () => {
                       key={product.id}
                       className={`bg-white rounded-2xl shadow-md hover:shadow-xl transition-all border border-gray-200 overflow-hidden ${unavailable ? 'opacity-70' : ''}`}
                     >
-                      {/* Área de imagen con badge */}
+                      {/* �rea de imagen con badge */}
                       <div className="relative bg-white h-32 sm:h-44 flex items-center justify-center group">
                         {product.precioAnterior ? (
                           <span className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-lg z-10">
@@ -698,7 +698,7 @@ const Catalog = () => {
                           </Link>
                         ) : (
                           <Link to={`/producto/${product.id}`} className="cursor-pointer">
-                            <span className="text-4xl sm:text-5xl">📱</span>
+                            <span className="text-4xl sm:text-5xl">??</span>
                           </Link>
                         )}
                         {unavailable && (
@@ -710,7 +710,7 @@ const Catalog = () => {
 
                       {/* Contenido de la tarjeta */}
                       <div className="p-2 sm:p-3 flex flex-col flex-1">
-                        {/* Título del producto */}
+                        {/* T�tulo del producto */}
                         <Link to={`/producto/${product.id}`} className="font-bold text-gray-900 text-xs sm:text-sm leading-tight mb-1 sm:mb-2 line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] block hover:text-primary-500">
                           {product.nombre}
                         </Link>
@@ -752,7 +752,7 @@ const Catalog = () => {
                             )}
                             {/* Separador */}
                             {product.colores && product.colores.length > 0 && product.memorias && product.memorias.length > 0 && (
-                              <span className="text-gray-300">•</span>
+                              <span className="text-gray-300">�</span>
                             )}
                             {/* Almacenamiento */}
                             {product.memorias && product.memorias.length > 0 && (
@@ -763,12 +763,12 @@ const Catalog = () => {
                           </div>
                         )}
 
-                        {/* Información de crédito mejorada */}
+                        {/* Informaci�n de cr�dito mejorada */}
                         {product.disponibleCredito && (product.pagoSemanal || product.enganche) && (
                           <div className="bg-blue-50 border border-blue-100 rounded-lg p-1.5 sm:p-2 mb-1 sm:mb-2">
                             {product.pagoSemanal && (
                               <p className="text-[10px] sm:text-[11px] text-blue-700 font-bold leading-tight">
-                                💳 {product.pagoSemanal}
+                                ?? {product.pagoSemanal}
                               </p>
                             )}
                             {product.enganche && (
@@ -782,11 +782,11 @@ const Catalog = () => {
                         {/* Disponibilidad */}
                         {!unavailable && (
                           <p className="text-[8px] sm:text-[9px] text-green-600 font-semibold mb-1 sm:mb-2 flex items-center gap-1">
-                            <span>✓</span> Disponible
+                            <span>?</span> Disponible
                           </p>
                         )}
 
-                        {/* Botones de acción */}
+                        {/* Botones de acci�n */}
                         <div className="mt-auto">
                           {!unavailable ? (
                             <button

@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 // Mapeo de logos locales por nombre
 const getLogoSrc = (nombre: string): string | null => {
@@ -36,34 +36,34 @@ const bancosYTiendas = [
 const DondePagar = () => {
   return (
     <div>
-      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
+      {/* -- Hero --------------------------------------------------------------- */}
       <section className="bg-gradient-to-br from-secondary-500 to-primary-500 text-white py-12 sm:py-16 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <span className="bg-accent-500 text-secondary-500 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-4 inline-block">
             Medios de pago
           </span>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-3">
-            ¿Dónde pagar?
+            �D�nde pagar?
           </h1>
           <p className="text-blue-100 text-sm sm:text-base max-w-xl mx-auto">
-            Para facilitar el pago de tu factura, Telcel pone a tu disposición diferentes formas de pago.
+            Para facilitar el pago de tu factura, Telcel pone a tu disposici�n diferentes formas de pago.
           </p>
           <p className="text-white text-sm mt-4 font-medium">
-            Ten a la mano tu <strong>número de cuenta Amigo Paguitos</strong> al momento de realizar tu pago.
+            Ten a la mano tu <strong>n�mero de cuenta Amigo Paguitos</strong> al momento de realizar tu pago.
           </p>
         </div>
       </section>
 
-      {/* ── Descripción ─────────────────────────────────────────────────────── */}
+      {/* -- Descripci�n ------------------------------------------------------- */}
       <section className="py-8 px-4 bg-white">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-gray-600 text-sm sm:text-base">
-            Realiza tu pago semanal, con tarjeta de débito o crédito en cualquier Centro de Atención a Clientes, en estos bancos y comercios autorizados; únicamente indica tu número de cuenta Amigo Paguitos.
+            Realiza tu pago semanal, con tarjeta de d�bito o cr�dito en cualquier Centro de Atenci�n a Clientes, en estos bancos y comercios autorizados; �nicamente indica tu n�mero de cuenta Amigo Paguitos.
           </p>
         </div>
       </section>
 
-      {/* ── Bancos y tiendas ──────────────────────────────────────────────────── */}
+      {/* -- Bancos y tiendas ---------------------------------------------------- */}
       <section className="py-12 sm:py-16 px-4 bg-blue-50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8">
@@ -113,19 +113,19 @@ const DondePagar = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-gray-500 text-sm">
-                La recepción del pago en efectivo, con tarjeta de débito o crédito depende de cada establecimiento. En los distintos Telcel se cobrará una comisión por el pago.
+                La recepci�n del pago en efectivo, con tarjeta de d�bito o cr�dito depende de cada establecimiento. En los distintos Telcel se cobrar� una comisi�n por el pago.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── CTA ───────────────────────────────────────────────────────────────── */}
+      {/* -- CTA ----------------------------------------------------------------- */}
       <section className="bg-gradient-to-r from-secondary-500 to-primary-500 text-white py-12 px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl font-bold mb-3">¿Tienes dudas sobre tu pago?</h2>
+          <h2 className="text-2xl font-bold mb-3">�Tienes dudas sobre tu pago?</h2>
           <p className="text-blue-200 mb-6">
-            Contáctanos y con gusto te orientamos sobre tus opciones de pago.
+            Cont�ctanos y con gusto te orientamos sobre tus opciones de pago.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -138,7 +138,7 @@ const DondePagar = () => {
               to="/catalogo"
               className="bg-accent-500 text-secondary-500 px-6 py-3 rounded-xl font-bold text-sm hover:bg-green-400 transition-all shadow-lg"
             >
-              Ver catálogo
+              Ver cat�logo
             </Link>
           </div>
         </div>

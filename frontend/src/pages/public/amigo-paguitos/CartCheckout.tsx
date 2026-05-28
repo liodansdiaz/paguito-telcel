@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { addDays, isSunday, isBefore, startOfDay } from 'date-fns';
 import 'react-day-picker/style.css';
-import { showError, showWarning } from '../../utils/notifications';
+import { showError, showWarning } from '../../../utils/notifications';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../../utils/leaflet';
-import { useCarritoStore } from '../../store/carrito.store';
-import { useGeolocation } from '../../hooks/useGeolocation';
-import { toImageUrl } from '../../services/config';
-import api from '../../services/api';
+import { useCarritoStore } from '../../../store/carrito.store';
+import { useGeolocation } from '../../../hooks/useGeolocation';
+import { toImageUrl } from '../../../services/config';
+import api from '../../../services/api';
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(price);
