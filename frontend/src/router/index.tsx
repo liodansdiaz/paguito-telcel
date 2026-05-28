@@ -11,6 +11,11 @@ import VendorLayout from '../components/layout/VendorLayout';
 // Public pages - ACXOCEL Corporate
 import Home from '../pages/public/Home';
 import Nosotros from '../pages/public/Nosotros';
+import PlanesComparativa from '../pages/public/PlanesComparativa';
+import Equipos from '../pages/public/Equipos';
+import Corporativo from '../pages/public/Corporativo';
+import Sucursales from '../pages/public/Sucursales';
+import Trabaja from '../pages/public/Trabaja';
 
 // Public pages - Amigo Paguitos
 import AmigoPaguitosHome from '../pages/public/amigo-paguitos/Home';
@@ -63,7 +68,12 @@ export const router = createBrowserRouter([
     children: [
       { path: '/', element: <Home /> },
       { path: '/nosotros', element: <Nosotros /> },
-      // TODO: Agregar rutas de planes, equipos, corporativo, sucursales, trabaja
+      { path: '/planes-comparativa', element: <PlanesComparativa /> },
+      { path: '/planes', element: <PlanesComparativa /> },
+      { path: '/equipos', element: <Equipos /> },
+      { path: '/corporativo', element: <Corporativo /> },
+      { path: '/sucursales', element: <Sucursales /> },
+      { path: '/trabaja', element: <Trabaja /> },
     ],
   },
   
