@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { addDays, isSunday, isBefore, startOfDay } from 'date-fns';
 import 'react-day-picker/style.css';
-import { showError, showSuccess } from '../../../../utils/notifications';
-import api from '../../../../services/api';
-import { toImageUrl } from '../../../../services/config';
+import { showError, showSuccess } from '../../../utils/notifications';
+import api from '../../../services/api';
+import { toImageUrl } from '../../../services/config';
 
 const formatFecha = (fecha: string) =>
   new Date(fecha).toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
